@@ -28,9 +28,13 @@ function [length, varargout] = inverseKinematics(pose, winchPositions, cableAtta
 %   performs advanced inverse kinematics taking into account the specified
 %   pulley radius.
 % 
-%   [LENGTH, CABLEVECTORS] = INVERSEKINEMATICS(Pose, ...) also provides the
+%   [LENGTH, CABLEVECTORS] = INVERSEKINEMATICS(...) also provides the
 %   vectors of the cable directions from platform to attachment point given
 %   in the global coordinate system
+% 
+%   [LENGTH, CABLEVECTORS, CABLEUNITVECTORS = INVERSEKINEMATICS(...) also
+%   provides the unit vectors for each cable which might come in handy at
+%   times
 %   
 %   Inputs:
 %   
@@ -85,7 +89,6 @@ function [length, varargout] = inverseKinematics(pose, winchPositions, cableAtta
 
 %------------- BEGIN CODE --------------
 
-
 %% Create an input parser
 % Input parse to easily parse input arguments
 ip = inputParser;
@@ -134,7 +137,6 @@ ip.FunctionName = 'calculateCableLength';
 % Parse the provided inputs
 parse(ip, pose, winchPositions, cableAttachments, varargin{:});
 
-
 %% Parse variables so we can use them natively
 bUseAdvanced = ip.Results.UseAdvanced;
 vPlatformPose = ip.Results.Pose;
@@ -146,180 +148,136 @@ mWinchOrientations = ip.Results.WinchOrientations;
 vWinchPulleyRadius = ip.Results.WinchPulleyRadius;
 mCableAttachments = ip.Results.CableAttachments;
 
-
-%% Do the magic
-% Initialize zero cable length for every cables
+%% Init output
+% Holds the vectors of the cables (i.e., from B to A (or A-adjusted i.e.,
+% C))
 mCableVector = zeros(3, size(mWinchPositions, 2));
+% Holds the unit vectors for each cable vector
+mCableUnitVector = zeros(3, size(mWinchPositions, 2));
+% % Adjustements to the cable length (primarily used by the advanced
+% % algorithm to allow for adding the wound up cable length
+% % vCableLengthAdjustment = zeros(1, size(mWinchPositions, 2));
+% Final length of the cables (may also already contain cable length
+% adjustment determined by the advanced algorithm
 vCableLength = zeros(1, size(mWinchPositions, 2));
 
 
+%% Do the magic
 %%% What algorithm to use?
 % Advanced kinematics algorithm
 if bUseAdvanced
     for iUnit = 1:size(mWinchPositions, 2)
-        % Rotation from winch coordinate system to global coordinate system
+        % Rotation matrix to rotate any vector given in winch coordinate
+        % system K_A into the global coordinate system K_O
         mRotation_kA2kO = rotz(mWinchOrientations(3, iUnit))*roty(mWinchOrientations(2, iUnit))*rotx(mWinchOrientations(1, iUnit));
         
-        % Vector from winch coordinate system A to cable attachment point B
-        % in the global coordinate system
-        v_A2B_in_kO = vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit) - mWinchPositions(:, iUnit);
-        % Transform the latter into the winch coordinate system
-        v_A2B_in_kA = transpose(mRotation_kA2kO)*v_A2B_in_kO;
+        % Vector from contact point of cable on pulley A to cable
+        % attachment point on the platform B given in coordinates of system
+        % A
+        v_A2B_in_kA = transpose(mRotation_kA2kO)*(vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit) - mWinchPositions(:, iUnit));
         
-        % Rotation about the z-axis of coordinate system A gives us the
-        % coordinate system in which the pulley is lying
-        dRotationAngleAbout_kPz_Degree = atan2d(v_A2B_in_kA(2), v_A2B_in_kA(1));
-%         dRotationAngleAbout_kPz_Radian = degtorad(dRotationAngleAbout_kPz_Degree);
-        % ^ These values are correct as validated by PTT (2015-04-03 17-16)
-        % Rotation from pulley coordinate system P to winch coordinate
-        % system A
-        mRotation_kP2kA = rotz(dRotationAngleAbout_kPz_Degree);
+        % Determine the angle of rotation of the pulley to have the
+        % pulley's x-axis point in the direction of the cable which points
+        % towards B
+        dRotationAngleAbout_kAz_Degree = atan2d(v_A2B_in_kA(2), v_A2B_in_kA(1));
         
-        % Vector from pulley center M to where the cable touches the pulley
-        % given in pulley coordinates
+        % Rotation matrix from pulley coordinate system K_P to winch
+        % coordinate system K_A
+        mRotation_kP2kA = rotz(dRotationAngleAbout_kAz_Degree);
+        
+        % Vector from point P (center of coordinate system K_P) to the
+        % cable attachment point B given in the coordinate system of the
+        % pulley (easily transferable from the same vector given in K_A by
+        % simply rotating it about the local z-axis of K_A)
+        v_A2B_in_kP = transpose(mRotation_kP2kA)*v_A2B_in_kA;
+        v_P2B_in_kP = v_A2B_in_kP;
+        
+        % Vector from P to the pulley center given in the pulley coordinate
+        % system K_P
         v_P2M_in_kP = vWinchPulleyRadius(iUnit)*[1; 0; 0];
-%         % Vector from pulley center M to where the cable touches the pulley
-%         % given in winch coordinates
-%         v_A2M_in_kA = mRotation_kP2kA*(v_A2M_in_kP);
         
-        % Vector from pulley center M to where the cable is attached to the
-        % platform given in pulley coordinates P
-        v_M2B_in_kP = transpose(mRotation_kP2kA)*v_A2B_in_kA - v_P2M_in_kP;
+        % Closed vector loop to determine the vector from M to B in
+        % coordinate system K_P: P2M + M2B = P2B. This basically also
+        % transforms our coordinate system K_P to K_M
+        v_M2B_in_kP = v_P2B_in_kP - v_P2M_in_kP;
         
-        % This is the length from C to B (which is actually the cable
-        % length). We need this for trigonometric functions and to use with
-        % Pythagoras later on. Coordinates to point C will be calculated
-        % further down, but we need the angle about which to rotate the
-        % y-axis of coordinate system M first
-        dDistance_C2B_in_kP = sqrt(norm(v_M2B_in_kP)^2 - vWinchPulleyRadius(iUnit)^2);
+        % Convert everything in to the coordinate system K_M of the
+        % pulley's center
+        v_M2B_in_kM = v_M2B_in_kP;
         
-        % Angle delta is the angle that coordinate system M would have to
-        % be rotated about its y-axis so that its x-axis points directly
-        % onto B
-        dRotationAngle_delta_Degree = atan2d(v_M2B_in_kP(3) - v_P2M_in_kP(3), v_M2B_in_kP(1) - v_P2M_in_kP(1));
-        dRotationAngle_delta_Degree = atan2d(v_M2B_in_kP(3), v_M2B_in_kP(1));
+        % Preliminarily determine the cable length (this helps us to
+        % determine the angle beta_3 to later on determine the angle of the
+        % vector from M to C in the coordinate system of M. It is quite
+        % simple to do so using Pythagoras: l^2 + radius^2 = M2B^2
+        dCableLength_C2B = sqrt(norm(v_M2B_in_kM)^2 - vWinchPulleyRadius(iUnit));
         
-        % Angle phi is the angle that is between M2B and M2C
-        dRotationAngle_phi_Degree = atand(dDistance_C2B_in_kP/vWinchPulleyRadius(iUnit));
+        % Determine the angle of rotation of that vector relative to the
+        % x-axis of K_P. This is beta_2 in PTT's sketch
+        dAngleBetween_M2B_and_xM_Degree = atan2d(v_M2B_in_kP(3), v_M2B_in_kP(1));
         
-        dRotationAngleAbout_kMy_Degree = dRotationAngle_delta_Degree + dRotationAngle_phi_Degree;
-        % The angle that describes how much of the pulley is being covered
-        % by the cable;
-        dWrapAngle_Degree = 90 + dRotationAngleAbout_kMy_Degree;
+        % Now we can determine the angle between M2B and M2C using
+        % trigonometric functions because cos(beta_3) = radius/M2B and as
+        % well sin(beta_3) = L/M2B or tan(beta_3) = L/radius
+        dAngleBetween_M2B_and_M2C_Degree = atand(dCableLength_C2B/vWinchPulleyRadius(iUnit));
         
-        % Vector from the pulley center M to the contact point C which is
-        % nothing but the vector of the x-axis scaled by the winch pulley
-        % radius and then rotated about the y-axis of system M
-        mRotation_kC2kM = roty(dRotationAngleAbout_kMy_Degree);
+        % Angle between the x-axis of M and the vector from M to C given in
+        % coordinate system K_M and in degree
+        dAngleBetween_xM_and_M2C_Degree = dAngleBetween_M2B_and_M2C_Degree + dAngleBetween_M2B_and_xM_Degree;
         
-        v_M2C_in_kM = vWinchPulleyRadius(iUnit).*transp(mRotation_kC2kM)*[1; 0; 0];
+        % Vector from winch center M to adjusted cable release point C in
+        % system K_M is nothing but the scaled x-axis rotated about the
+        % y-axis with previsouly determined angle beta2
+        mRotation_kC2kM = roty(dAngleBetween_xM_and_M2C_Degree);
+        v_M2C_in_kM = transpose(mRotation_kC2kM)*(vWinchPulleyRadius(iUnit).*[1; 0; 0]);
         
+        % Wrapping angle can be calculated in to ways, either by getting
+        % the angle between the scaled negative x-axis (M to P) and the
+        % vector M to C, or by getting the angle between the scaled
+        % positive x-axis and the vector M to C
+        v_M2P_in_kM = vWinchPulleyRadius(iUnit).*[-1; 0; 0];
+        dAngleWrap_Degree = acosd(dot(v_M2P_in_kM, v_M2C_in_kM)/(norm(v_M2P_in_kM)*norm(v_M2C_in_kM)));
         
+        % Adjust the winch position given the coordinates to point C
+        mWinchPositions(:, iUnit) = mWinchPositions(:, iUnit) + mRotation_kA2kO*(mRotation_kP2kA*(v_P2M_in_kP + v_M2C_in_kM));
+        vCableLength(iUnit) = degtorad(dAngleWrap_Degree)*vWinchPulleyRadius(iUnit);
         
-        %%% Finally, correct the winch attachment point given all we have
-        % calculated above
-        % Calculate adjusted winch positions
-        mWinchPositions(:, iUnit) = mWinchPositions(:, iUnit) + mRotation_kA2kO*(mRotation_kP2kA*(v_P2M_in_kP + mRotation_kC2kM*(v_M2C_in_kM)));
-        % Determine the cable vector from adjusted winch position to anchor
-        % point
-        mCableVector(:, iUnit) = mWinchPositions(:, iUnit) - ( vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit));
-        % Determine the cable length which is nothing different than the
-        % free cable length i.e., winch position to platform plus the
-        % amount of cable wrapped around the pulley
-        vCableLength(iUnit) = norm(mCableVector(:, iUnit)) + degtorad(dWrapAngle_Degree)*vWinchPulleyRadius(iUnit);
-        
-        
-        
-        
-        
-        
-        
-        
+%         % Calculate the cable vector (from attachment point B to last
+%         % contact point of cable on pulley)
+%         mCableVector(:, iUnit) = mWinchPositions(:, iUnit) - ( vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit));
+%         % Calculate the normalized vector of the cable direction
+%         mCableUnitVector(:, iUnit) = mCableVector(:, iUnit)./norm(mCableVector(:, iUnit));
+%         % And finally, determine the actual cable length which is nothing
+%         % else but the length from adjusted A (in this case C) and the
+%         % distance on the pulley the cable is wrapped up
+%         vCableLength(iUnit) = norm(mCableVector(:, iUnit)) + degtorad(dAngleWrap_Degree)*vWinchPulleyRadius(iUnit);
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-%         % Rotation matrix to rotate any vector given in A to the global
-%         % coordinate system
-%         mRotation_kA2kO = rotz(mWinchOrientations(3, iUnit))*roty(mWinchOrientations(2, iUnit))*rotx(mWinchOrientations(1, iUnit));
-%         
-%         % Vector from cable contact point on pulley to cable attachment
-%         % point on platform. This is needed to determine the pulley's
-%         % rotation about the local z-axis (z-axis of system A)
-%         v_A2B_in_kO = vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit) - mWinchPositions(:, iUnit);
-%         
-%         % Transform the vector from A to B into K_A so that we can
-%         % determine the local rotation about the z-axis (this leads to
-%         % coordinate system AB (A rotated such that its x-axis aligns with
-%         % the vector of A through B)
-%         v_A2B_in_kA = transpose(mRotation_kA2kO)*v_A2B_in_kO;
-%         
-%         % Get the rotation angle (whatch out, this is being done in degree
-%         % so we can use it directly for ```rotz```)
-%         dAngleRotation_kAB2kA_Degree = atan2d(v_A2B_in_kA(2), v_A2B_in_kA(1));
-%         % Code is checked and validated up to here and it is correct! (^PTT 2015-04-03 11:34)
-%         dAngleRotation_kAB2kA_Radian = degtorad(dAngleRotation_kAB2kA_Degree);
-%         
-%         % Rotation matrix to get any vector given in coordinate system M
-%         % into the coordinate system of the winch
-%         mRotation_kAB2kA = rotz(dAngleRotation_kAB2kA_Degree);
-%         
-%         % Vector from A to M in the rotated coordinate system of the
-%         % pulley, per convention the pulley is aligned with the x-axis of
-%         % this coordinate system, so that makes things quite easy
-%         v_A2M_in_kAB = vWinchPulleyRadius(iUnit)*[1; 0; 0];
-%         
-%         % The vector from M to B in K_AB is given by the closed loop from A
-%         % to M and then from M to B
-%         v_M2B_in_kAB = transpose(mRotation_kAB2kA)*v_A2B_in_kA - v_A2M_in_kAB;
-%         
-%         % Calculate the free cable length from C to B using Pythagoras
-%         dCableLength_C2B = sqrt(norm(v_M2B_in_kAB)^2 - vWinchPulleyRadius(iUnit)^2 );
-%         
-%         % The rotation about the y-axis of the coordinate system kM can be
-%         % easily determined using two angles, one being the angle that M2B
-%         % has relative to the x-axis of k_AB, and the other is the angle
-%         % that is defined by the triangle through M-C-B. Then, additionally
-%         % you would want to want to add 90° (or pi/2) to this result to
-%         % reflect the angles being measured against the x-axis of k_AB
-%         dAngleRotation_kM2kAB_Degree = radtodeg(pi/2) + atan2d(v_M2B_in_kAB(3), v_M2B_in_kAB(1)) + acosd(vWinchPulleyRadius(iUnit)/norm(v_M2B_in_kAB));
-%         dAngleRotation_kM2kAB_Radian = degtorad(dAngleRotation_kM2kAB_Degree);
-%         
-%         % Calculate the length of the cable wrapped around the pulley by
-%         % multiplying the wrapping angle (in radian) with the pulley radius
-%         dCableLength_Wrap = dAngleRotation_kM2kAB_Radian*vWinchPulleyRadius(iUnit);
-%         
-%         % The absolute cable length is obviously the cable length wrapped
-%         % around the pulley and the length from C to B
-%         vCableLength(iUnit) = dCableLength_Wrap + dCableLength_C2B;
-%         % Code is checked and validated up to here and it is not completey
-%         % correct (^PTT 2015-04-03 12:25)
+        % Code is checked and validated up to here and it is correct
+        % ^ PTT 2015-04-04 11-53
     end
-% Standard algorithm assumes the cables to be guided form the winch
-% attachment points
-else
-    % We have to loop over every winch, otherwise it'll be a little too
-    % complicated to get the values correct
-    for iUnit = 1:size(mWinchPositions, 2)
-        mCableVector(:, iUnit) = mWinchPositions(:, iUnit) - ( vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit));
-        vCableLength(iUnit) = norm(mCableVector(:, iUnit));
+% % Standard algorithm l_i = a_i - ( r_i + R*b_i)
+% else
+end
+
+%% Determine the actual cable length
+% Given the standard algorithm l_i = a_i - ( r_i + R*b_i) which may have
+% adjusted a_i and also an adjustment for the determined cable length, the
+% cable length will be determined here
+% We have to loop over every winch, otherwise it'll be a little too
+% complicated to get the values correct
+for iUnit = 1:size(mWinchPositions, 2)
+    % Get the cable vector according to l_i = a_i - ( r_i + R*b_i )
+    mCableVector(:, iUnit) = mWinchPositions(:, iUnit) - ( vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit));
+    % Determine the cable length by taking the norm of the cable vector and
+    % also adding previously determined cable length adjustment values
+    % (stored in vCableLength is e.g., the length of the cable on the
+    % pulley)
+    vCableLength(iUnit) = vCableLength(iUnit) + norm(mCableVector(:, iUnit));
+    
+    % Only determine the cable unit vector in case it is requested (this
+    % saves some computational time
+    if nargout > 2
+        mCableUnitVector(:, iUnit) = mCableVector(:, iUnit)./norm(mCableVector(:, iUnit));
     end
 end
 
@@ -328,8 +286,12 @@ length = vCableLength;
 
 % Assign all the other, optional output quantities
 if nargout
-    if nargout >= 0
+    if nargout > 1
         varargout{1} = mCableVector;
+    end
+    
+    if nargout > 2
+        varargout{2} = mCableUnitVector;
     end
 end
 
