@@ -97,6 +97,7 @@ function [length, varargout] = inverseKinematics(pose, winchPositions, cableAtta
 
 %------------- BEGIN CODE --------------
 
+
 %% Create an input parser
 % Input parse to easily parse input arguments
 ip = inputParser;
@@ -145,6 +146,8 @@ ip.FunctionName = 'inverseKinematics';
 % Parse the provided inputs
 parse(ip, pose, winchPositions, cableAttachments, varargin{:});
 
+
+
 %% Parse variables so we can use them natively
 bUseAdvanced = ip.Results.UseAdvanced;
 vPlatformPose = ip.Results.Pose;
@@ -152,6 +155,8 @@ mWinchPositions = ip.Results.WinchPositions;
 mWinchOrientations = ip.Results.WinchOrientations;
 vWinchPulleyRadius = ip.Results.WinchPulleyRadius;
 mCableAttachments = ip.Results.CableAttachments;
+
+
 
 %% Do the magic
 %%% What algorithm to use?
@@ -162,6 +167,8 @@ if bUseAdvanced
 else
     [vCableLength, mCableVector, mCableUnitVector] = algoInverseKinematics_Simple(vPlatformPose, mWinchPositions, mCableAttachments);
 end
+
+
 
 %% Assign output quantities
 length = vCableLength;
@@ -186,6 +193,7 @@ if nargout
         end
     end
 end
+
 
 end
 
