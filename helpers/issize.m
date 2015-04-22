@@ -1,17 +1,19 @@
-function flag = issquare(A)
-% ISSQUARE - Check whether the given matrix is square
+function flag = issize(A, r, c)
+% ISSIZE - Check whether the given matrix is of provided size/dimensions
 % 
-%   FLAG = ISSQUARE(A) checks the matrix a for squareness i.e., checks that
-%   the number of rows equals the number of columns
+%   FLAG = ISSIZE(A, r, c) checks matrix A is of dimensions r x c
 % 
 %   Inputs:
 % 
 %   A: matrix to check for squareness
+%   
+%   r: rows matrix A has to have
+%   
+%   c: number of columns matrix A has to have
 % 
 %   Outputs:
 % 
-%   FLAG: vector of force distribution values as determined by the
-%   algorithm
+%   FLAG: evaluates to true if A is of size r x c, otherwise false
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
 % Date: 2015-04-22
@@ -19,10 +21,10 @@ function flag = issquare(A)
 %   2015-04-22: Initial release
 
 
-%------------- BEGIN CODE --------------
+% ------------- BEGIN CODE --------------
 
 
-flag = ismatrix(A) && isequal(size(A, 1), size(A, 2));
+flag = ismatrix(A) && isequal(size(A, 1), r) && isequal(size(A, 2), c);
 
 
 end
