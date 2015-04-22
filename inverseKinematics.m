@@ -157,10 +157,10 @@ mCableAttachments = ip.Results.CableAttachments;
 %%% What algorithm to use?
 % Advanced kinematics algorithm (including pulley radius)
 if bUseAdvanced
-    [vCableLength, mCableVector, mCableUnitVector] = algoInverseKinematicsPulley(vPlatformPose, mWinchPositions, mCableAttachments, vWinchPulleyRadius, mWinchOrientations);
+    [vCableLength, mCableVector, mCableUnitVector] = algoInverseKinematics_Pulley(vPlatformPose, mWinchPositions, mCableAttachments, vWinchPulleyRadius, mWinchOrientations);
 % Simple kinematics algorithm (no pulley radius)
 else
-    [vCableLength, mCableVector, mCableUnitVector] = algoInverseKinematicsSimple(vPlatformPose, mWinchPositions, mCableAttachments);
+    [vCableLength, mCableVector, mCableUnitVector] = algoInverseKinematics_Simple(vPlatformPose, mWinchPositions, mCableAttachments);
 end
 
 %% Assign output quantities

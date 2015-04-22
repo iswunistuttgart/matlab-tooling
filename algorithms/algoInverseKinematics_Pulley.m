@@ -1,5 +1,5 @@
-function [length, varargout] = algoInverseKinematicsPulley(Pose, WinchPositions, CableAttachments, WinchPulleyRadius, WinchOrientations)
-% ALGOINVERSEKINEMATICSPULLEY - Perform inverse kinematics for the given
+function [length, varargout] = algoInverseKinematics_Pulley(Pose, WinchPositions, CableAttachments, WinchPulleyRadius, WinchOrientations)
+% ALGOINVERSEKINEMATICS_PULLEY - Perform inverse kinematics for the given
 %   pose of the virtual robot
 %   Inverse kinematics means to determine the values for the joint
 %   variables (in this case cable lengths) for a given endeffector pose.
@@ -13,15 +13,15 @@ function [length, varargout] = algoInverseKinematicsPulley(Pose, WinchPositions,
 %   loop can be used as well as the advanced pulley kinematics (considering
 %   pulley radius and rotatability).
 % 
-%   LENGTH = ALGOINVERSEKINEMATICSPULLEY(POSE, WINCHPOSITIONS, CABLEATTACHMENTS)
+%   LENGTH = ALGOINVERSEKINEMATICS_PULLEY(POSE, WINCHPOSITIONS, CABLEATTACHMENTS)
 %   performs simple inverse kinematics with the cables running from a_i to
 %   b_i for the given pose
 % 
-%   [LENGTH, CABLEVECTORS] = ALGOINVERSEKINEMATICSPULLEY(...) also provides the
+%   [LENGTH, CABLEVECTORS] = ALGOINVERSEKINEMATICS_PULLEY(...) also provides the
 %   vectors of the cable directions from platform to attachment point given
 %   in the global coordinate system
 % 
-%   [LENGTH, CABLEVECTORS, CABLEUNITVECTORS] = ALGOINVERSEKINEMATICSPULLEY(...)
+%   [LENGTH, CABLEVECTORS, CABLEUNITVECTORS] = ALGOINVERSEKINEMATICS_PULLEY(...)
 %   also provides the unit vectors for each cable which might come in handy
 %   at times
 %   
