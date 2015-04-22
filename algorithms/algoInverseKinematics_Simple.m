@@ -72,19 +72,20 @@ function [length, varargout] = algoInverseKinematics_Simple(Pose, WinchPositions
 % To unify variable names
 mCableAttachments = CableAttachments;
 mWinchPositions = WinchPositions;
+iNumberOfWires = size(mWinchPositions, 2);
 % Holds the actual cable vector
-mCableVector = zeros(3, size(mWinchPositions, 2));
+mCableVector = zeros(3, iNumberOfWires);
 % Holds the normalized cable vector
-mCableVectorUnit = zeros(3, size(mWinchPositions, 2));
+mCableVectorUnit = zeros(3, iNumberOfWires);
 % Holds the cable lengths
-vCableLength = zeros(1, size(mWinchPositions, 2));
+vCableLength = zeros(1, iNumberOfWires);
 % Extract the position from the pose
 vPlatformPosition = Pose(1:3);
 % Extract rotatin from the pose
 mPlatformRotation = reshape(Pose(4:12), 3, 3);
 
 % Loop over every winch and ...
-for iUnit = 1:size(mWinchPositions, 2)
+for iUnit = 1:iNumberOfWires
     % ... calculate the cable vector
     mCableVector(:, iUnit) = mWinchPositions(:, iUnit) - ( vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit) );
     % ... calculate the cable length

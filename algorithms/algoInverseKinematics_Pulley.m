@@ -78,24 +78,26 @@ mCableAttachments = CableAttachments;
 mWinchPositions = WinchPositions;
 vWinchPulleyRadius = WinchPulleyRadius;
 mWinchOrientations = WinchOrientations;
+% Get the number of wires
+iNumberOfWires = size(mWinchPositions, 2);
 % Holds the actual cable vector
-mCableVector = zeros(3, size(mWinchPositions, 2));
+mCableVector = zeros(3, iNumberOfWires);
 % Holds the normalized cable vector
-mCableVectorUnit = zeros(3, size(mWinchPositions, 2));
+mCableVectorUnit = zeros(3, iNumberOfWires);
 % Holds the cable lengths
-vCableLength = zeros(1, size(mWinchPositions, 2));
+vCableLength = zeros(1, iNumberOfWires);
 % Holds offset to the cable lengths
-vCableLengthOffset = zeros(1, size(mWinchPositions, 2));
+vCableLengthOffset = zeros(1, iNumberOfWires);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
 mPlatformRotation = reshape(Pose(4:12), 3, 3);
 % Holds the rotation angle gamma and the wrapping angle beta
-mWinchPulleyAngles = zeros(2, size(mWinchPositions, 2));
+mWinchPulleyAngles = zeros(2, iNumberOfWires);
 
 % Loop over every winch and calculate the corrected winch position i.e.,
 % a_{i, corr}
-for iUnit = 1:size(mWinchPositions, 2)
+for iUnit = 1:iNumberOfWires
     % Rotation matrix to rotate any vector given in winch coordinate
     % system K_A into the global coordinate system K_O
     mRotation_kA2kO = rotz(mWinchOrientations(3, iUnit))*roty(mWinchOrientations(2, iUnit))*rotx(mWinchOrientations(1, iUnit));
