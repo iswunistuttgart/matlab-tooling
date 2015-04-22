@@ -84,6 +84,8 @@ vCableLengthOffset = zeros(1, size(mWinchPositions, 2));
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
 mPlatformRotation = reshape(Pose(4:12), 3, 3);
+% Holds the rotation angle gamma and the wrapping angle beta
+mWinchPulleyAngles = zeros(2, size(mWinchPositions, 2));
 
 % Loop over every winch and calculate the corrected winch position i.e.,
 % a_{i, corr}
@@ -101,6 +103,7 @@ for iUnit = 1:size(mWinchPositions, 2)
     % pulley's x-axis point in the direction of the cable which points
     % towards B
     dRotationAngleAbout_kAz_Degree = atan2d(v_A2B_in_kA(2), v_A2B_in_kA(1));
+    mWinchPulleyAngles(1, iUnit) = dRotationAngleAbout_kAz_Degree;
 
     % Rotation matrix from pulley coordinate system K_P to winch
     % coordinate system K_A
@@ -157,6 +160,7 @@ for iUnit = 1:size(mWinchPositions, 2)
     % positive x-axis and the vector M to C
     v_M2P_in_kM = vWinchPulleyRadius(iUnit).*[-1; 0; 0];
     dAngleWrap_Degree = acosd(dot(v_M2P_in_kM, v_M2C_in_kM)/(norm(v_M2P_in_kM)*norm(v_M2C_in_kM)));
+    mWinchPulleyAngles(2, iUnit) = dAngleWrap_Degree;
 
     % Adjust the winch position given the coordinates to point C
     mWinchPositions(:, iUnit) = mWinchPositions(:, iUnit) + mRotation_kA2kO*(mRotation_kP2kA*(v_P2M_in_kP + v_M2C_in_kM));
@@ -178,13 +182,19 @@ length = vCableLength;
 % Further outputs as requested
 if nargout
     % Second output is the matrix of cable vectors from b_i to a_i
-    if nargout > 1
+    if nargout >= 2
         varargout{1} = mCableVector;
     end
     
     % Third output is the matrix of normalized cable vectors
-    if nargout > 2
+    if nargout >= 3
         varargout{2} = mCableVectorUnit;
+    end
+    
+    % Fourth output will be the revolving and wrapping angles of the
+    % pulleys
+    if nargout >= 4
+        varargout{3} = mWinchPulleyAngles;
     end
 end
 

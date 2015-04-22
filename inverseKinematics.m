@@ -157,7 +157,7 @@ mCableAttachments = ip.Results.CableAttachments;
 %%% What algorithm to use?
 % Advanced kinematics algorithm (including pulley radius)
 if bUseAdvanced
-    [vCableLength, mCableVector, mCableUnitVector] = algoInverseKinematics_Pulley(vPlatformPose, mWinchPositions, mCableAttachments, vWinchPulleyRadius, mWinchOrientations);
+    [vCableLength, mCableVector, mCableUnitVector, mWinchPulleyAngles] = algoInverseKinematics_Pulley(vPlatformPose, mWinchPositions, mCableAttachments, vWinchPulleyRadius, mWinchOrientations);
 % Simple kinematics algorithm (no pulley radius)
 else
     [vCableLength, mCableVector, mCableUnitVector] = algoInverseKinematics_Simple(vPlatformPose, mWinchPositions, mCableAttachments);
@@ -168,12 +168,22 @@ length = vCableLength;
 
 % Assign all the other, optional output quantities
 if nargout
-    if nargout > 1
+    % Second output argument is the matrix of cable directions vectors
+    if nargout >= 2
         varargout{1} = mCableVector;
     end
     
-    if nargout > 2
+    % Third output is the matrix of normalized cable direction vectors
+    if nargout >= 3
         varargout{2} = mCableUnitVector;
+    end
+    
+    % Fourth output argument...
+    if nargout >= 4
+        % For the advanced algorithms we are returning the wrapping angles
+        if bUseAdvanced
+            varargout{3} = mWinchPulleyAngles;
+        end
     end
 end
 
