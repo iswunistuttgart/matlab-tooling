@@ -32,7 +32,7 @@ function [length, varargout] = inverseKinematics(pose, winchPositions, cableAtta
 %   vectors of the cable directions from platform to attachment point given
 %   in the global coordinate system
 % 
-%   [LENGTH, CABLEVECTORS, CABLEUNITVECTORS = INVERSEKINEMATICS(...) also
+%   [LENGTH, CABLEVECTORS, CABLEUNITVECTORS] = INVERSEKINEMATICS(...) also
 %   provides the unit vectors for each cable which might come in handy at
 %   times
 %   
@@ -80,10 +80,18 @@ function [length, varargout] = inverseKinematics(pose, winchPositions, cableAtta
 % 
 %   LENGTH: Length is a vector of size 1xN with the cable lengths
 %   determined using either simple or advanced kinematics
+%
+%   CABLEVECTOR: Vectors of each cable from attachment point to (corrected)
+%   winch point
+%   
+%   CABLEUNITVECTOR: Normalized vector for each cable from attachment point
+%   to its (corrected) winch point
+% 
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
 % Date: 2015-04-03
 % Changelog:
+%   2015-04-22: Add commentary for outputs CableVector and CableUnitVector
 %   2015-04-03: Initial release
 
 
@@ -255,8 +263,6 @@ if bUseAdvanced
         % Code is checked and validated up to here and it is correct
         % ^ PTT 2015-04-04 11-53
     end
-% % Standard algorithm l_i = a_i - ( r_i + R*b_i)
-% else
 end
 
 %% Determine the actual cable length
@@ -296,6 +302,7 @@ if nargout
 end
 
 end
+
 %------------- END OF CODE --------------
 % Please send suggestions for improvement of this file to the original
 % author as can be found in the header
