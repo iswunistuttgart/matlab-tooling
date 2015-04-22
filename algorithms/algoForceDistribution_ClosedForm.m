@@ -1,4 +1,4 @@
-function [Distribution, varargout] = algoForceDistribution_ClosedForm(Wrench, CableAttachments, CableUnitVector, ForceMinimum, ForceMaximum)
+function [Distribution, varargout] = algoForceDistribution_ClosedForm(Wrench, StructureMatrix, ForceMinimum, ForceMaximum)
 % ALGOFORCEDISTRIBUTION_CLOSEDFORM - Determine the force distribution for
 %   the given robot using the closed-form force distribution algorithm
 % 
@@ -24,7 +24,7 @@ function [Distribution, varargout] = algoForceDistribution_ClosedForm(Wrench, Ca
 % 
 %   WINCHPOSITIONS: Matrix of winch positions w.r.t. the world frame. Each
 %   winch has its own column and the rows are the x, y, and z-value,
-%   respectively i.e., WINCHPOSITIONS must be a matrix of 3xN values. The
+%   respectively i.e., WINCHPOSITIONS must be a matrix of 3xM values. The
 %   number of winches i.e., N, must match the number of cable attachment
 %   points in CABLEATTACHMENTS (i.e., its column count) and the order must
 %   mach the real linkage of winch to cable attachment on the platform
@@ -32,7 +32,7 @@ function [Distribution, varargout] = algoForceDistribution_ClosedForm(Wrench, Ca
 %   CABLEATTACHMENTS: Matrix of cable attachment points w.r.t. the
 %   platforms coordinate system. Each attachment point has its own column
 %   and the rows are the x, y, and z-value, respectively, i.e.,
-%   CABLEATTACHMENTS must be a matrix of 3xN values. The number of cables
+%   CABLEATTACHMENTS must be a matrix of 3xM values. The number of cables
 %   i.e., N, must match the number of winches in WINCHPOSITIONS (i.e., its
 %   column count) and the order must match the real linkage of cable
 %   attachment on the platform to winch.
@@ -41,23 +41,23 @@ function [Distribution, varargout] = algoForceDistribution_ClosedForm(Wrench, Ca
 % 
 %   DISTRIBUTION: Vector of force distribution values as determined by the
 %   algorithm
-% 
+%
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
 % Date: 2015-04-22
 % Changelog:
 %   2015-04-22: Initial release
 
+
 %------------- BEGIN CODE --------------
+
 
 %%% Assert and parse variables
 % Wrench
 vWrench = Wrench;
-% Cable attachment points
-mCableAttachments = CableAttachments;
-% Cable unit vectors
-mCableUnitVector = CableUnitVector;
+% Structure matrix to determine force distribution for
+mStructureMatrixAt = StructureMatrix;
 % Number of cables (is being used quite often in the following code)
-iNumberOfWires = size(mCableUnitVector, 2);
+iNumberOfWires = size(mStructureMatrixAt, 2);
 
 % Force minimum, can be given a scalar or a vector
 if isscalar(ForceMinimum)
@@ -75,31 +75,8 @@ end
 vForceMean = 0.5.*(vForceMinimum + vForceMaximum);
 
 
-%% Asserting variables
-% % Wrench
-% assert(iscolumn(vWrench) && size(vWrench, 1) == 6, 'Wrench must be given as a 1x6 column vector');
-% % Cable attachment points
-% assert(ismatrix(CableAttachments) && size(CableAttachments, 1) == 3, 'Matrix of cable attachment points must be a 3xM matrix');
-% % Cable unit vectors
-% assert(ismatrix(CableUnitVector) && size(CableUnitVector, 1) == 3, 'Matrix of cable unit vectors points must be a 3xM matrix');
-% % Same amount of cable attachments as cable unit vectors?
-% assert(size(mCableAttachments, 2) == size(mCableUnitVector, 2), 'Number of cable attachment points must be equal to the number of cable (unit) vectors');
-% % Force minimum
-% assert(iscolumn(vForceMinimum) && size(vForceMinimum, 1) == iNumberOfWires, 'Vector of minimum cable forces must contain as many entries as cables are used');
-% % Force maximum
-% assert(iscolumn(vForceMaximum) && size(vForceMaximum, 1) == iNumberOfWires, 'Vector of maximum cable forces must contain as many entries as cables are used');
-
 
 %% Do the magic
-% Calculate the stucture matrix
-mStructureMatrixAt = zeros(6, iNumberOfWires);
-for iUnit = 1:iNumberOfWires
-    mStructureMatrixAt(:, iUnit) = [ ...
-            mCableUnitVector(:, iUnit); ...
-            cross(mCableAttachments(:, iUnit), mCableUnitVector(:, iUnit)) ...
-        ];
-end
-
 % Simple case where the number of wires matches the number of degrees of
 % freedom, we can just solve the linear equation system At*f = -w;
 if issquare(mStructureMatrixAt)
@@ -114,8 +91,10 @@ else
 end
 
 
+
 %% Create output quantities
 Distribution = mForceDistribution;
+
 
 end
 

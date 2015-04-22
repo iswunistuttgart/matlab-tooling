@@ -35,7 +35,7 @@ function [length, varargout] = algoInverseKinematics_Pulley(Pose, WinchPositions
 % 
 %   WINCHPOSITIONS: Matrix of winch positions w.r.t. the world frame. Each
 %   winch has its own column and the rows are the x, y, and z-value,
-%   respectively i.e., WINCHPOSITIONS must be a matrix of 3xN values. The
+%   respectively i.e., WINCHPOSITIONS must be a matrix of 3xM values. The
 %   number of winches i.e., N, must match the number of cable attachment
 %   points in CABLEATTACHMENTS (i.e., its column count) and the order must
 %   mach the real linkage of winch to cable attachment on the platform
@@ -43,28 +43,34 @@ function [length, varargout] = algoInverseKinematics_Pulley(Pose, WinchPositions
 %   CABLEATTACHMENTS: Matrix of cable attachment points w.r.t. the
 %   platforms coordinate system. Each attachment point has its own column
 %   and the rows are the x, y, and z-value, respectively, i.e.,
-%   CABLEATTACHMENTS must be a matrix of 3xN values. The number of cables
+%   CABLEATTACHMENTS must be a matrix of 3xM values. The number of cables
 %   i.e., N, must match the number of winches in WINCHPOSITIONS (i.e., its
 %   column count) and the order must match the real linkage of cable
 %   attachment on the platform to winch.
 % 
 %   Outputs:
 % 
-%   LENGTH: Length is a vector of size 1xN with the cable lengths
+%   LENGTH: Length is a vector of size 1xM with the cable lengths
 %   determined using either simple or advanced kinematics
 %
 %   CABLEVECTOR: Vectors of each cable from attachment point to corrected
-%   winch point
+%   winch point given as 3xM matrix
 %   
 %   CABLEUNITVECTOR: Normalized vector for each cable from attachment point
-%   to its corrected winch point
+%   to its corrected winch point as 3xM matrix
+%   
+%   CABLEWRAPANGLES: Matrix of gamma and beta angles of rotation and
+%   wrapping angle of pulley and cable on pulley respectively, given as 2xM
+%   matrix
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
 % Date: 2015-04-22
 % Changelog:
 %   2015-04-22: Initial release
 
+
 %------------- BEGIN CODE --------------
+
 
 %%% Initialize variables
 % To unify variable names
@@ -197,6 +203,7 @@ if nargout
         varargout{3} = mWinchPulleyAngles;
     end
 end
+
 
 end
 
