@@ -7,3 +7,4 @@ if exist(fullfile(pwd, '..', '..', 'Matlab', 'helper', 'startup.m'), 'file')
 end
 
 addpath(fullfile(pwd, 'algorithms'));
+addpath(fullfile(pwd, 'helpers'));
