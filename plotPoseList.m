@@ -24,7 +24,7 @@ valFcn_Viewport3D = @(x) isrow(x) && isequal(size(x, 2), 2);
 %%% This fills in the parameters for the function
 % We need the pose list
 addRequired(ip, 'PoseList', valFcn_PoseList);
-addOptional(ip, 'PlotStyle', 'Single2D', valFcn_PlotStyle);
+addOptional(ip, 'PlotStyle', '3D', valFcn_PlotStyle);
 % % We allow the user to explicitley flag which algorithm to use
 % addOptional(ip, 'Plot3d', false, @islogical);
 % Allow options to be passed to the figure
@@ -41,6 +41,8 @@ addOptional(ip, 'ColumnTime', 0, valFcn_ColumnTime)
 addOptional(ip, 'ColumnsXYZ', [2, 3, 4], valFcn_ColumnsXYZ);
 % User might want to change the 3D view port
 addOptional(ip, 'Viewport3D', [-20, 6], valFcn_Viewport3D);
+% Maybe the direction of the 3D-plot's trajectory is desired, too?
+addOptional(ip, 'PlotDirection3D', false, @islogical);
 
 % Configuratio nfor the input parser
 ip.KeepUnmatched = true;
@@ -76,6 +78,7 @@ if iColumnTime == 0
 end
 vColumnsXYZ = ip.Results.ColumnsXYZ;
 v3DViewport = ip.Results.Viewport3D;
+b3DPlotDireciton = ip.Results.PlotDirection3D;
 
 
 
@@ -95,6 +98,7 @@ switch cPlotStyle
         hold on;
         plot(mPoseList(:, iColumnTime), mPoseList(:, vColumnsXYZ), clLineProperties{:});
         axis('tight')
+        ylim(ylim().*1.10);
         xlabel('Time $t \left[ \rm s \right]$');
         ylabel('Position $\left[ \rm m \right]$');
         legend('$x$', '$y$', '$z$');
@@ -110,11 +114,11 @@ switch cPlotStyle
         grid on;
         view(v3DViewport);
         
+        % Plot [x, y, z] vs t
         subplot(2, 1, 1);
-        plot(NaN, NaN);
-        hold on;
         plot(mPoseList(:, iColumnTime), mPoseList(:, vColumnsXYZ), clLineProperties{:});
         axis('tight')
+        ylim(ylim().*1.10);
         xlabel('Time $t \left[ \rm s \right]$');
         ylabel('Position $\left[ \rm m \right]$');
         legend('$x$', '$y$', '$z$');
@@ -123,6 +127,7 @@ switch cPlotStyle
         subplot(3, 1, 1);
         plot(mPoseList(:, iColumnTime), mPoseList(:, vColumnsXYZ(1)), clLineProperties{:});
         axis('tight')
+        ylim(ylim().*1.10);
         xlabel('Time $t \left[ \rm s \right]$');
         ylabel('Position $x \left[ \rm m \right]$');
         
@@ -130,6 +135,7 @@ switch cPlotStyle
         subplot(3, 1, 2);
         plot(mPoseList(:, iColumnTime), mPoseList(:, vColumnsXYZ(2)), clLineProperties{:});
         axis('tight')
+        ylim(ylim().*1.10);
         xlabel('Time $t \left[ \rm s \right]$');
         ylabel('Position $y \left[ \rm m \right]$');
         
@@ -137,6 +143,7 @@ switch cPlotStyle
         subplot(3, 1, 3);
         plot(mPoseList(:, iColumnTime), mPoseList(:, vColumnsXYZ(3)), clLineProperties{:});
         axis('tight')
+        ylim(ylim().*1.10);
         xlabel('Time $t \left[ \rm s \right]$');
         ylabel('Position $z \left[ \rm m \right]$');
     case 'multi2d+3d'
@@ -155,6 +162,7 @@ switch cPlotStyle
         subplot(2, 3, 1);
         plot(mPoseList(:, iColumnTime), mPoseList(:, vColumnsXYZ(1)), clLineProperties{:});
         axis('tight')
+        ylim(ylim().*1.10);
         xlabel('Time $t \left[ \rm s \right]$');
         ylabel('Position $x \left[ \rm m \right]$');
         
@@ -162,6 +170,7 @@ switch cPlotStyle
         subplot(2, 3, 2);
         plot(mPoseList(:, iColumnTime), mPoseList(:, vColumnsXYZ(2)), clLineProperties{:});
         axis('tight')
+        ylim(ylim().*1.10);
         xlabel('Time $t \left[ \rm s \right]$');
         ylabel('Position $y \left[ \rm m \right]$');
         
@@ -169,11 +178,22 @@ switch cPlotStyle
         subplot(2, 3, 3);
         plot(mPoseList(:, iColumnTime), mPoseList(:, vColumnsXYZ(3)), clLineProperties{:});
         axis('tight')
+        ylim(ylim().*1.10);
         xlabel('Time $t \left[ \rm s \right]$');
         ylabel('Position $z \left[ \rm m \right]$');
     case '3d'
         % Plot 3d
         plot3(mPoseList(:, vColumnsXYZ(1)), mPoseList(:, vColumnsXYZ(2)), mPoseList(:, vColumnsXYZ(3)), clLineProperties{:});
+        if b3DPlotDireciton
+            hold on
+%             vIndexArrowStart = 1:(size(mPoseList(:, iColumnTime)) - 1);
+%             vIndexArrowEnd = vIndexArrowStart + 1;
+%             vArrowX = 0.5.*(mPoseList(vIndexArrowEnd, vColumnsXYZ(1)) - mPoseList(vIndexArrowStart, vColumnsXYZ(1)));
+%             vArrowY = 0.5.*(mPoseList(vIndexArrowEnd, vColumnsXYZ(2)) - mPoseList(vIndexArrowStart, vColumnsXYZ(2)));
+%             vArrowZ = 0.5.*(mPoseList(vIndexArrowEnd, vColumnsXYZ(3)) - mPoseList(vIndexArrowStart, vColumnsXYZ(3)));
+            quiver3(mPoseList(:, vColumnsXYZ(1)), mPoseList(:, vColumnsXYZ(2)), mPoseList(:, vColumnsXYZ(3)), gradient(mPoseList(:, vColumnsXYZ(1))), gradient(mPoseList(:, vColumnsXYZ(2))), gradient(mPoseList(:, vColumnsXYZ(3))));
+%             quiver3(mPoseList(vIndexArrowStart, vColumnsXYZ(1)), mPoseList(vIndexArrowStart, vColumnsXYZ(2)), mPoseList(vIndexArrowStart, vColumnsXYZ(3)), vArrowX, vArrowY, vArrowZ, 0);
+        end
         axis('tight')
         xlabel('$x \left[ m \right]$');
         ylabel('$y \left[ m \right]$');
@@ -186,6 +206,7 @@ switch cPlotStyle
         subplot(1, 2, 1);
         plot3(mPoseList(:, vColumnsXYZ(1)), mPoseList(:, vColumnsXYZ(2)), mPoseList(:, vColumnsXYZ(3)), clLineProperties{:});
         axis('tight')
+        ylim(ylim().*1.10);
         xlabel('$x \left[ m \right]$');
         ylabel('$y \left[ m \right]$');
         zlabel('$z \left[ m \right]$');
@@ -193,11 +214,11 @@ switch cPlotStyle
         grid on;
         view(v3DViewport);
         
+        % Plot [x, y, z] vs t
         subplot(1, 2, 2);
-        plot(NaN, NaN);
-        hold on;
         plot(mPoseList(:, iColumnTime), mPoseList(:, vColumnsXYZ), clLineProperties{:});
         axis('tight')
+        ylim(ylim().*1.10);
         xlabel('Time $t \left[ \rm s \right]$');
         ylabel('Position $\left[ \rm m \right]$');
         legend('$x$', '$y$', '$z$');
@@ -217,6 +238,7 @@ switch cPlotStyle
         subplot(3, 2, 2);
         plot(mPoseList(:, iColumnTime), mPoseList(:, vColumnsXYZ(1)), clLineProperties{:});
         axis('tight')
+        ylim(ylim().*1.10);
         xlabel('Time $t \left[ \rm s \right]$');
         ylabel('Position $x \left[ \rm m \right]$');
         
@@ -224,6 +246,7 @@ switch cPlotStyle
         subplot(3, 2, 4);
         plot(mPoseList(:, iColumnTime), mPoseList(:, vColumnsXYZ(2)), clLineProperties{:});
         axis('tight')
+        ylim(ylim().*1.10);
         xlabel('Time $t \left[ \rm s \right]$');
         ylabel('Position $y \left[ \rm m \right]$');
         
@@ -231,6 +254,7 @@ switch cPlotStyle
         subplot(3, 2, 6);
         plot(mPoseList(:, iColumnTime), mPoseList(:, vColumnsXYZ(3)), clLineProperties{:});
         axis('tight')
+        ylim(ylim().*1.10);
         xlabel('Time $t \left[ \rm s \right]$');
         ylabel('Position $z \left[ \rm m \right]$');
         
