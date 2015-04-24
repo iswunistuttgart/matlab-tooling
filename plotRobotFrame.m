@@ -1,4 +1,74 @@
 function plotRobotFrame(winchPositions, varargin)
+% PLOTROBOTFRAME Plot the robot frame as given by the winch positions
+% 
+%   PLOTROBOTFRAME(WINCHPOSITIONS) plots the winch positions in a 3D plot
+%   
+%   PLOTROBOTFRAME(WINCHPOSITIONS, ax) plots the winch positions into the
+%   given axes. May be used to add the winch positions to e.g., the plot of
+%   the trajectory or a subplot of a multiplot figure.
+%   
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'Axes', ax) plots the winch positions
+%   into the given axes. May be used to add the winch positions to e.g.,
+%   the plot of a trajectory or a subplot of a multiplot figure.
+% 
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'PlotProperties', {'Color', 'r'}, ...)
+%   allows to adjust the plot properties for the winch position markers. By
+%   default, the 'o' markers are plotted in the first default axis color.
+%   
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'BoundingBox', true, ...) will also
+%   print the bounding box of the winch positions.
+%   
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'BoundingBoxProperties', {'Color', 'r'},
+%   ...) will print the bounding box with 'r' lines instead of the default
+%   'k' lines. See documentation of Patch Properties for available options.
+%   
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'Viewport', viewport, ...) adjusts the
+%   viewport of the 3d plot to the set values. Allowed values are [az, el],
+%   [x, y, z], 2, 3. See documentation of view for more info.
+%
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'WinchLabels', true, ...) if you want to
+%   label the winches according to their column index of winch positions.
+%
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'WinchLabels', {'W1', 'W2', ..., 'WM'},
+%   ...) to set specific labels for the corresponding winch. In case of a
+%   cell array, it must be a row cell array and have as many entries as
+%   WINCHPOSITIONS has columns.
+%
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'WinchLabelProperties',
+%   {'VerticalAlignment', 'bottom'}, ...) to set further properties on the
+%   winch labels. Check the documentation for Text Properties on more info.
+%
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'HomePosition', true, ...) will plot the
+%   home position defined by [0; 0; 0] into the current plot. Home position
+%   will be a diamond 'd' marker colored in 'k'.
+%
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'HomePosition', [-1; 1; 1], ...) will
+%   plot the home position as the specified position given as a [x; y; z]
+%   column vector. Home position will be a diamond 'd' marker colored in
+%   'k'.
+%
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'HomePositionProperties', {'Color',
+%   'r'}, ...) to set the properties of the home position as e.g., color,
+%   marker, marker size, etc.. See Chart Line Properties for available
+%   options.
+%   
+%   Inputs:
+%   
+%   WINCHPOSITIONS: Matrix of winch positions of size 3xM where the rows
+%   are sorted as [x, y, z]. Any number of winches may be given in any
+%   order.
+%
+%   See also:
+%   VIEW
+%   PLOT3
+%   TEXT
+%   PATCH
+%   GRID
+%
+% Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
+% Date: 2015-04-24
+% Changelog:
+%   2015-04-24: Initial release
 
 
 
@@ -6,12 +76,18 @@ function plotRobotFrame(winchPositions, varargin)
 ip = inputParser;
 
 %%% Define validation methods
-valFcn_Axes = @(x) ishandle(x) && strcmp(get(x, 'type'), 'axes');
+% Winch positions must be a matrix of size 3xM
 valFcn_WinchPositions = @(x) ismatrix(x) && isequal(size(x, 1), 3);
+% Option to 'axes' must be a handle and also a 'axes' handle
+valFcn_Axes = @(x) ishandle(x) && strcmp(get(x, 'type'), 'axes');
+% Viewport may be 2, 3, [az, el], or [x, y, z]
 valFcn_Viewport = @(x) ( isequal(x, 2) || isequal(x, 3) || ( isrow(x) && ( isequal(size(x, 2), 2) || isequal(size(x, 2), 3) ) ) );
-valFcn_WinchLabels = @(x) islogical(x) || ( iscell(x) && issize(x, 1, size(winchPositions, 2)) );
-valFcn_HomePosition = @(x) islogical(x) || ( isvector(x) && ( issize(x, 1, 3) || issize(x, 3, 1) ) );
-valFcn_Grid = @(x) islogical(x) || any(strcmpi(x, {'on', 'off', 'minor'}));
+% Winch labels may be true, false, 1, 0, or a cell array
+valFcn_WinchLabels = @(x) islogical(x) || ( isequal(x, 1) || isequal(x, 0) ) || ( iscell(x) && issize(x, 1, size(winchPositions, 2)) );
+% Home position may be true, false, 1, 0, or a vector of size 1x3 or 3x1
+valFcn_HomePosition = @(x) islogical(x) || ( isequal(x, 1) || isequal(x, 0) ) || ( isvector(x) && ( issize(x, 1, 3) || issize(x, 3, 1) ) );
+% Grid may be true, false, 1, 0, 'on', 'off', or 'minor'
+valFcn_Grid = @(x) islogical(x) || ( isequal(x, 1) || isequal(x, 0) ) || any(strcmpi(x, {'on', 'off', 'minor'}));
 
 %%% This fills in the parameters for the function
 % We need the winch positions
@@ -48,6 +124,7 @@ ip.FunctionName = 'plotRobotFrame';
 parse(ip, winchPositions, varargin{:});
 
 
+
 %% Parse variables of the input parser to local parser
 hAxes = ip.Results.Axes;
 mWinchPositions = ip.Results.WinchPositions;
@@ -73,6 +150,7 @@ if islogical(mxdGrid) && isequal(mxdGrid, true)
 end
 
 
+
 %% Plot the damn thing now!
 % If there is no handle given, we will create a new figure and plot into
 % that, otherwise we will select the given axes as active
@@ -83,16 +161,16 @@ else
     axes(hAxes);
 end
 
+% Ensure we have the axes on hold so we don't accidentaly overwrite its
+% content
+hold(hAxes, 'on');
+
 % First, plot the winch positions as circles
 hPlotWinchPositions = plot3(mWinchPositions(1, :), mWinchPositions(2, :), mWinchPositions(3, :), 'o');
 % If the plot properties were given, we need to set them on the plot
 if ~isempty(cPlotProperties)
     set(hPlotWinchPositions, cPlotProperties{:});
 end
-
-% Ensure we have the axes on hold so we don't accidentaly overwrite its
-% content
-hold(hAxes, 'on');
 
 % Label the winches by number?
 if islogical(mxdWinchLabels) && isequal(mxdWinchLabels, true)
@@ -158,3 +236,9 @@ axes(hAxes);
 
 
 end
+
+%------------- END OF CODE --------------
+% Please send suggestions for improvement of this file to the original
+% author as can be found in the header
+% Your contribution towards improving this funciton will be acknowledged in
+% the "Changes" section of the header
