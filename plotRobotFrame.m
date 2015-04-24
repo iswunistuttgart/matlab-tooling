@@ -1,4 +1,4 @@
-function plotRobotFrame(winchPositions, varargin)
+function [varargout] = plotRobotFrame(winchPositions, varargin)
 % PLOTROBOTFRAME Plot the robot frame as given by the winch positions
 % 
 %   PLOTROBOTFRAME(WINCHPOSITIONS) plots the winch positions in a 3D plot
@@ -76,6 +76,7 @@ function plotRobotFrame(winchPositions, varargin)
 ip = inputParser;
 
 %%% Define validation methods
+valFcn_LogicalOrInt = @(x) islogical(x) || isequal(x, 1) || isequal(x, 0);
 % Winch positions must be a matrix of size 3xM
 valFcn_WinchPositions = @(x) ismatrix(x) && isequal(size(x, 1), 3);
 % Option to 'axes' must be a handle and also a 'axes' handle
@@ -83,11 +84,13 @@ valFcn_Axes = @(x) ishandle(x) && strcmp(get(x, 'type'), 'axes');
 % Viewport may be 2, 3, [az, el], or [x, y, z]
 valFcn_Viewport = @(x) ( isequal(x, 2) || isequal(x, 3) || ( isrow(x) && ( isequal(size(x, 2), 2) || isequal(size(x, 2), 3) ) ) );
 % Winch labels may be true, false, 1, 0, or a cell array
-valFcn_WinchLabels = @(x) islogical(x) || ( isequal(x, 1) || isequal(x, 0) ) || ( iscell(x) && issize(x, 1, size(winchPositions, 2)) );
+valFcn_WinchLabels = @(x) valFcn_LogicalOrInt(x) || ( iscell(x) && issize(x, 1, size(winchPositions, 2)) );
 % Home position may be true, false, 1, 0, or a vector of size 1x3 or 3x1
-valFcn_HomePosition = @(x) islogical(x) || ( isequal(x, 1) || isequal(x, 0) ) || ( isvector(x) && ( issize(x, 1, 3) || issize(x, 3, 1) ) );
+valFcn_HomePosition = @(x) valFcn_LogicalOrInt(x) || ( isvector(x) && ( issize(x, 1, 3) || issize(x, 3, 1) ) );
 % Grid may be true, false, 1, 0, 'on', 'off', or 'minor'
-valFcn_Grid = @(x) islogical(x) || ( isequal(x, 1) || isequal(x, 0) ) || any(strcmpi(x, {'on', 'off', 'minor'}));
+valFcn_Grid = @(x) valFcn_LogicalOrInt(x) || any(strcmpi(x, {'on', 'off', 'minor'}));
+% Box may be true, false, 1, 0
+valFcn_Box = @(x) valFcn_LogicalOrInt(x);
 
 %%% This fills in the parameters for the function
 % We need the winch positions
@@ -98,7 +101,7 @@ addOptional(ip, 'Axes', false, valFcn_Axes);
 % Allow the plot to have user-defined properties
 addOptional(ip, 'PlotProperties', {}, @iscell);
 % Allow the lines drawn to have user-defined properties
-addOptional(ip, 'BoundingBox', false, @islogical);
+addOptional(ip, 'BoundingBox', false, valFcn_LogicalOrInt);
 % Maybe the bounding box must have other properties as the ones we use
 % here?
 addOptional(ip, 'BoundingBoxProperties', {}, @iscell);
@@ -115,6 +118,8 @@ addOptional(ip, 'HomePosition', false, valFcn_HomePosition);
 addOptional(ip, 'HomePositionProperties', {}, @iscell);
 % Allow user to choose grid style (either false 'on', 'off', or 'minor'
 addOptional(ip, 'Grid', false, valFcn_Grid);
+% Allow user to choose whether a box shall be displayed or not
+addOptional(ip, 'Box', false, valFcn_Box);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -148,6 +153,7 @@ mxdGrid = ip.Results.Grid;
 if islogical(mxdGrid) && isequal(mxdGrid, true)
     mxdGrid = 'on';
 end
+bBox = ip.Results.Box;
 
 
 
@@ -170,6 +176,11 @@ hPlotWinchPositions = plot3(mWinchPositions(1, :), mWinchPositions(2, :), mWinch
 % If the plot properties were given, we need to set them on the plot
 if ~isempty(cPlotProperties)
     set(hPlotWinchPositions, cPlotProperties{:});
+end
+
+% Wrap a box around the 3d plot?
+if bBox
+    box(hAxes, 'on');
 end
 
 % Label the winches by number?
@@ -207,7 +218,7 @@ if bBoundingBox
     % Get the bounding box for the winch positions
     [mWinchPositionsBoundingBox, mWinchPositionsBoundingBoxFaces] = boundingbox3(mWinchPositions(1, :), mWinchPositions(2, :), mWinchPositions(3, :));
     % And create a hollow patch
-    hPatch = patch('Vertices', mWinchPositionsBoundingBox', 'Faces', mWinchPositionsBoundingBoxFaces, 'FaceColor', 'none');
+    hPatch = patch('Vertices', mWinchPositionsBoundingBox', 'Faces', mWinchPositionsBoundingBoxFaces, 'FaceColor', 'none', 'EdgeColor', 'c');
     if ~isempty(cBoundingBoxProperties)
         set(hPatch, cBoundingBoxProperties{:});
     end
@@ -229,10 +240,19 @@ xlim(hAxes, xlim().*1.05);
 ylim(hAxes, ylim().*1.05);
 zlim(hAxes, zlim().*1.05);
 
+% Make sure the figure is being drawn before anything else is done
+drawnow
+
 % Finally, set the active axes handle to be the first most axes handle we
 % have created or were given a parameter to this function
 axes(hAxes);
 
+
+
+%% Assign output quantities
+if nargout >= 1
+    varargout{1} = hAxes;
+end
 
 
 end
