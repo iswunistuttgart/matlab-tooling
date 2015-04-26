@@ -246,7 +246,7 @@ if ~isempty(ceWinchLabels)
 end
 
 % Plot the home position?
-if iscolumn(vHomePosition)
+if ~isscalar(vHomePosition) && isvector(vHomePosition)
     % Plot the home position as a black marker
     hPlotHomePosition = plot3(vHomePosition(1), vHomePosition(2), vHomePosition(3), 'Color', 'k', 'Marker', 'd');
     
@@ -306,17 +306,20 @@ if bOwnPlot
 
     % And adjust the axes limits so we don't waste too much space but won't be
     % too narrow on the frame/bounding box, either
-    xlim(hAxes, xlim().*1.05);
-    ylim(hAxes, ylim().*1.05);
-    zlim(hAxes, zlim().*1.05);
+%     xlim(hAxes, xlim().*1.05);
+%     ylim(hAxes, ylim().*1.05);
+%     zlim(hAxes, zlim().*1.05);
 end
 
 % Finally, set the active axes handle to be the first most axes handle we
 % have created or were given a parameter to this function
 axes(hAxes);
 
-% Enforece drawing of the image before returning anything
+% Enforce drawing of the image before returning anything
 drawnow
+
+% Clear the hold off the current axes
+hold(hAxes, 'off');
 
 
 
