@@ -1,10 +1,10 @@
-function varargout = plotRobotTrajectory(Time, Poses, varargin)
-% PLOTROBOTTRAJECTORY Plots the given trajectory of the robot
+function varargout = plotRobotPoses(Time, Poses, varargin)
+% PLOTROBOTPOSES Plots the given poses of the robot
 % 
-%   PLOTROBOTTRAJECTORY(TIME, POSES) plots the poses against time in a new 2D
+%   PLOTROBOTPOSES(TIME, POSES) plots the poses against time in a new 2D
 %   plot
 %   
-%   PLOTROBOTTRAJECTORY(TIME, POSES, 'PlotStyle', PlotStyleValue) will plot the
+%   PLOTROBOTPOSES(TIME, POSES, 'PlotStyle', PlotStyleValue) will plot the
 %   poses in a different style. Possible values are
 %   
 %       2D      plot [X, Y, Z] against [T]
@@ -16,27 +16,27 @@ function varargout = plotRobotTrajectory(Time, Poses, varargin)
 %       2DZX    plot [X] against [Z]
 %       3D      plot [Z] against [Y] against [X]
 %   
-%   In conjunction with PLOTROBOTTRAJECTORY(AX, ...) only allowed if given axes
+%   In conjunction with PLOTROBOTPOSES(AX, ...) only allowed if given axes
 %   is already a 3D plot.
 % 
-%   PLOTROBOTTRAJECTORY(TIME, POSES, 'LineSpec', LineSpecs) forces the given
+%   PLOTROBOTPOSES(TIME, POSES, 'LineSpec', LineSpecs) forces the given
 %   line specs on the 2D or 3D plot. See LINESPEC
 %   
-%   PLOTROBOTTRAJECTORY(TIME, POSES, , 'Viewport', viewport, ...) adjusts the
+%   PLOTROBOTPOSES(TIME, POSES, , 'Viewport', viewport, ...) adjusts the
 %   viewport of the 3d plot to the set values. Allowed values are 2, 3, [az,
 %   el], or [x, y, z]. See documentation of view for more info. Only works in
 %   standalone mode.
 %   
-%   PLOTROBOTTRAJECTORY(TIME, POSES, 'BoundingBoxSpec', {'Color', 'r'},
+%   PLOTROBOTPOSES(TIME, POSES, 'BoundingBoxSpec', {'Color', 'r'},
 %   ...) will print the bounding box with 'r' lines instead of the default
 %   'k' lines. See documentation of Patch Spec for available options.
 %   
-%   PLOTROBOTTRAJECTORY(TIME, POSES, 'Viewport', viewport, ...) adjusts the
+%   PLOTROBOTPOSES(TIME, POSES, 'Viewport', viewport, ...) adjusts the
 %   viewport of the 3d plot to the set values. Allowed values are [az, el],
 %   [x, y, z], 2, 3. See documentation of view for more info. Only works in
 %   standalone mode.
 %
-%   PLOTROBOTTRAJECTORY(TIME, POSES, 'Grid', Grid, ...) to define the grid
+%   PLOTROBOTPOSES(TIME, POSES, 'Grid', Grid, ...) to define the grid
 %   style. Any of the following options are allowed
 %   
 %       'on'        turns major grid on
@@ -45,19 +45,19 @@ function varargout = plotRobotTrajectory(Time, Poses, varargin)
 %   
 %   Only works in standalone mode.
 %
-%   PLOTROBOTTRAJECTORY(TIME, POSES, 'Title', Title) puts a title on the figure.
+%   PLOTROBOTPOSES(TIME, POSES, 'Title', Title) puts a title on the figure.
 %   Only works in standalone mode.
 %
-%   PLOTROBOTTRAJECTORY(TIME, POSES, 'XLabel', XLabel) sets the x-axis label to
+%   PLOTROBOTPOSES(TIME, POSES, 'XLabel', XLabel) sets the x-axis label to
 %   the specified char. Only works in standalone mode.
 %
-%   PLOTROBOTTRAJECTORY(TIME, POSES, 'YLabel', YLabel) sets the y-axis label to
+%   PLOTROBOTPOSES(TIME, POSES, 'YLabel', YLabel) sets the y-axis label to
 %   the specified char. Only works in standalone mode.
 %
-%   PLOTROBOTTRAJECTORY(TIME, POSES, 'ZLabel', ZLabel) sets the z-axis label to
+%   PLOTROBOTPOSES(TIME, POSES, 'ZLabel', ZLabel) sets the z-axis label to
 %   the specified char. Only works in standalone mode.
 %   
-%   PLOTROBOTTRAJECTORY(AX, TIME, POSES, ...) plots the poses into the specified
+%   PLOTROBOTPOSES(AX, TIME, POSES, ...) plots the poses into the specified
 %   axes.
 %   
 %   Inputs:
@@ -114,7 +114,7 @@ addRequired(ip, 'Time', valFcn_Time);
 valFcn_Poses = @(x) validateattributes(x, {'numeric'}, {'2d', 'size', [size(Time, 1), 3]}, mfilename, 'Poses');
 addRequired(ip, 'Poses', valFcn_Poses);
 
-% Axes may be given, too, as always, so that we could add the trajectory to the
+% Axes may be given, too, as always, so that we could add the poses to the
 % frame and winch plot or pose list plot
 % Option to 'axes' must be a handle and also a 'axes' handle
 % valFcn_Axes = @(x) validateattributes(x, {'handle', 'matlab.graphics.axis.Axes'}, {}, mfilename, 'Axes');
@@ -156,7 +156,7 @@ addOptional(ip, 'Title', false, valFcn_Title);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
-ip.FunctionName = 'plotRobotTrajectory';
+ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 parse(ip, Time, Poses, varargin{:});
@@ -179,7 +179,7 @@ chPlotStyle = upper(ip.Results.PlotStyle);
 % into a 3D axes, nor a 3D plot into a 2D axis
 [az, el] = view(hAxes);
 if ~ ( isempty(regexp(chPlotStyle, '^2.*$', 'once')) || isequaln([az, el], [0, 90]) )
-    error('PHILIPPTEMPEL:plotRobotTrajectory:invalidAxesType', 'Given plot styles does not match provided axes type. Cannot plot a 2D image into a 3D plot.');
+    error('PHILIPPTEMPEL:plotRobotPoses:invalidAxesType', 'Given plot styles does not match provided axes type. Cannot plot a 2D image into a 3D plot.');
 end
 
 % Plotting spec
