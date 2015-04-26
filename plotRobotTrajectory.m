@@ -1,4 +1,103 @@
 function varargout = plotRobotTrajectory(Time, Poses, varargin)
+% PLOTROBOTTRAJECTORY Plots the given trajectory of the robot
+% 
+%   PLOTROBOTTRAJECTORY(TIME, POSES) plots the poses against time in a new 2D
+%   plot
+%   
+%   PLOTROBOTTRAJECTORY(TIME, POSES, 'PlotStyle', PlotStyleValue) will plot the
+%   poses in a different style. Possible values are
+%   
+%       2D      plot [X, Y, Z] against [T]
+%       2DXY    plot [Y] against [X]
+%       2DYX    plot [X] against [Y]
+%       2DYZ    plot [Z] against [Y]
+%       2DZY    plot [Y] against [Z]
+%       2DXZ    plot [Z] against [X]
+%       2DZX    plot [X] against [Z]
+%       3D      plot [Z] against [Y] against [X]
+%   
+%   In conjunction with PLOTROBOTTRAJECTORY(AX, ...) only allowed if given axes
+%   is already a 3D plot.
+% 
+%   PLOTROBOTTRAJECTORY(TIME, POSES, 'LineSpec', LineSpecs) forces the given
+%   line specs on the 2D or 3D plot. See LINESPEC
+%   
+%   PLOTROBOTTRAJECTORY(TIME, POSES, , 'Viewport', viewport, ...) adjusts the
+%   viewport of the 3d plot to the set values. Allowed values are 2, 3, [az,
+%   el], or [x, y, z]. See documentation of view for more info. Only works in
+%   standalone mode.
+%   
+%   PLOTROBOTTRAJECTORY(TIME, POSES, 'BoundingBoxSpec', {'Color', 'r'},
+%   ...) will print the bounding box with 'r' lines instead of the default
+%   'k' lines. See documentation of Patch Spec for available options.
+%   
+%   PLOTROBOTTRAJECTORY(TIME, POSES, 'Viewport', viewport, ...) adjusts the
+%   viewport of the 3d plot to the set values. Allowed values are [az, el],
+%   [x, y, z], 2, 3. See documentation of view for more info. Only works in
+%   standalone mode.
+%
+%   PLOTROBOTTRAJECTORY(TIME, POSES, 'Grid', Grid, ...) to define the grid
+%   style. Any of the following options are allowed
+%   
+%       'on'        turns major grid on
+%       'off'       turns all grids off
+%       'minor'     turns minor and major grid on
+%   
+%   Only works in standalone mode.
+%
+%   PLOTROBOTTRAJECTORY(TIME, POSES, 'Title', Title) puts a title on the figure.
+%   Only works in standalone mode.
+%
+%   PLOTROBOTTRAJECTORY(TIME, POSES, 'XLabel', XLabel) sets the x-axis label to
+%   the specified char. Only works in standalone mode.
+%
+%   PLOTROBOTTRAJECTORY(TIME, POSES, 'YLabel', YLabel) sets the y-axis label to
+%   the specified char. Only works in standalone mode.
+%
+%   PLOTROBOTTRAJECTORY(TIME, POSES, 'ZLabel', ZLabel) sets the z-axis label to
+%   the specified char. Only works in standalone mode.
+%   
+%   PLOTROBOTTRAJECTORY(AX, TIME, POSES, ...) plots the poses into the specified
+%   axes.
+%   
+%   Inputs:
+%   
+%   TIME: Column vector of increasing values representing the timestamps at wich
+%   the poses are gathered. Only needed in any '2D' mode.
+%   
+%   POSES: Matrix of poses of the platform center of gravity where each row is
+%   the [x, y, z] tuple of platform center of gravity positon at the time
+%   corresponding to that value
+%
+%   See also: VIEW, PLOT, PLOT3, LINESPEC, GRID, TITLE, XLABEL, YLABEL, ZLABEL
+%
+% Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
+% Date: 2015-04-26
+% Changelog:
+%   2015-04-26: Introduce options 'XLabel', 'YLabel', 'ZLabel', 'Title'. Also
+%               fix the logic behind {'WinchLabels', true} so we won't have
+%               duplicate code for doing basically the same thing in a different
+%               way.
+%               Change all inputs to have column major i.e., one column is a
+%               logical unit whereas between columns, the "thing" might change.
+%               That means, given the winches, if we look at one column, we see
+%               the data of one winch, whereas if we looked at the first row, we
+%               can read info on the x-values of all winches
+%   2015-04-24: Initial release
+
+
+
+%% Preprocess inputs (allows to have the axis defined as first argument)
+% By default we don't have any axes handle
+hAxes = false;
+% Check if the first argument is an axes handle, then we just have to shift all
+% other arguments by one
+if ~isempty(varargin) && allAxes(Poses)
+    hAxes = Time;
+    Time = Poses;
+    Poses = varargin{1};
+    varargin = varargin(2:end);
+end
 
 
 
@@ -18,17 +117,17 @@ addRequired(ip, 'Poses', valFcn_Poses);
 % Axes may be given, too, as always, so that we could add the trajectory to the
 % frame and winch plot or pose list plot
 % Option to 'axes' must be a handle and also a 'axes' handle
-valFcn_Axes = @(x) validateattributes(x, {'handle', 'matlab.graphics.axis.Axes'}, {}, mfilename, 'Axes');
-addOptional(ip, 'Axes', false, valFcn_Axes);
+% valFcn_Axes = @(x) validateattributes(x, {'handle', 'matlab.graphics.axis.Axes'}, {}, mfilename, 'Axes');
+% addOptional(ip, 'Axes', false, valFcn_Axes);
 
 % Let user decied on the plot style
 % Plot style can be chosen anything from the list below
 valFcn_PlotStyle = @(x) any(validatestring(x, {'2D', '2DXY', '2DYX', '2DYZ', '2DZY', '2DXZ', '2DZX', '3D'}, mfilename, 'PlotStyle'));
 addOptional(ip, 'PlotStyle', '2D', valFcn_PlotStyle);
 
-% Let user decied on the plot properties
-valFcn_PlotProperties = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'PlotProperties');
-addOptional(ip, 'PlotProperties', {}, valFcn_PlotProperties);
+% Let user decied on the plot spec
+valFcn_LineSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'LineSpec');
+addOptional(ip, 'LineSpec', {}, valFcn_LineSpec);
 
 % The 3d view may be defined, too
 % Viewport may be 2, 3, [az, el], or [x, y, z]
@@ -84,8 +183,8 @@ if ~ ( isempty(regexp(chPlotStyle, '^2.*$', 'once')) || isequaln([az, el], [0, 9
     error('PHILIPPTEMPEL:plotRobotTrajectory:invalidAxesType', 'Given plot styles does not match provided axes type. Cannot plot a 2D image into a 3D plot.');
 end
 
-% Plotting properties
-cPlotProperties = ip.Results.PlotProperties;
+% Plotting spec
+cLineSpec = ip.Results.LineSpec;
 % 3D viewport (only used for 3d plot style)
 vViewport = ip.Results.Viewport;
 % Grid options
@@ -118,9 +217,9 @@ switch chPlotStyle
         % Plot X, Y, Z three dimensionally
         hPlot3d = plot3(mPoses(:, 1), mPoses(:, 2), mPoses(:, 3));
         
-        % Set specific properties on the plot?
-        if ~isempty(cPlotProperties)
-            set(hPlot3d, cPlotProperties{:});
+        % Set specific line specs on the plot?
+        if ~isempty(cLineSpec)
+            set(hPlot3d, cLineSpec{:});
         end
         
         % In our own plot? Then we're free to add stuff as we want
@@ -180,9 +279,9 @@ switch chPlotStyle
         % Plot the 2d plot with defined columns as defined above
         hPlot2d = plot(mPoses(:, vIndex(1)), mPoses(:, vIndex(2)));
         
-        % Set specific properties on the plot?
-        if ~isempty(cPlotProperties)
-            set(hPlot2d, cPlotProperties);
+        % Set specific line specs on the plot?
+        if ~isempty(cLineSpec)
+            set(hPlot2d, cLineSpec);
         end
         
         % In our own plot? Then we're free to add stuff as we want
@@ -218,8 +317,8 @@ switch chPlotStyle
     case '2D'
         hPlot2d = plot(vTime, mPoses);
         
-        if ~isempty(cPlotProperties)
-            set(hPlot2d, cPlotProperties);
+        if ~isempty(cLineSpec)
+            set(hPlot2d, cLineSpec);
         end
         
         % In our own plot? Then we're free to add stuff as we want
@@ -267,10 +366,24 @@ hold(hAxes, 'off');
 
 
 
-
 %% Assign output quantities
 if nargout >= 1
     varargout{1} = hAxes;
 end
 
+
+
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function result = allAxes(h)
+
+result = all(all(ishghandle(h))) && ...
+         length(findobj(h,'type','axes','-depth',0)) == length(h);
+end
+
+%------------- END OF CODE --------------
+% Please send suggestions for improvement of this file to the original
+% author as can be found in the header
+% Your contribution towards improving this funciton will be acknowledged in
+% the "Changes" section of the header

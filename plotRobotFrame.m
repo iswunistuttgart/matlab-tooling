@@ -2,25 +2,17 @@ function [varargout] = plotRobotFrame(winchPositions, varargin)
 % PLOTROBOTFRAME Plot the robot frame as given by the winch positions
 % 
 %   PLOTROBOTFRAME(WINCHPOSITIONS) plots the winch positions in a new 3D plot
-%   
-%   PLOTROBOTFRAME(WINCHPOSITIONS, ax) plots the winch positions into the
-%   given axes. May be used to add the winch positions to e.g., the plot of
-%   the trajectory or a subplot of a multiplot figure.
-%   
-%   PLOTROBOTFRAME(WINCHPOSITIONS, 'Axes', ax) plots the winch positions
-%   into the given axes. May be used to add the winch positions to e.g.,
-%   the plot of a trajectory or a subplot of a multiplot figure.
 % 
-%   PLOTROBOTFRAME(WINCHPOSITIONS, 'PlotProperties', {'Color', 'r'}, ...)
-%   allows to adjust the plot properties for the winch position markers. By
-%   default, the 'o' markers are plotted in the first default axis color.
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'PlotSpec', PlotSpec, ...) allows to adjust
+%   the plot spec for the winch position markers. By default, the 'o' markers
+%   are plotted as markers for the winches in the first default axis color.
 %   
 %   PLOTROBOTFRAME(WINCHPOSITIONS, 'BoundingBox', true, ...) will also
 %   print the bounding box of the winch positions.
 %   
-%   PLOTROBOTFRAME(WINCHPOSITIONS, 'BoundingBoxProperties', {'Color', 'r'},
-%   ...) will print the bounding box with 'r' lines instead of the default
-%   'k' lines. See documentation of Patch Properties for available options.
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'BoundingBoxSpec', BoundingBoxSpec, ...)
+%   will print the bounding box with 'r' lines instead of the default 'k' lines.
+%   See documentation of Patch Spec for available options.
 %   
 %   PLOTROBOTFRAME(WINCHPOSITIONS, 'Viewport', viewport, ...) adjusts the
 %   viewport of the 3d plot to the set values. Allowed values are [az, el],
@@ -30,39 +22,50 @@ function [varargout] = plotRobotFrame(winchPositions, varargin)
 %   PLOTROBOTFRAME(WINCHPOSITIONS, 'WinchLabels', true, ...) if you want to
 %   label the winches according to their column index of winch positions.
 %
-%   PLOTROBOTFRAME(WINCHPOSITIONS, 'WinchLabels', {'W1', 'W2', ..., 'WM'},
-%   ...) to set specific labels for the corresponding winch. In case of a
-%   cell array, it must be a row cell array and have as many entries as
-%   WINCHPOSITIONS has rows.
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'WinchLabels', WinchLabels, ...) to set
+%   specific labels for the corresponding winch. In case of a cell array, it
+%   must be a row cell array and have as many entries as WINCHPOSITIONS has
+%   columns.
 %
-%   PLOTROBOTFRAME(WINCHPOSITIONS, 'WinchLabelProperties',
-%   {'VerticalAlignment', 'bottom'}, ...) to set further properties on the
-%   winch labels. Check the documentation for Text Properties on more info.
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'WinchLabelSpec', WinchLabelSpec, ...) to
+%   set further spec on the winch labels. Check the documentation for Text
+%   Properties on more info.
 %
 %   PLOTROBOTFRAME(WINCHPOSITIONS, 'HomePosition', true, ...) will plot the
 %   home position defined by [0; 0; 0] into the current plot. Home position
 %   will be a diamond 'd' marker colored in 'k'.
 %
-%   PLOTROBOTFRAME(WINCHPOSITIONS, 'HomePosition', [1; 1; 1], ...) will
-%   plot the home position as the specified position given as a [x; y; z]
-%   row vector. Home position will be a diamond 'd' marker colored in 'k'.
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'HomePosition', HomePosition, ...) will plot
+%   the home position as the specified position given as a [x; y; z] column
+%   vector. Home position will be a diamond 'd' marker colored in 'k'.
 %
-%   PLOTROBOTFRAME(WINCHPOSITIONS, 'HomePositionProperties', {'Color',
-%   'r'}, ...) to set the properties of the home position as e.g., color,
-%   marker, marker size, etc.. See Chart Line Properties for available
-%   options.
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'HomePositionSpec', HomePositionSpec, ...)
+%   to set the spec of the home position as e.g., color, marker, marker size,
+%   etc.. See Chart Line Properties for available options.
 %
-%   PLOTROBOTFRAME(WINCHPOSITIONS, 'Title', 'Robot frame') puts a title on the
-%   figure. Only works in standalone mode.
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'Grid', Grid, ...) to define the grid style.
+%   Any of the following options are allowed
+%   
+%       'on'        turns major grid on
+%       'off'       turns all grids off
+%       'minor'     turns minor and major grid on
+%   
+%   Only works in standalone mode.
 %
-%   PLOTROBOTFRAME(WINCHPOSITIONS, 'XLabel', '$x$') sets the x-axis label to the
-%   specified char. Only works in standalone mode.
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'Title', Title) puts a title on the figure.
+%   Only works in standalone mode.
 %
-%   PLOTROBOTFRAME(WINCHPOSITIONS, 'YLabel', '$y$') sets the y-axis label to the
-%   specified char. Only works in standalone mode.
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'XLabel', XLabel) sets the x-axis label to
+%   the specified char. Only works in standalone mode.
 %
-%   PLOTROBOTFRAME(WINCHPOSITIONS, 'ZLabel', '$z$') sets the z-axis label to the
-%   specified char. Only works in standalone mode.
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'YLabel', YLabel) sets the y-axis label to
+%   the specified char. Only works in standalone mode.
+%
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'ZLabel', ZLabel) sets the z-axis label to
+%   the specified char. Only works in standalone mode.
+%
+%   PLOTROBOTFRAME(AX, WINCHPOSITIONS, ...) plots the winch positions into the
+%   specified axes
 %   
 %   Inputs:
 %   
@@ -70,7 +73,7 @@ function [varargout] = plotRobotFrame(winchPositions, varargin)
 %   represents one winch with its rows defined as [x; y; z]. Any number of
 %   winches may be given in any order.
 %
-%   See also: VIEW, PLOT3, TEXT, PATCH, GRID
+%   See also: VIEW, PLOT3, TEXT, PATCH, GRID, TITLE, XLABEL, YLABEL, ZLABEL
 %
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
 % Date: 2015-04-26
@@ -87,19 +90,17 @@ function [varargout] = plotRobotFrame(winchPositions, varargin)
 %   2015-04-24: Initial release
 
 
+
 %% Preprocess inputs (allows to have the axis defined as first argument)
-% % By default we don't have any axes handle
-% hAxes = false;
-% % Check if the first argument is an axes handle, then we just have to shift all
-% % other arguments by one
-% if allAxes(winchPositions)
-%     hAxes = winchPositions;
-%     clear winchPositions;
-%     if ~isempty(varargin)
-%         winchPositions = varargin{1};
-%         varargin = varargin{2:end};
-%     end
-% end
+% By default we don't have any axes handle
+hAxes = false;
+% Check if the first argument is an axes handle, then we just have to shift all
+% other arguments by one
+if ~isempty(varargin) && allAxes(winchPositions)
+    hAxes = winchPositions;
+    winchPositions = varargin{1};
+    varargin = varargin(2:end);
+end
 
 
 
@@ -113,21 +114,21 @@ addRequired(ip, 'WinchPositions', valFcn_WinchPositions);
 
 % We need the axes handle which is allowed to be the first optional
 % argument which must not be used with a parameter name
-valFcn_Axes = @(x) validateattributes(x, {'handle', 'matlab.graphics.axis.Axes'}, {}, mfilename, 'Axes');
-addOptional(ip, 'Axes', false, valFcn_Axes);
+% valFcn_Axes = @(x) validateattributes(x, {'handle', 'matlab.graphics.axis.Axes'}, {}, mfilename, 'Axes');
+% addOptional(ip, 'Axes', false, valFcn_Axes);
 
-% Allow the plot to have user-defined properties
-valFcn_PlotProperties = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'PlotProperties');
-addOptional(ip, 'PlotProperties', {}, valFcn_PlotProperties);
+% Allow the plot to have user-defined spec
+valFcn_PlotSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'PlotSpec');
+addOptional(ip, 'PlotSpec', {}, valFcn_PlotSpec);
 
 % Bounding box about the winch positions? May be any numeric or logical value
 % valFcn_BoundingBox = @(x) valFcn_AnythingTrueOrFalse(x);
 valFcn_BoundingBox = @(x) validateattributes(x, {'numeric', 'logical'}, {'>=', 0, '<=', 1}, mfilename, 'BoundingBox');
 addOptional(ip, 'BoundingBox', false, valFcn_BoundingBox);
 
-% Maybe the bounding box must have other properties as the ones we use here?
-valFcn_BoundingBoxProperties = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'BoundingBoxProperties');
-addOptional(ip, 'BoundingBoxProperties', {}, valFcn_BoundingBoxProperties);
+% Maybe the bounding box must have other spec as the ones we use here?
+valFcn_BoundingBoxSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'BoundingBoxSpec');
+addOptional(ip, 'BoundingBoxSpec', {}, valFcn_BoundingBoxSpec);
 
 % The 3d view may be defined, too. Viewport may be 2, 3, [az, el], or [x, y, z]
 valFcn_Viewport = @(x) validateattributes(x, {'logical', 'numeric'}, {'2d'}, mfilename, 'Viewport');
@@ -137,18 +138,18 @@ addOptional(ip, 'Viewport', [-13, 10], valFcn_Viewport);
 valFcn_WinchLabels = @(x) validateattributes(x, {'logical', 'numeric', 'cell'}, {'2d'}, mfilename, 'WinchLabels');
 addOptional(ip, 'WinchLabels', false, valFcn_WinchLabels);
 
-% Some style properties to set on the winch labels?
-valFcn_WinchLabelProperties = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'WinchLabelProperties');
-addOptional(ip, 'WinchLabelProperties', {}, valFcn_WinchLabelProperties);
+% Some style spec to set on the winch labels?
+valFcn_WinchLabelSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'WinchLabelSpec');
+addOptional(ip, 'WinchLabelSpec', {}, valFcn_WinchLabelSpec);
 
 % Also print the home position? Can be either a logical 'true' to print at
 % [0, 0, 0], or the explicit home position as a 1x3 column vector
 valFcn_HomePosition = @(x) validateattributes(x, {'logical', 'numeric'}, {'column'}, mfilename, 'HomePosition');
 addOptional(ip, 'HomePosition', false, valFcn_HomePosition);
 
-% Some style properties for the home position to plot?
-valFcn_HomePositionProperties = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'HomePositionProperties');
-addOptional(ip, 'HomePositionProperties', {}, valFcn_HomePositionProperties);
+% Some style spec for the home position to plot?
+valFcn_HomePositionSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'HomePositionSpec');
+addOptional(ip, 'HomePositionSpec', {}, valFcn_HomePositionSpec);
 
 % Allow user to choose grid style (either 'on', 'off', or 'minor')
 valFcn_Grid = @(x) any(validatestring(x, {'on', 'off', 'minor'}, mfilename, 'Grid'));
@@ -180,7 +181,7 @@ parse(ip, winchPositions, varargin{:});
 
 
 %% Parse variables of the input parser to local parser
-hAxes = ip.Results.Axes;
+% hAxes = ip.Results.Axes;
 % Ensure the handle for the axes is a valid handle. If none given, we will
 % create our own figure with handle
 if ~ishandle(hAxes)
@@ -201,14 +202,14 @@ if isequal(ceWinchLabels, true)
 elseif ~iscell(ceWinchLabels)
     ceWinchLabels = {};
 end
-% Properties for the winch labels can be set, too
-cWinchLabelProperties = ip.Results.WinchLabelProperties;
-% Plot properties
-cPlotProperties = ip.Results.PlotProperties;
+% Spec for the winch labels can be set, too
+cWinchLabelSpec = ip.Results.WinchLabelSpec;
+% Plot spec
+cPlotSpec = ip.Results.PlotSpec;
 % Bounding box?
 bBoundingBox = ip.Results.BoundingBox;
-% Properties on the bounding box
-cBoundingBoxProperties = ip.Results.BoundingBoxProperties;
+% Spec on the bounding box
+cBoundingBoxSpec = ip.Results.BoundingBoxSpec;
 % Viewport settings
 mxdViewport = ip.Results.Viewport;
 % Home position to plot
@@ -221,8 +222,8 @@ if islogical(vHomePosition) && isequal(vHomePosition, true)
 elseif isvector(vHomePosition) && ~iscolumn(vHomePosition)
     vHomePosition = vHomePosition(:);
 end
-% Properties on the home position
-cHomePositionProperties = ip.Results.HomePositionProperties;
+% Spec on the home position
+cHomePositionSpec = ip.Results.HomePositionSpec;
 % Parse the option for the grid
 chGrid = ip.Results.Grid;
 if islogical(chGrid) && isequal(chGrid, true)
@@ -253,9 +254,9 @@ hold(hAxes, 'on');
 
 % First, plot the winch positions as circles
 hPlotWinchPositions = plot3(mWinchPositions(1, :), mWinchPositions(2, :), mWinchPositions(3, :), 'o');
-% If the plot properties were given, we need to set them on the plot
-if ~isempty(cPlotProperties)
-    set(hPlotWinchPositions, cPlotProperties{:});
+% If the plot spec were given, we need to set them on the plot
+if ~isempty(cPlotSpec)
+    set(hPlotWinchPositions, cPlotSpec{:});
 end
 
 % Label the winches (either as given by the user or as pre-defined values)
@@ -263,8 +264,8 @@ if ~isempty(ceWinchLabels)
     for iUnit = 1:size(ceWinchLabels, 2)
         hText = text(mWinchPositions(1, iUnit), mWinchPositions(2, iUnit), mWinchPositions(3, iUnit), ...
             ceWinchLabels{iUnit}, 'VerticalAlignment', 'bottom', 'FontSize', 10);
-        if ~isempty(cWinchLabelProperties)
-            set(hText, cWinchLabelProperties{:});
+        if ~isempty(cWinchLabelSpec)
+            set(hText, cWinchLabelSpec{:});
         end
     end
 end
@@ -274,9 +275,9 @@ if ~isscalar(vHomePosition) && isvector(vHomePosition)
     % Plot the home position as a black marker
     hPlotHomePosition = plot3(vHomePosition(1), vHomePosition(2), vHomePosition(3), 'Color', 'k', 'Marker', 'd');
     
-    % Set properties on the home positon?
-    if ~isempty(cHomePositionProperties)
-        set(hPlotHomePosition, cHomePositionProperties{:});
+    % Set spec on the home positon?
+    if ~isempty(cHomePositionSpec)
+        set(hPlotHomePosition, cHomePositionSpec{:});
     end
 end
 
@@ -289,9 +290,9 @@ if bBoundingBox
     % And create a hollow patch from the bounding box
     hPatch = patch('Vertices', mWinchPositionsBoundingBox, 'Faces', mWinchPositionsBoundingBoxFaces, 'FaceColor', 'none');
     
-    % Properties to set on the bounding box? No problemo!
-    if ~isempty(cBoundingBoxProperties)
-        set(hPatch, cBoundingBoxProperties{:});
+    % Spec to set on the bounding box? No problemo!
+    if ~isempty(cBoundingBoxSpec)
+        set(hPatch, cBoundingBoxSpec{:});
     end
 end
 
@@ -357,7 +358,7 @@ end
 
 function result = allAxes(h)
 
-result = all(ishghandle(h)) && ...
+result = all(all(ishghandle(h))) && ...
          length(findobj(h,'type','axes','-depth',0)) == length(h);
 end
 
