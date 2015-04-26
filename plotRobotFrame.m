@@ -33,20 +33,19 @@ function [varargout] = plotRobotFrame(winchPositions, varargin)
 %   PLOTROBOTFRAME(WINCHPOSITIONS, 'WinchLabels', {'W1', 'W2', ..., 'WM'},
 %   ...) to set specific labels for the corresponding winch. In case of a
 %   cell array, it must be a row cell array and have as many entries as
-%   WINCHPOSITIONS has columns.
+%   WINCHPOSITIONS has rows.
 %
 %   PLOTROBOTFRAME(WINCHPOSITIONS, 'WinchLabelProperties',
 %   {'VerticalAlignment', 'bottom'}, ...) to set further properties on the
 %   winch labels. Check the documentation for Text Properties on more info.
 %
 %   PLOTROBOTFRAME(WINCHPOSITIONS, 'HomePosition', true, ...) will plot the
-%   home position defined by [0; 0; 0] into the current plot. Home position
+%   home position defined by [0, 0, 0] into the current plot. Home position
 %   will be a diamond 'd' marker colored in 'k'.
 %
-%   PLOTROBOTFRAME(WINCHPOSITIONS, 'HomePosition', [-1; 1; 1], ...) will
-%   plot the home position as the specified position given as a [x; y; z]
-%   column vector. Home position will be a diamond 'd' marker colored in
-%   'k'.
+%   PLOTROBOTFRAME(WINCHPOSITIONS, 'HomePosition', [1, 1, 1], ...) will
+%   plot the home position as the specified position given as a [x, y, z]
+%   row vector. Home position will be a diamond 'd' marker colored in 'k'.
 %
 %   PLOTROBOTFRAME(WINCHPOSITIONS, 'HomePositionProperties', {'Color',
 %   'r'}, ...) to set the properties of the home position as e.g., color,
@@ -67,9 +66,9 @@ function [varargout] = plotRobotFrame(winchPositions, varargin)
 %   
 %   Inputs:
 %   
-%   WINCHPOSITIONS: Matrix of winch positions of size 3xM where the rows
-%   are sorted as [x, y, z]. Any number of winches may be given in any
-%   order.
+%   WINCHPOSITIONS: Matrix of winch positions of size Mx3 where each row
+%   represents one winch with its columns sorted as [x, y, z]. Any number of
+%   winches may be given in any order.
 %
 %   See also:
 %   VIEW
@@ -95,8 +94,8 @@ ip = inputParser;
 %%% Define validation methods
 valFcn_AnythingTrueOrFalse = @(x) isequal(x, true) || isequal(x, false);
 % Winch positions must be a matrix of size 3xM
-% valFcn_WinchPositions = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', 3}, mfilename, 'WinchPositions');
-valFcn_WinchPositions = @(x) ismatrix(x) && isequal(size(x, 1), 3);
+% valFcn_WinchPositions = @(x) validateattributes(x, {'numeric'}, {'2d', 'ncolumns', 3}, mfilename, 'WinchPositions');
+valFcn_WinchPositions = @(x) ismatrix(x) && isequal(size(x, 2), 3);
 % Option to 'axes' must be a handle and also a 'axes' handle
 % valFcn_Axes = @(x) validateattributes(x, {'matlab.graphics.axis.Axes'}, {}, mfilename, 'Axes');
 valFcn_Axes = @(x) ishandle(x) && strcmp(get(x, 'type'), 'axes');
@@ -107,9 +106,9 @@ valFcn_BoundingBox = @(x) valFcn_AnythingTrueOrFalse(x);
 valFcn_Viewport = @(x) ( isequal(x, 2) || isequal(x, 3) || ( isrow(x) && ( isequal(size(x, 2), 2) || isequal(size(x, 2), 3) ) ) );
 % Winch labels may be true, false, 1, 0, or a cell array
 % valFcn_WinchLabels = @(x) validateattributes(x, {'logical', 'numeric', 'cell'}, {'2d', 'cell'}, mfilename, 'WinchLabels');
-valFcn_WinchLabels = @(x) valFcn_AnythingTrueOrFalse(x) || ( iscell(x) && issize(x, 1, size(winchPositions, 2)) );
+valFcn_WinchLabels = @(x) valFcn_AnythingTrueOrFalse(x) || ( iscell(x) && issize(x, 1, size(winchPositions, 1)) );
 % Home position may be true, false, 1, 0, or a vector of size 1x3 or 3x1
-valFcn_HomePosition = @(x) valFcn_AnythingTrueOrFalse(x) || ( isvector(x) && ( issize(x, 1, 3) || issize(x, 3, 1) ) );
+valFcn_HomePosition = @(x) valFcn_AnythingTrueOrFalse(x) || ( isrow(x) && isequal(size(x, 2), 3) );
 % Grid may be true, false, 1, 0, 'on', 'off', or 'minor'
 valFcn_Grid = @(x) valFcn_AnythingTrueOrFalse(x) || any(strcmpi(x, {'on', 'off', 'minor'}));
 
@@ -132,7 +131,7 @@ addOptional(ip, 'WinchLabels', false, valFcn_WinchLabels);
 % Some style properties to set on the winch labels?
 addOptional(ip, 'WinchLabelProperties', {}, @iscell);
 % Also print the home position? Can be either a logical 'true' to print at
-% [0; 0; 0], or the explicit home position as a 3x1 column vector
+% [0, 0, 0], or the explicit home position as a 1x3 column vector
 addOptional(ip, 'HomePosition', false, valFcn_HomePosition);
 % Some style properties for the home position to plot?
 addOptional(ip, 'HomePositionProperties', {}, @iscell);
@@ -171,8 +170,8 @@ ceWinchLabels = ip.Results.WinchLabels;
 % If just set to anything like true, we will magically create the labels by the
 % number of winches we have
 if isequal(ceWinchLabels, true)
-    ceWinchLabels = cell(1, size(mWinchPositions, 2));
-    for iUnit = 1:size(mWinchPositions, 2)
+    ceWinchLabels = cell(1, size(mWinchPositions, 1));
+    for iUnit = 1:size(mWinchPositions, 1)
         ceWinchLabels{iUnit} = num2str(iUnit);
     end
 else
@@ -191,12 +190,12 @@ mxdViewport = ip.Results.Viewport;
 % Home position to plot
 vHomePosition = ip.Results.HomePosition;
 % Prepare the home position argument (convert logical true to [0;0;0] or
-% make sure that any vector given is a column vector (just for the beauty
+% make sure that any vector given is a row vector (just for the beauty
 % of consistent vector styles;
 if islogical(vHomePosition) && isequal(vHomePosition, true)
-    vHomePosition = [0; 0; 0];
-elseif isvector(vHomePosition) && ~iscolumn(vHomePosition)
-    vHomePosition = vHomePosition(:);
+    vHomePosition = [0, 0, 0];
+elseif isvector(vHomePosition) && ~row(vHomePosition)
+    vHomePosition = vHomePosition(:)';
 end
 % Properties on the home position
 cHomePositionProperties = ip.Results.HomePositionProperties;
@@ -229,7 +228,7 @@ axes(hAxes);
 hold(hAxes, 'on');
 
 % First, plot the winch positions as circles
-hPlotWinchPositions = plot3(mWinchPositions(1, :), mWinchPositions(2, :), mWinchPositions(3, :), 'o');
+hPlotWinchPositions = plot3(mWinchPositions(:, 1), mWinchPositions(:, 2), mWinchPositions(:, 3), 'o');
 % If the plot properties were given, we need to set them on the plot
 if ~isempty(cPlotProperties)
     set(hPlotWinchPositions, cPlotProperties{:});
@@ -238,7 +237,7 @@ end
 % Label the winches (either as given by the user or as pre-defined values)
 if ~isempty(ceWinchLabels)
     for iUnit = 1:size(ceWinchLabels, 2)
-        hText = text(mWinchPositions(1, iUnit), mWinchPositions(2, iUnit), mWinchPositions(3, iUnit), ...
+        hText = text(mWinchPositions(iUnit, 1), mWinchPositions(iUnit, 2), mWinchPositions(iUnit, 3), ...
             ceWinchLabels{iUnit}, 'VerticalAlignment', 'bottom', 'FontSize', 10);
         if ~isempty(cWinchLabelProperties)
             set(hText, cWinchLabelProperties{:});
@@ -247,7 +246,7 @@ if ~isempty(ceWinchLabels)
 end
 
 % Plot the home position?
-if iscolumn(vHomePosition)
+if isrow(vHomePosition)
     % Plot the home position as a black marker
     hPlotHomePosition = plot3(vHomePosition(1), vHomePosition(2), vHomePosition(3), 'Color', 'k', 'Marker', 'd');
     
@@ -261,9 +260,11 @@ end
 % Plot the bounding box?
 if bBoundingBox
     % Get the bounding box for the winch positions
-    [mWinchPositionsBoundingBox, mWinchPositionsBoundingBoxFaces] = boundingbox3(mWinchPositions(1, :), mWinchPositions(2, :), mWinchPositions(3, :));
-    % And create a hollow patch
-    hPatch = patch('Vertices', mWinchPositionsBoundingBox', 'Faces', mWinchPositionsBoundingBoxFaces, 'FaceColor', 'none');
+    [mWinchPositionsBoundingBox, mWinchPositionsBoundingBoxFaces] = boundingbox3(mWinchPositions(:, 1), mWinchPositions(:, 2), mWinchPositions(:, 3));
+    
+    % And create a hollow patch from the bounding box
+    hPatch = patch('Vertices', mWinchPositionsBoundingBox, 'Faces', mWinchPositionsBoundingBoxFaces, 'FaceColor', 'none');
+    
     % Properties to set on the bounding box? No problemo!
     if ~isempty(cBoundingBoxProperties)
         set(hPatch, cBoundingBoxProperties{:});
