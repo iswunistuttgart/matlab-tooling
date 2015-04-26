@@ -187,6 +187,11 @@ if ~ishandle(hAxes)
     hFig = figure;
     hAxes = gca;
 end
+% Check we are looking at a 3D plot
+[az, el] = view(hAxes);
+if isequaln([az, el], [0, 90])
+    error('PHILIPPTEMPEL:plotRobotFrame:invalidAxesType', 'Cannot plot a 3D plot into an existing 2D plot.');
+end
 
 mWinchPositions = ip.Results.WinchPositions;
 % Parse winch labels
