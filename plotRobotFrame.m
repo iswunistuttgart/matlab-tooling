@@ -87,64 +87,88 @@ function [varargout] = plotRobotFrame(winchPositions, varargin)
 %   2015-04-24: Initial release
 
 
+%% Preprocess inputs (allows to have the axis defined as first argument)
+% % By default we don't have any axes handle
+% hAxes = false;
+% % Check if the first argument is an axes handle, then we just have to shift all
+% % other arguments by one
+% if allAxes(winchPositions)
+%     hAxes = winchPositions;
+%     clear winchPositions;
+%     if ~isempty(varargin)
+%         winchPositions = varargin{1};
+%         varargin = varargin{2:end};
+%     end
+% end
+
+
 
 %% Define the input parser
 ip = inputParser;
 
-%%% Define validation methods
-valFcn_AnythingTrueOrFalse = @(x) isequal(x, true) || isequal(x, false);
-% Winch positions must be a matrix of size 3xM
-% valFcn_WinchPositions = @(x) validateattributes(x, {'numeric'}, {'2d', 'ncolumns', 3}, mfilename, 'WinchPositions');
-valFcn_WinchPositions = @(x) ismatrix(x) && isequal(size(x, 1), 3);
-% Option to 'axes' must be a handle and also a 'axes' handle
-% valFcn_Axes = @(x) validateattributes(x, {'matlab.graphics.axis.Axes'}, {}, mfilename, 'Axes');
-valFcn_Axes = @(x) ishandle(x) && strcmp(get(x, 'type'), 'axes');
-% Bounding box may be anything true or false (i.e., true, false, 0, 1)
-valFcn_BoundingBox = @(x) valFcn_AnythingTrueOrFalse(x);
-% Viewport may be 2, 3, [az, el], or [x, y, z]
-% valFcn_Viewport = @(x) validateattributes(x, {'logical', 'numeric'}, {'2d'}, mfilename, 'Viewport');
-valFcn_Viewport = @(x) ( isequal(x, 2) || isequal(x, 3) || ( isrow(x) && ( isequal(size(x, 2), 2) || isequal(size(x, 2), 3) ) ) );
-% Winch labels may be true, false, 1, 0, or a cell array
-% valFcn_WinchLabels = @(x) validateattributes(x, {'logical', 'numeric', 'cell'}, {'2d', 'cell'}, mfilename, 'WinchLabels');
-valFcn_WinchLabels = @(x) valFcn_AnythingTrueOrFalse(x) || ( iscell(x) && issize(x, 1, size(winchPositions, 1)) );
-% Home position may be true, false, 1, 0, or a vector of size 1x3 or 3x1
-valFcn_HomePosition = @(x) valFcn_AnythingTrueOrFalse(x) || ( iscolumn(x) && isequal(size(x, 1), 3) );
-% Grid may be true, false, 1, 0, 'on', 'off', or 'minor'
-valFcn_Grid = @(x) valFcn_AnythingTrueOrFalse(x) || any(strcmpi(x, {'on', 'off', 'minor'}));
-
-%%% This fills in the parameters for the function
-% We need the winch positions
+% Require: Winch Positions. Must be a matrix of size 3xM
+% valFcn_WinchPositions = @(x) ismatrix(x) && isequal(size(x, 1), 3);
+valFcn_WinchPositions = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', 3}, mfilename, 'WinchPositions');
 addRequired(ip, 'WinchPositions', valFcn_WinchPositions);
+
 % We need the axes handle which is allowed to be the first optional
 % argument which must not be used with a parameter name
+valFcn_Axes = @(x) validateattributes(x, {'handle', 'matlab.graphics.axis.Axes'}, {}, mfilename, 'Axes');
 addOptional(ip, 'Axes', false, valFcn_Axes);
+
 % Allow the plot to have user-defined properties
-addOptional(ip, 'PlotProperties', {}, @iscell);
-% Allow the lines drawn to have user-defined properties
+valFcn_PlotProperties = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'PlotProperties');
+addOptional(ip, 'PlotProperties', {}, valFcn_PlotProperties);
+
+% Bounding box about the winch positions? May be any numeric or logical value
+% valFcn_BoundingBox = @(x) valFcn_AnythingTrueOrFalse(x);
+valFcn_BoundingBox = @(x) validateattributes(x, {'numeric', 'logical'}, {'>=', 0, '<=', 1}, mfilename, 'BoundingBox');
 addOptional(ip, 'BoundingBox', false, valFcn_BoundingBox);
+
 % Maybe the bounding box must have other properties as the ones we use here?
-addOptional(ip, 'BoundingBoxProperties', {}, @iscell);
-% The 3d view may be defined, too
+valFcn_BoundingBoxProperties = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'BoundingBoxProperties');
+addOptional(ip, 'BoundingBoxProperties', {}, valFcn_BoundingBoxProperties);
+
+% The 3d view may be defined, too. Viewport may be 2, 3, [az, el], or [x, y, z]
+valFcn_Viewport = @(x) validateattributes(x, {'logical', 'numeric'}, {'2d'}, mfilename, 'Viewport');
 addOptional(ip, 'Viewport', [-13, 10], valFcn_Viewport);
+
 % Maybe also display the winch labels? Or custom labels?
+valFcn_WinchLabels = @(x) validateattributes(x, {'logical', 'numeric', 'cell'}, {'2d'}, mfilename, 'WinchLabels');
 addOptional(ip, 'WinchLabels', false, valFcn_WinchLabels);
+
 % Some style properties to set on the winch labels?
-addOptional(ip, 'WinchLabelProperties', {}, @iscell);
+valFcn_WinchLabelProperties = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'WinchLabelProperties');
+addOptional(ip, 'WinchLabelProperties', {}, valFcn_WinchLabelProperties);
+
 % Also print the home position? Can be either a logical 'true' to print at
 % [0, 0, 0], or the explicit home position as a 1x3 column vector
+valFcn_HomePosition = @(x) validateattributes(x, {'logical', 'numeric'}, {'column'}, mfilename, 'HomePosition');
 addOptional(ip, 'HomePosition', false, valFcn_HomePosition);
+
 % Some style properties for the home position to plot?
-addOptional(ip, 'HomePositionProperties', {}, @iscell);
-% Allow user to choose grid style (either false 'on', 'off', or 'minor')
+valFcn_HomePositionProperties = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'HomePositionProperties');
+addOptional(ip, 'HomePositionProperties', {}, valFcn_HomePositionProperties);
+
+% Allow user to choose grid style (either 'on', 'off', or 'minor')
+valFcn_Grid = @(x) any(validatestring(x, {'on', 'off', 'minor'}, mfilename, 'Grid'));
 addOptional(ip, 'Grid', false, valFcn_Grid);
+
 % Allow user to set the xlabel ...
-addOptional(ip, 'XLabel', false, @ischar);
+valFcn_XLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'XLabel');
+addOptional(ip, 'XLabel', false, valFcn_XLabel);
+
 % Allow user to set the ylabel ...
-addOptional(ip, 'YLabel', false, @ischar);
+valFcn_YLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'YLabel');
+addOptional(ip, 'YLabel', false, valFcn_YLabel);
+
 % And allow user to set the zlabel
-addOptional(ip, 'ZLabel', false, @ischar);
+valFcn_ZLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'ZLabel');
+addOptional(ip, 'ZLabel', false, valFcn_ZLabel);
+
 % Maybe a title is provided and shall be plotted, too?
-addOptional(ip, 'Title', false, @ischar);
+valFcn_Title = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Title');
+addOptional(ip, 'Title', false, valFcn_Title);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -174,7 +198,7 @@ if isequal(ceWinchLabels, true)
     for iUnit = 1:size(mWinchPositions, 2)
         ceWinchLabels{iUnit} = num2str(iUnit);
     end
-else
+elseif ~iscell(ceWinchLabels)
     ceWinchLabels = {};
 end
 % Properties for the winch labels can be set, too
@@ -329,6 +353,12 @@ if nargout >= 1
 end
 
 
+end
+
+function result = allAxes(h)
+
+result = all(ishghandle(h)) && ...
+         length(findobj(h,'type','axes','-depth',0)) == length(h);
 end
 
 %------------- END OF CODE --------------

@@ -5,50 +5,59 @@ function varargout = plotRobotTrajectory(Time, Poses, varargin)
 %% Define the input parser
 ip = inputParser;
 
-%%% Define validation methods
-valFcn_AnythingTrueOrFalse = @(x) isequal(x, true) || isequal(x, false);
-% Time must be an increasing column vector
-valFcn_Time = @(x) isvector(x);
-% List of poses must be a matrix with as many columns as Time has rows
-valFcn_Poses = @(x) ismatrix(x) && isequal(size(x, 1), numel(Time));
-% % Pose mapping must be a cell row vector
-% valFcn_PoseMapping = @(x) isrow(x) && iscell(x);
-% Plot style can be chosen anything from the regexp below
-valFcn_PlotStyle = @(x) ischar(x) && regexpi(x, '^2D(XY|YX|YZ|ZY|XZ|ZX)?|3D$');
-% Option to 'axes' must be a handle and also a 'axes' handle
-valFcn_Axes = @(x) ishandle(x) && strcmp(get(x, 'type'), 'axes');
-% Viewport may be 2, 3, [az, el], or [x, y, z]
-valFcn_Viewport = @(x) ( isequal(x, 2) || isequal(x, 3) || ( isrow(x) && ( isequal(size(x, 2), 2) || isequal(size(x, 2), 3) ) ) );
-% Grid may be true, false, 1, 0, 'on', 'off', or 'minor'
-valFcn_Grid = @(x) valFcn_AnythingTrueOrFalse(x) || any(strcmpi(x, {'on', 'off', 'minor'}));
-
 % Require: Time column vector
+% Time must be an increasing column vector
+valFcn_Time = @(x) validateattributes(x, {'numeric'}, {'vector', 'column', 'increasing'}, mfilename, 'Time');
 addRequired(ip, 'Time', valFcn_Time);
+
 % Require: Matrix of poses
+% List of poses must be a matrix with as many columns as Time has rows
+valFcn_Poses = @(x) validateattributes(x, {'numeric'}, {'2d', 'size', [size(Time, 1), 3]}, mfilename, 'Poses');
 addRequired(ip, 'Poses', valFcn_Poses);
+
 % Axes may be given, too, as always, so that we could add the trajectory to the
 % frame and winch plot or pose list plot
+% Option to 'axes' must be a handle and also a 'axes' handle
+valFcn_Axes = @(x) validateattributes(x, {'handle', 'matlab.graphics.axis.Axes'}, {}, mfilename, 'Axes');
 addOptional(ip, 'Axes', false, valFcn_Axes);
+
 % Let user decied on the plot style
+% Plot style can be chosen anything from the list below
+valFcn_PlotStyle = @(x) any(validatestring(x, {'2D', '2DXY', '2DYX', '2DYZ', '2DZY', '2DXZ', '2DZX', '3D'}, mfilename, 'PlotStyle'));
 addOptional(ip, 'PlotStyle', '2D', valFcn_PlotStyle);
+
 % Let user decied on the plot properties
-addOptional(ip, 'PlotProperties', {}, @iscell);
+valFcn_PlotProperties = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'PlotProperties');
+addOptional(ip, 'PlotProperties', {}, valFcn_PlotProperties);
+
 % The 3d view may be defined, too
+% Viewport may be 2, 3, [az, el], or [x, y, z]
+valFcn_Viewport = @(x) validateattributes(x, {'numeric'}, {'row'}, mfilename, 'Viewport') || validateattributes(x, {'numeric'}, {'ncols', '>=', '2', 'ncols', '<=', 3}, mfilename, 'Viewport');
 addOptional(ip, 'Viewport', [-13, 10], valFcn_Viewport);
-% Allow user to choose grid style (either false 'on', 'off', or 'minor')
+
+% Allow user to choose grid style (either 'on', 'off', or 'minor')
+valFcn_Grid = @(x) any(validatestring(x, {'on', 'off', 'minor'}, mfilename, 'Grid'));
 addOptional(ip, 'Grid', false, valFcn_Grid);
+
 % Allow user to set the xlabel ...
-addOptional(ip, 'XLabel', false, @ischar);
+valFcn_XLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'XLabel');
+addOptional(ip, 'XLabel', false, valFcn_XLabel);
+
 % Allow user to set the ylabel ...
-addOptional(ip, 'YLabel', false, @ischar);
+valFcn_YLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'YLabel');
+addOptional(ip, 'YLabel', false, valFcn_YLabel);
+
 % And allow user to set the zlabel
-addOptional(ip, 'ZLabel', false, @ischar);
+valFcn_ZLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'ZLabel');
+addOptional(ip, 'ZLabel', false, valFcn_ZLabel);
+
 % Maybe a title is provided and shall be plotted, too?
-addOptional(ip, 'Title', false, @ischar);
+valFcn_Title = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Title');
+addOptional(ip, 'Title', false, valFcn_Title);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
-ip.FunctionName = 'plotRobotFrame';
+ip.FunctionName = 'plotRobotTrajectory';
 
 % Parse the provided inputs
 parse(ip, Time, Poses, varargin{:});
