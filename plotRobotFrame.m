@@ -181,7 +181,6 @@ parse(ip, winchPositions, varargin{:});
 
 
 %% Parse variables of the input parser to local parser
-% hAxes = ip.Results.Axes;
 % Ensure the handle for the axes is a valid handle. If none given, we will
 % create our own figure with handle
 if ~ishandle(hAxes)

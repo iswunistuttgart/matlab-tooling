@@ -169,7 +169,6 @@ vTime = ip.Results.Time;
 % Vector of poses
 mPoses = ip.Results.Poses;
 % Axes handle
-hAxes = ip.Results.Axes;
 if ~ishandle(hAxes)
     hFig = figure;
     hAxes = gca;
