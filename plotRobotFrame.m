@@ -186,11 +186,10 @@ parse(ip, winchPositions, varargin{:});
 if ~ishandle(hAxes)
     hFig = figure;
     hAxes = gca;
-end
-% Check we are looking at a 3D plot
-[az, el] = view(hAxes);
-if isequaln([az, el], [0, 90])
-    error('PHILIPPTEMPEL:plotRobotFrame:invalidAxesType', 'Cannot plot a 3D plot into an existing 2D plot.');
+% Check we are looking at a 3D plot, if a plot is given
+else
+    [az, el] = view(hAxes);
+    assert(isequaln([az, el], [0, 90]), 'Cannot plot a 3D plot into an existing 2D plot.');
 end
 
 mWinchPositions = ip.Results.WinchPositions;
@@ -292,7 +291,7 @@ if bBoundingBox
     [mWinchPositionsBoundingBox, mWinchPositionsBoundingBoxFaces] = boundingbox3(mWinchPositions(1, :), mWinchPositions(2, :), mWinchPositions(3, :));
     
     % And create a hollow patch from the bounding box
-    hPatch = patch('Vertices', mWinchPositionsBoundingBox, 'Faces', mWinchPositionsBoundingBoxFaces, 'FaceColor', 'none');
+    hPatch = patch('Vertices', mWinchPositionsBoundingBox', 'Faces', mWinchPositionsBoundingBoxFaces, 'FaceColor', 'none');
     
     % Spec to set on the bounding box? No problemo!
     if ~isempty(cBoundingBoxSpec)
