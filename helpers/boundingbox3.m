@@ -56,26 +56,22 @@ end
 
 %% Do the magic!
 % First, get all minimum and maximum values of X, Y, and Z
-minX = min(X(:));
-maxX = max(X(:));
-minY = min(Y(:));
-maxY = max(Y(:));
-minZ = min(Z(:));
-maxZ = max(Z(:));
+minVals = min([X(:), Y(:), Z(:)]);
+maxVals = max([X(:), Y(:), Z(:)]);
 
 % Holds our output
-box = zeros(3, 8);
+box = zeros(8, 3);
 
 % The first set of points will be all points on the lower side of the cube
-box(:, 1) = [minX, minY, minZ];
-box(:, 2) = [maxX, minY, minZ];
-box(:, 3) = [maxX, maxY, minZ];
-box(:, 4) = [minX, maxY, minZ];
+box(1, :) = [minVals(1), minVals(2), minVals(3)];
+box(2, :) = [maxVals(1), minVals(2), minVals(3)];
+box(3, :) = [maxVals(1), maxVals(2), minVals(3)];
+box(4, :) = [minVals(1), maxVals(2), minVals(3)];
 % Second half of points will be all points on the upper side of the cube
-box(:, 5) = [minX, minY, maxZ];
-box(:, 6) = [maxX, minY, maxZ];
-box(:, 7) = [maxX, maxY, maxZ];
-box(:, 8) = [minX, maxY, maxZ];
+box(5, :) = [minVals(1), minVals(2), maxVals(3)];
+box(6, :) = [maxVals(1), minVals(2), maxVals(3)];
+box(7, :) = [maxVals(1), maxVals(2), maxVals(3)];
+box(8, :) = [minVals(1), maxVals(2), maxVals(3)];
 
 % This allows to use results of boundingbox3 as input to patch('Vertices', box, 'Faces', traversal)
 traversal = [1, 2, 3, 4; ...
