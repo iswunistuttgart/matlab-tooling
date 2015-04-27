@@ -1,4 +1,4 @@
-function StructureMatrix = algoStructureMatrix(CableAttachments, CableVectors)
+function StructureMatrix = algoStructureMatrix(CableAttachments, CableVectors, varargin)
 % ALGOSTRUCTUREMATRIX - Calculate the structure matrix for the given cable
 %   attachment points and cable vectors
 % 
@@ -43,6 +43,15 @@ mStructureMatrix = zeros(6, iNumberOfWires);
 % Keeping variable names consistent
 mCableVectors = CableVectors;
 mCableAttachments = CableAttachments;
+% Get the platforms position and rotation
+mRotation = eye(3);
+
+% Parse additional inputs
+if ~isempty(varargin)
+    if numel(varargin) >= 1
+        mRotation = varargin{1};
+    end
+end
 
 
 %% Create the structure matrix
@@ -53,9 +62,9 @@ for iUnit = 1:iNumberOfWires
         mCableVectors(:, iUnit) = mCableVectors(:, iUnit)./norm(mCableVectors(:, iUnit));
     end
     
-    % Each column of A' is [u, b x u]';
+    % Each column of A' is [u, cross((R*b), u)]';
     mStructureMatrix(:, iUnit) = [mCableVectors(:, iUnit); ...
-                                    cross(mCableAttachments(:, iUnit), mCableVectors(:, iUnit))];
+                                    cross(mRotation*mCableAttachments(:, iUnit), mCableVectors(:, iUnit))];
 end
 
 
