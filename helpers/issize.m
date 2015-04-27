@@ -19,7 +19,8 @@ function flag = issize(A, r, c)
 % Date: 2015-04-24
 % Changelog:
 %   2015-04-24: Update validation function to use ```isequaln``` rather
-%   than ```isequal``` (slight improvement of readability and speed)
+%               than ```isequal``` (slight improvement of readability and
+%               speed)
 %   2015-04-22: Initial release
 
 
