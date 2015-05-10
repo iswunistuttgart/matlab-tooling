@@ -166,7 +166,7 @@ addOptional(ip, 'Title', false, valFcn_Title);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
-ip.FunctionName = 'plotRobotFrame';
+ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 parse(ip, winchPositions, varargin{:});

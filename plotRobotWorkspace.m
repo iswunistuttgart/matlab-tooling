@@ -35,7 +35,7 @@ addOptional(ip, 'Grid', false, valFcn_Grid);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
-ip.FunctionName = 'plotRobotWorkspace';
+ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 parse(ip, XData, YData, ZData, varargin{:});

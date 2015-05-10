@@ -1,4 +1,4 @@
-function [length, varargout] = inverseKinematics(pose, winchPositions, cableAttachments, varargin)
+function [length, varargout] = inverseKinematics(Pose, WinchPositions, CableAttachments, varargin)
 % INVERSEKINEMATICS - Perform inverse kinematics for the given robot
 %   Inverse kinematics means to determine the values for the joint
 %   variables (in this case cable lengths) for a given endeffector pose.
@@ -102,49 +102,38 @@ function [length, varargout] = inverseKinematics(pose, winchPositions, cableAtta
 % Input parse to easily parse input arguments
 ip = inputParser;
 
-% Allow the pose to be a row vector of
-% [x, y, z, R11, R12, R13, R21, R22, R23, R31, R32, R33];
-valFcn_Pose = @(x) isrow(x) && numel(x) == 12;
-% Allow the winch positions to be given as
-% [a_1x, a_2x, ..., a_nx; ...
-%  a_1y, a_2y, ..., a_ny; ...
-%  a_1z, a_2z, ..., a_nz];
-valFcn_WinchPositions = @(x) ismatrix(x) && size(x, 1) == 3 && size(x, 2) == size(cableAttachments, 2);
-% Allow the cable attachments to be given as
-% [b_1x, b_2x, ..., b_nx; ...
-%  b_1y, b_2y, ..., b_ny; ...
-%  b_1z, b_2z, ..., b_nz];
-valFcn_CableAttachmens = @(x) ismatrix(x) && size(x, 1) == 3 && size(x, 2) == size(winchPositions, 2);
-% Allow the winch orientations to be given as
-% [a_1, a_2, ..., a_3; ...
-%  b_1, b_2, ..., b_3; ...
-%  c_1, c_2, ..., c_3];
-% for a rotation result of R_i = rotz(c_i)*roty(b_i)*rotx(a_i);
-valFcn_WinchOrientations = @(x) ismatrix(x) && size(x, 1) == 3 && size(x, 2) == size(cableAttachments, 2);
-% Allow the winch pulley radius to only be a matrix of one radius per winch
-valFcn_WinchPulleyRadius = @(x) isrow(x) && size(x, 2) == size(winchPositions, 2);
-
 %%% This fills in the parameters for the function
 % We need the current pose...
+valFcn_Pose = @(x) validateattributes(x, {'numeric'}, {'vector', 'ncols', 12}, mfilename, 'Pose');
 addRequired(ip, 'Pose', valFcn_Pose);
+
 % We need the a_i's ...
+valFcn_WinchPositions = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', '3', 'ncols', size(CableAttachments, 2)}, mfilename, 'WinchPositions');
 addRequired(ip, 'WinchPositions', valFcn_WinchPositions);
+
 % And we need the b_i's
+valFcn_CableAttachmens = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', '3', 'ncols', size(WinchPositions, 2)}, mfilename, 'CableAttachments');
 addRequired(ip, 'CableAttachments', valFcn_CableAttachmens);
+
 % We allow the user to explicitley flag which algorithm to use
-addOptional(ip, 'UseAdvanced', false, @islogical);
+valFcn_UseAdvanced = @(x) any(validatestring(x, {'yes', 'no', 'on', 'off'}, mfilename, 'UseAdvanced'));
+addOptional(ip, 'UseAdvanced', false, valFcn_UseAdvanced);
+
 % We might want to use the winch orientations
-addParameter(ip, 'WinchOrientations', zeros(3, size(winchPositions, 2)), valFcn_WinchOrientations);
+valFcn_WinchOrientations = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', 3, 'ncols', size(WinchPositions, 2)}, mfilename, 'WinchOrientations');
+addParameter(ip, 'WinchOrientations', zeros(3, size(WinchPositions, 2)), valFcn_WinchOrientations);
+
 % We might want the pulley radius to be defined if using advanced
 % kinematics
-addParameter(ip, 'WinchPulleyRadius', zeros(1, size(winchPositions, 2)), valFcn_WinchPulleyRadius);
+valFcn_WinchPulleyRadius = @(x) validateattributes(x, {'numeric'}, {'vector', 'ncols', size(WinchPositions, 2)}, mfilename, 'WinchPulleyRadius');
+addParameter(ip, 'WinchPulleyRadius', zeros(1, size(WinchPositions, 2)), valFcn_WinchPulleyRadius);
 
 % Configuratio nfor the input parser
 ip.KeepUnmatched = true;
-ip.FunctionName = 'inverseKinematics';
+ip.FunctionName = mfilename;
 
 % Parse the provided inputs
-parse(ip, pose, winchPositions, cableAttachments, varargin{:});
+parse(ip, Pose, WinchPositions, CableAttachments, varargin{:});
 
 
 

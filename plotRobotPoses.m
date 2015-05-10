@@ -14,10 +14,9 @@ function varargout = plotRobotPoses(Time, Poses, varargin)
 %       2DZY    plot [Y] against [Z]
 %       2DXZ    plot [Z] against [X]
 %       2DZX    plot [X] against [Z]
-%       3D      plot [Z] against [Y] against [X]
-%   
-%   In conjunction with PLOTROBOTPOSES(AX, ...) only allowed if given axes
-%   is already a 3D plot.
+%       3D      plot [Z] against [Y] against [X] (In conjunction with
+%               PLOTROBOTAXES(AX, ...) only allowed if given axes is already a
+%               3D plot
 % 
 %   PLOTROBOTPOSES(TIME, POSES, 'LineSpec', LineSpecs) forces the given
 %   line specs on the 2D or 3D plot. See LINESPEC
