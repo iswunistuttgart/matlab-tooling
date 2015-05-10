@@ -63,6 +63,7 @@ ip.FunctionName = mfilename;
 parse(ip, Time, Forces, varargin{:});
 
 
+
 %% Parse variables of the input parser to local parser
 % Ensure the handle for the axes is a valid handle. If none given, we will
 % create our own figure with handle
@@ -96,7 +97,6 @@ chTitle = ip.Results.Title;
 % Get provided axes labels
 chXLabel = ip.Results.XLabel;
 chYLabel = ip.Results.YLabel;
-
 
 
 
@@ -162,6 +162,7 @@ hold(hAxes, 'off');
 if nargout >= 1
     varargout{1} = hAxes;
 end
+
 
 end
 

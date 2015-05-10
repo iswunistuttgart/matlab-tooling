@@ -69,10 +69,8 @@ function [length, varargout] = algoInverseKinematics_Pulley(Pose, WinchPositions
 %   2015-04-22: Initial release
 
 
-%------------- BEGIN CODE --------------
 
-
-%%% Initialize variables
+%% Initialize variables
 % To unify variable names
 mCableAttachments = CableAttachments;
 mWinchPositions = WinchPositions;
@@ -95,6 +93,9 @@ mPlatformRotation = reshape(Pose(4:12), 3, 3);
 % Holds the rotation angle gamma and the wrapping angle beta
 mWinchPulleyAngles = zeros(2, iNumberOfWires);
 
+
+
+%% Do the magic
 % Loop over every winch and calculate the corrected winch position i.e.,
 % a_{i, corr}
 for iUnit = 1:iNumberOfWires
@@ -183,27 +184,26 @@ for iUnit = 1:iNumberOfWires
 end
 
 
-%%% Output parsing
+
+%% Output parsing
 % First output is the cable lengths
 length = vCableLength;
 
 % Further outputs as requested
-if nargout
-    % Second output is the matrix of cable vectors from b_i to a_i
-    if nargout >= 2
-        varargout{1} = mCableVector;
-    end
-    
-    % Third output is the matrix of normalized cable vectors
-    if nargout >= 3
-        varargout{2} = mCableVectorUnit;
-    end
-    
-    % Fourth output will be the revolving and wrapping angles of the
-    % pulleys
-    if nargout >= 4
-        varargout{3} = mWinchPulleyAngles;
-    end
+% Second output is the matrix of cable vectors from b_i to a_i
+if nargout >= 2
+    varargout{1} = mCableVector;
+end
+
+% Third output is the matrix of normalized cable vectors
+if nargout >= 3
+    varargout{2} = mCableVectorUnit;
+end
+
+% Fourth output will be the revolving and wrapping angles of the
+% pulleys
+if nargout >= 4
+    varargout{3} = mWinchPulleyAngles;
 end
 
 

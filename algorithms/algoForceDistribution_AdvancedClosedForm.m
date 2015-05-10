@@ -48,10 +48,8 @@ function [Distribution, varargout] = algoForceDistribution_AdvancedClosedForm(Wr
 %   2015-04-22: Initial release
 
 
-%------------- BEGIN CODE --------------
 
-
-%%% Assert and parse variables
+%% Assert and parse variables
 % Wrench
 vWrench = Wrench;
 % Structure matrix to determine force distribution for

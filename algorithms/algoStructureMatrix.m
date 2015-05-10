@@ -32,8 +32,6 @@ function StructureMatrix = algoStructureMatrix(CableAttachments, CableVectors, v
 %   2015-04-22: Initial release
 
 
-%------------- BEGIN CODE --------------
-
 
 %% Parse Variables
 % Get number of wires
@@ -43,15 +41,7 @@ mStructureMatrix = zeros(6, iNumberOfWires);
 % Keeping variable names consistent
 mCableVectors = CableVectors;
 mCableAttachments = CableAttachments;
-% Get the platforms position and rotation
-mRotation = eye(3);
 
-% Parse additional inputs
-if ~isempty(varargin)
-    if numel(varargin) >= 1
-        mRotation = varargin{1};
-    end
-end
 
 
 %% Create the structure matrix
@@ -64,7 +54,7 @@ for iUnit = 1:iNumberOfWires
     
     % Each column of A' is [u, cross((R*b), u)]';
     mStructureMatrix(:, iUnit) = [mCableVectors(:, iUnit); ...
-                                    cross(mRotation*mCableAttachments(:, iUnit), mCableVectors(:, iUnit))];
+                                    cross(mCableAttachments(:, iUnit), mCableVectors(:, iUnit))];
 end
 
 

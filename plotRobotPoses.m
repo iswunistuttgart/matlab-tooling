@@ -130,7 +130,7 @@ addOptional(ip, 'LineSpec', {}, valFcn_LineSpec);
 
 % The 3d view may be defined, too
 % Viewport may be 2, 3, [az, el], or [x, y, z]
-valFcn_Viewport = @(x) validateattributes(x, {'numeric'}, {'row'}, mfilename, 'Viewport') || validateattributes(x, {'numeric'}, {'ncols', '>=', '2', 'ncols', '<=', 3}, mfilename, 'Viewport');
+valFcn_Viewport = @(x) validateattributes(x, {'numeric'}, {'row'}, mfilename, 'Viewport') || validateattributes(x, {'numeric'}, {'ncols', '>=', 2, 'ncols', '<=', 3}, mfilename, 'Viewport');
 addOptional(ip, 'Viewport', [-13, 10], valFcn_Viewport);
 
 % Allow user to choose grid style (either 'on', 'off', or 'minor')
@@ -368,7 +368,6 @@ hold(hAxes, 'off');
 if nargout >= 1
     varargout{1} = hAxes;
 end
-
 
 
 end

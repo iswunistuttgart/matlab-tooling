@@ -95,8 +95,6 @@ function [length, varargout] = inverseKinematics(Pose, WinchPositions, CableAtta
 %   2015-04-03: Initial release
 
 
-%------------- BEGIN CODE --------------
-
 
 %% Create an input parser
 % Input parse to easily parse input arguments
@@ -108,11 +106,11 @@ valFcn_Pose = @(x) validateattributes(x, {'numeric'}, {'vector', 'ncols', 12}, m
 addRequired(ip, 'Pose', valFcn_Pose);
 
 % We need the a_i's ...
-valFcn_WinchPositions = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', '3', 'ncols', size(CableAttachments, 2)}, mfilename, 'WinchPositions');
+valFcn_WinchPositions = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', 3, 'ncols', size(CableAttachments, 2)}, mfilename, 'WinchPositions');
 addRequired(ip, 'WinchPositions', valFcn_WinchPositions);
 
 % And we need the b_i's
-valFcn_CableAttachmens = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', '3', 'ncols', size(WinchPositions, 2)}, mfilename, 'CableAttachments');
+valFcn_CableAttachmens = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', 3, 'ncols', size(WinchPositions, 2)}, mfilename, 'CableAttachments');
 addRequired(ip, 'CableAttachments', valFcn_CableAttachmens);
 
 % We allow the user to explicitley flag which algorithm to use
@@ -162,24 +160,22 @@ end
 %% Assign output quantities
 length = vCableLength;
 
-% Assign all the other, optional output quantities
-if nargout
-    % Second output argument is the matrix of cable directions vectors
-    if nargout >= 2
-        varargout{1} = mCableVector;
-    end
-    
-    % Third output is the matrix of normalized cable direction vectors
-    if nargout >= 3
-        varargout{2} = mCableUnitVector;
-    end
-    
-    % Fourth output argument...
-    if nargout >= 4
-        % For the advanced algorithms we are returning the wrapping angles
-        if bUseAdvanced
-            varargout{3} = mWinchPulleyAngles;
-        end
+%%% Assign all the other, optional output quantities
+% Second output argument is the matrix of cable directions vectors
+if nargout >= 2
+    varargout{1} = mCableVector;
+end
+
+% Third output is the matrix of normalized cable direction vectors
+if nargout >= 3
+    varargout{2} = mCableUnitVector;
+end
+
+% Fourth output argument...
+if nargout >= 4
+    % For the advanced algorithms we are returning the wrapping angles
+    if bUseAdvanced
+        varargout{3} = mWinchPulleyAngles;
     end
 end
 

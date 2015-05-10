@@ -65,10 +65,8 @@ function [length, varargout] = algoInverseKinematics_Simple(Pose, WinchPositions
 %   2015-04-22: Initial release
 
 
-%------------- BEGIN CODE --------------
 
-
-%%% Initialize variables
+%% Initialize variables
 % To unify variable names
 mCableAttachments = CableAttachments;
 mWinchPositions = WinchPositions;
@@ -80,10 +78,13 @@ mCableVectorUnit = zeros(3, iNumberOfWires);
 % Holds the cable lengths
 vCableLength = zeros(1, iNumberOfWires);
 % Extract the position from the pose
-vPlatformPosition = Pose(1:3);
+vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
 mPlatformRotation = reshape(Pose(4:12), 3, 3);
 
+
+
+%% Do the magic
 % Loop over every winch and ...
 for iUnit = 1:iNumberOfWires
     % ... calculate the cable vector
@@ -94,21 +95,21 @@ for iUnit = 1:iNumberOfWires
     mCableVectorUnit(:, iUnit) = mCableVector(:, iUnit)./vCableLength(iUnit);
 end
 
-%%% Output parsing
+
+
+%% Output parsing
 % First output is the cable lengths
 length = vCableLength;
 
 % Further outputs as requested
-if nargout
-    % Second output is the matrix of cable vectors from b_i to a_i
-    if nargout > 1
-        varargout{1} = mCableVector;
-    end
-    
-    % Third output is the matrix of normalized cable vectors
-    if nargout > 2
-        varargout{2} = mCableVectorUnit;
-    end
+% Second output is the matrix of cable vectors from b_i to a_i
+if nargout > 1
+    varargout{1} = mCableVector;
+end
+
+% Third output is the matrix of normalized cable vectors
+if nargout > 2
+    varargout{2} = mCableVectorUnit;
 end
 
 
