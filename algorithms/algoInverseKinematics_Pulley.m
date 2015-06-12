@@ -68,6 +68,9 @@ function [length, varargout] = algoInverseKinematics_Pulley(Pose, WinchPositions
 % Changelog:
 %   2015-04-22: Initial release
 
+%% Set extrinsic functions
+
+
 
 
 %% Initialize variables
@@ -173,7 +176,7 @@ for iUnit = 1:iNumberOfWires
 
     % Adjust the winch position given the coordinates to point C
     mWinchPositions(:, iUnit) = mWinchPositions(:, iUnit) + mRotation_kA2kO*(mRotation_kP2kA*(v_P2M_in_kP + v_M2C_in_kM));
-    vCableLengthOffset(iUnit) = degtorad(dAngleWrap_Degree)*vWinchPulleyRadius(iUnit);
+    vCableLengthOffset(iUnit) = pi/180*dAngleWrap_Degree*vWinchPulleyRadius(iUnit);
     
     % ... calculate the cable vector
     mCableVector(:, iUnit) = mWinchPositions(:, iUnit) - ( vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit) );
