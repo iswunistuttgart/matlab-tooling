@@ -92,7 +92,7 @@ vCableLengthOffset = zeros(1, iNumberOfWires);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
-mPlatformRotation = reshape(Pose(4:12), 3, 3);
+mPlatformRotation = reshape(Pose(4:12), 3, 3)';
 % Holds the rotation angle gamma and the wrapping angle beta
 mWinchPulleyAngles = zeros(2, iNumberOfWires);
 
