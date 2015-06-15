@@ -1,4 +1,4 @@
-function [length, varargout] = algoInverseKinematics_Pulley(Pose, WinchPositions, CableAttachments, WinchPulleyRadius, WinchOrientations)
+function [length, varargout] = algoInverseKinematics_Pulley(Pose, PulleyPositions, CableAttachments, PulleyRadius, PulleyOrientations)
 % ALGOINVERSEKINEMATICS_PULLEY - Perform inverse kinematics for the given
 %   pose of the virtual robot
 %   Inverse kinematics means to determine the values for the joint
@@ -13,7 +13,7 @@ function [length, varargout] = algoInverseKinematics_Pulley(Pose, WinchPositions
 %   loop can be used as well as the advanced pulley kinematics (considering
 %   pulley radius and rotatability).
 % 
-%   LENGTH = ALGOINVERSEKINEMATICS_PULLEY(POSE, WINCHPOSITIONS, CABLEATTACHMENTS)
+%   LENGTH = ALGOINVERSEKINEMATICS_PULLEY(POSE, PULLEYPOSITIONS, CABLEATTACHMENTS)
 %   performs simple inverse kinematics with the cables running from a_i to
 %   b_i for the given pose
 % 
@@ -33,20 +33,20 @@ function [length, varargout] = algoInverseKinematics_Pulley(Pose, WinchPositions
 %   something like this
 %   pose = [x, y, z, R11, R12, R13, R21, R22, R23, R31, R32, R33]
 % 
-%   WINCHPOSITIONS: Matrix of winch positions w.r.t. the world frame. Each
-%   winch has its own column and the rows are the x, y, and z-value,
-%   respectively i.e., WINCHPOSITIONS must be a matrix of 3xM values. The
-%   number of winches i.e., N, must match the number of cable attachment
+%   PULLEYPOSITIONS: Matrix of pulley positions w.r.t. the world frame. Each
+%   pulley has its own column and the rows are the x, y, and z-value,
+%   respectively i.e., PULLEYPOSITIONS must be a matrix of 3xM values. The
+%   number of pulleyes i.e., N, must match the number of cable attachment
 %   points in CABLEATTACHMENTS (i.e., its column count) and the order must
-%   mach the real linkage of winch to cable attachment on the platform
+%   mach the real linkage of pulley to cable attachment on the platform
 % 
 %   CABLEATTACHMENTS: Matrix of cable attachment points w.r.t. the
 %   platforms coordinate system. Each attachment point has its own column
 %   and the rows are the x, y, and z-value, respectively, i.e.,
 %   CABLEATTACHMENTS must be a matrix of 3xM values. The number of cables
-%   i.e., N, must match the number of winches in WINCHPOSITIONS (i.e., its
+%   i.e., N, must match the number of pulleyes in PULLEYPOSITIONS (i.e., its
 %   column count) and the order must match the real linkage of cable
-%   attachment on the platform to winch.
+%   attachment on the platform to pulley.
 % 
 %   Outputs:
 % 
@@ -54,10 +54,10 @@ function [length, varargout] = algoInverseKinematics_Pulley(Pose, WinchPositions
 %   determined using either simple or advanced kinematics
 %
 %   CABLEVECTOR: Vectors of each cable from attachment point to corrected
-%   winch point given as 3xM matrix
+%   pulley point given as 3xM matrix
 %   
 %   CABLEUNITVECTOR: Normalized vector for each cable from attachment point
-%   to its corrected winch point as 3xM matrix
+%   to its corrected pulley point as 3xM matrix
 %   
 %   CABLEWRAPANGLES: Matrix of gamma and beta angles of rotation and
 %   wrapping angle of pulley and cable on pulley respectively, given as 2xM
@@ -76,11 +76,11 @@ function [length, varargout] = algoInverseKinematics_Pulley(Pose, WinchPositions
 %% Initialize variables
 % To unify variable names
 mCableAttachments = CableAttachments;
-mWinchPositions = WinchPositions;
-vWinchPulleyRadius = WinchPulleyRadius;
-mWinchOrientations = WinchOrientations;
+mPulleyPositions = PulleyPositions;
+vPulleyRadius = PulleyRadius;
+mPulleyOrientations = PulleyOrientations;
 % Get the number of wires
-iNumberOfWires = size(mWinchPositions, 2);
+iNumberOfWires = size(mPulleyPositions, 2);
 % Holds the actual cable vector
 mCableVector = zeros(3, iNumberOfWires);
 % Holds the normalized cable vector
@@ -94,30 +94,30 @@ vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
 mPlatformRotation = reshape(Pose(4:12), 3, 3)';
 % Holds the rotation angle gamma and the wrapping angle beta
-mWinchPulleyAngles = zeros(2, iNumberOfWires);
+mPulleyAngles = zeros(2, iNumberOfWires);
 
 
 
 %% Do the magic
-% Loop over every winch and calculate the corrected winch position i.e.,
+% Loop over every pulley and calculate the corrected pulley position i.e.,
 % a_{i, corr}
 for iUnit = 1:iNumberOfWires
-    % Rotation matrix to rotate any vector given in winch coordinate
+    % Rotation matrix to rotate any vector given in pulley coordinate
     % system K_A into the global coordinate system K_O
-    mRotation_kA2kO = rotz(mWinchOrientations(3, iUnit))*roty(mWinchOrientations(2, iUnit))*rotx(mWinchOrientations(1, iUnit));
+    mRotation_kA2kO = rotz(mPulleyOrientations(3, iUnit))*roty(mPulleyOrientations(2, iUnit))*rotx(mPulleyOrientations(1, iUnit));
 
     % Vector from contact point of cable on pulley A to cable
     % attachment point on the platform B given in coordinates of system
     % A
-    v_A2B_in_kA = transpose(mRotation_kA2kO)*(vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit) - mWinchPositions(:, iUnit));
+    v_A2B_in_kA = transpose(mRotation_kA2kO)*(vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit) - mPulleyPositions(:, iUnit));
 
     % Determine the angle of rotation of the pulley to have the
     % pulley's x-axis point in the direction of the cable which points
     % towards B
     dRotationAngleAbout_kAz_Degree = atan2d(v_A2B_in_kA(2), v_A2B_in_kA(1));
-    mWinchPulleyAngles(1, iUnit) = dRotationAngleAbout_kAz_Degree;
+    mPulleyAngles(1, iUnit) = dRotationAngleAbout_kAz_Degree;
 
-    % Rotation matrix from pulley coordinate system K_P to winch
+    % Rotation matrix from pulley coordinate system K_P to pulley
     % coordinate system K_A
     mRotation_kP2kA = rotz(dRotationAngleAbout_kAz_Degree);
 
@@ -130,7 +130,7 @@ for iUnit = 1:iNumberOfWires
 
     % Vector from P to the pulley center given in the pulley coordinate
     % system K_P
-    v_P2M_in_kP = vWinchPulleyRadius(iUnit)*[1; 0; 0];
+    v_P2M_in_kP = vPulleyRadius(iUnit)*[1; 0; 0];
 
     % Closed vector loop to determine the vector from M to B in
     % coordinate system K_P: P2M + M2B = P2B. This basically also
@@ -145,7 +145,7 @@ for iUnit = 1:iNumberOfWires
     % determine the angle beta_3 to later on determine the angle of the
     % vector from M to C in the coordinate system of M. It is quite
     % simple to do so using Pythagoras: l^2 + radius^2 = M2B^2
-    dCableLength_C2B = sqrt(norm(v_M2B_in_kM)^2 - vWinchPulleyRadius(iUnit)^2);
+    dCableLength_C2B = sqrt(norm(v_M2B_in_kM)^2 - vPulleyRadius(iUnit)^2);
 
     % Determine the angle of rotation of that vector relative to the
     % x-axis of K_P. This is beta_2 in PTT's sketch
@@ -154,32 +154,32 @@ for iUnit = 1:iNumberOfWires
     % Now we can determine the angle between M2B and M2C using
     % trigonometric functions because cos(beta_3) = radius/M2B and as
     % well sin(beta_3) = L/M2B or tan(beta_3) = L/radius
-    dAngleBetween_M2B_and_M2C_Degree = atand(dCableLength_C2B/vWinchPulleyRadius(iUnit));
+    dAngleBetween_M2B_and_M2C_Degree = atand(dCableLength_C2B/vPulleyRadius(iUnit));
 
     % Angle between the x-axis of M and the vector from M to C given in
     % coordinate system K_M and in degree
     dAngleBetween_xM_and_M2C_Degree = dAngleBetween_M2B_and_M2C_Degree + dAngleBetween_M2B_and_xM_Degree;
 
-    % Vector from winch center M to adjusted cable release point C in
+    % Vector from pulley center M to adjusted cable release point C in
     % system K_M is nothing but the scaled x-axis rotated about the
     % y-axis with previsouly determined angle beta2
     mRotation_kC2kM = roty(dAngleBetween_xM_and_M2C_Degree);
-    v_M2C_in_kM = transpose(mRotation_kC2kM)*(vWinchPulleyRadius(iUnit).*[1; 0; 0]);
+    v_M2C_in_kM = transpose(mRotation_kC2kM)*(vPulleyRadius(iUnit).*[1; 0; 0]);
 
     % Wrapping angle can be calculated in to ways, either by getting
     % the angle between the scaled negative x-axis (M to P) and the
     % vector M to C, or by getting the angle between the scaled
     % positive x-axis and the vector M to C
-    v_M2P_in_kM = vWinchPulleyRadius(iUnit).*[-1; 0; 0];
+    v_M2P_in_kM = vPulleyRadius(iUnit).*[-1; 0; 0];
     dAngleWrap_Degree = acosd(dot(v_M2P_in_kM, v_M2C_in_kM)/(norm(v_M2P_in_kM)*norm(v_M2C_in_kM)));
-    mWinchPulleyAngles(2, iUnit) = dAngleWrap_Degree;
+    mPulleyAngles(2, iUnit) = dAngleWrap_Degree;
 
-    % Adjust the winch position given the coordinates to point C
-    mWinchPositions(:, iUnit) = mWinchPositions(:, iUnit) + mRotation_kA2kO*(mRotation_kP2kA*(v_P2M_in_kP + v_M2C_in_kM));
-    vCableLengthOffset(iUnit) = pi/180*dAngleWrap_Degree*vWinchPulleyRadius(iUnit);
+    % Adjust the pulley position given the coordinates to point C
+    mPulleyPositions(:, iUnit) = mPulleyPositions(:, iUnit) + mRotation_kA2kO*(mRotation_kP2kA*(v_P2M_in_kP + v_M2C_in_kM));
+    vCableLengthOffset(iUnit) = pi/180*dAngleWrap_Degree*vPulleyRadius(iUnit);
     
     % ... calculate the cable vector
-    mCableVector(:, iUnit) = mWinchPositions(:, iUnit) - ( vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit) );
+    mCableVector(:, iUnit) = mPulleyPositions(:, iUnit) - ( vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit) );
     % ... calculate the cable length
     vCableLength(iUnit) = norm(mCableVector(:, iUnit)) + vCableLengthOffset(iUnit);
     % ... calculate the direciton of the unit vector of the current cable
@@ -206,7 +206,7 @@ end
 % Fourth output will be the revolving and wrapping angles of the
 % pulleys
 if nargout >= 4
-    varargout{3} = mWinchPulleyAngles;
+    varargout{3} = mPulleyAngles;
 end
 
 

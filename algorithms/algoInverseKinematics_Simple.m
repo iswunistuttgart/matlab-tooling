@@ -1,4 +1,4 @@
-function [length, varargout] = algoInverseKinematics_Simple(Pose, WinchPositions, CableAttachments)
+function [length, varargout] = algoInverseKinematics_Simple(Pose, PulleyPositions, CableAttachments)
 % ALGOINVERSEKINEMATICS_SIMPLE - Perform inverse kinematics for the given
 %   pose of the virtual robot
 %   Inverse kinematics means to determine the values for the joint
@@ -13,7 +13,7 @@ function [length, varargout] = algoInverseKinematics_Simple(Pose, WinchPositions
 %   loop can be used as well as the advanced pulley kinematics (considering
 %   pulley radius and rotatability).
 % 
-%   LENGTH = ALGOINVERSEKINEMATICS_SIMPLE(POSE, WINCHPOSITIONS, CABLEATTACHMENTS)
+%   LENGTH = ALGOINVERSEKINEMATICS_SIMPLE(POSE, PULLEYPOSITIONS, CABLEATTACHMENTS)
 %   performs simple inverse kinematics with the cables running from a_i to
 %   b_i for the given pose
 % 
@@ -33,20 +33,20 @@ function [length, varargout] = algoInverseKinematics_Simple(Pose, WinchPositions
 %   something like this
 %   pose = [x, y, z, R11, R12, R13, R21, R22, R23, R31, R32, R33]
 % 
-%   WINCHPOSITIONS: Matrix of winch positions w.r.t. the world frame. Each
-%   winch has its own column and the rows are the x, y, and z-value,
-%   respectively i.e., WINCHPOSITIONS must be a matrix of 3xM values. The
-%   number of winches i.e., N, must match the number of cable attachment
+%   PULLEYPOSITIONS: Matrix of pulley positions w.r.t. the world frame. Each
+%   pulley has its own column and the rows are the x, y, and z-value,
+%   respectively i.e., PULLEYPOSITIONS must be a matrix of 3xM values. The
+%   number of pulleyes i.e., N, must match the number of cable attachment
 %   points in CABLEATTACHMENTS (i.e., its column count) and the order must
-%   mach the real linkage of winch to cable attachment on the platform
+%   mach the real linkage of pulley to cable attachment on the platform
 % 
 %   CABLEATTACHMENTS: Matrix of cable attachment points w.r.t. the
 %   platforms coordinate system. Each attachment point has its own column
 %   and the rows are the x, y, and z-value, respectively, i.e.,
 %   CABLEATTACHMENTS must be a matrix of 3xM values. The number of cables
-%   i.e., N, must match the number of winches in WINCHPOSITIONS (i.e., its
+%   i.e., N, must match the number of pulleyes in PULLEYPOSITIONS (i.e., its
 %   column count) and the order must match the real linkage of cable
-%   attachment on the platform to winch.
+%   attachment on the platform to pulley.
 % 
 %   Outputs:
 % 
@@ -54,10 +54,10 @@ function [length, varargout] = algoInverseKinematics_Simple(Pose, WinchPositions
 %   determined using either simple or advanced kinematics
 %
 %   CABLEVECTOR: Vectors of each cable from attachment point to corrected
-%   winch point given as 3xM matrix
+%   pulley point given as 3xM matrix
 %   
 %   CABLEUNITVECTOR: Normalized vector for each cable from attachment point
-%   to its corrected winch point as 3xM matrix
+%   to its corrected pulley point as 3xM matrix
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
 % Date: 2015-04-22
@@ -69,8 +69,8 @@ function [length, varargout] = algoInverseKinematics_Simple(Pose, WinchPositions
 %% Initialize variables
 % To unify variable names
 mCableAttachments = CableAttachments;
-mWinchPositions = WinchPositions;
-iNumberOfWires = size(mWinchPositions, 2);
+mPulleyPositions = PulleyPositions;
+iNumberOfWires = size(mPulleyPositions, 2);
 % Holds the actual cable vector
 mCableVector = zeros(3, iNumberOfWires);
 % Holds the normalized cable vector
@@ -85,10 +85,10 @@ mPlatformRotation = reshape(Pose(4:12), 3, 3)';
 
 
 %% Do the magic
-% Loop over every winch and ...
+% Loop over every pulley and ...
 for iUnit = 1:iNumberOfWires
     % ... calculate the cable vector
-    mCableVector(:, iUnit) = mWinchPositions(:, iUnit) - ( vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit) );
+    mCableVector(:, iUnit) = mPulleyPositions(:, iUnit) - ( vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit) );
     % ... calculate the cable length
     vCableLength(iUnit) = norm(mCableVector(:, iUnit));
     % ... calculate the direciton of the unit vector of the current cable
