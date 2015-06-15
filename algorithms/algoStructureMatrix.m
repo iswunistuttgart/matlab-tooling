@@ -27,9 +27,12 @@ function StructureMatrix = algoStructureMatrix(CableAttachments, CableVectors, v
 %   given the cable vectors. Is of size 6xM
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-04-22
+% Date: 2015-06-13
 % Changelog:
-%   2015-04-22: Initial release
+%   2015-06-13:
+%       * Add optional argument for the current rotation to method
+%   2015-04-22:
+%       * Initial release
 
 
 
@@ -42,6 +45,15 @@ mStructureMatrix = zeros(6, iNumberOfWires);
 mCableVectors = CableVectors;
 mCableAttachments = CableAttachments;
 
+%%% Process additional arguments
+% Third argument can be the platform's rotation at the given point
+if numel(varargin) >= 1
+    mRotation = varargin{1};
+% Platform rotation defaults to the "zero"-rotation if no argument given
+else
+    mRotation = eye(3);
+end
+
 
 
 %% Create the structure matrix
@@ -52,9 +64,9 @@ for iUnit = 1:iNumberOfWires
         mCableVectors(:, iUnit) = mCableVectors(:, iUnit)./norm(mCableVectors(:, iUnit));
     end
     
-    % Each column of A' is [u, cross((R*b), u)]';
+    % Each column of A' is [u; cross((R*b), u)]';
     mStructureMatrix(:, iUnit) = [mCableVectors(:, iUnit); ...
-                                    cross(mCableAttachments(:, iUnit), mCableVectors(:, iUnit))];
+                                    cross(mRotation*mCableAttachments(:, iUnit), mCableVectors(:, iUnit))];
 end
 
 
