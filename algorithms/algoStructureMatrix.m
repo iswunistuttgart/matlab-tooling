@@ -59,13 +59,13 @@ end
 % Loop over the wires being placed into the columns of A'
 for iUnit = 1:nNumberOfWires
     % Ensure the cable vector is normalized
-    if norm(aCableVectors(:, iUnit)) ~= 1
-        aCableVectors(:, iUnit) = aCableVectors(:, iUnit)./norm(aCableVectors(:, iUnit));
+    if norm(aCableVectors(:,iUnit)) ~= 1
+        aCableVectors(:,iUnit) = aCableVectors(:,iUnit)./norm(aCableVectors(:,iUnit));
     end
     
     % Each column of A' is [u; cross((R*b), u)]';
-    aStructureMatrix(:, iUnit) = [aCableVectors(:, iUnit); ...
-                                    cross(aRotation*aCableAttachments(:, iUnit), aCableVectors(:, iUnit))];
+    aStructureMatrix(:,iUnit) = [aCableVectors(:,iUnit); ...
+                                    cross(aRotation*aCableAttachments(:,iUnit), aCableVectors(:,iUnit))];
 end
 
 

@@ -53,13 +53,13 @@ nNumberOfWires = size(aStructureMatrixAt, 2);
 
 % Force minimum, can be given a scalar or a vector
 if isscalar(ForceMinimum)
-    vForceMinimum = ForceMinimum.*ones(nNumberOfWires, 1);
+    vForceMinimum = ForceMinimum.*ones(1, nNumberOfWires);
 else
     vForceMinimum = ForceMinimum;
 end
 % Force maximum, can be given a scalar or a vector
 if isscalar(ForceMaximum)
-    vForceMaximum = ForceMaximum.*ones(nNumberOfWires, 1);
+    vForceMaximum = ForceMaximum.*ones(1, nNumberOfWires);
 else
     vForceMaximum = ForceMaximum;
 end
@@ -67,7 +67,7 @@ end
 vForceMean = 0.5.*(vForceMinimum + vForceMaximum);
 
 % Initialize the force distribution holding vector
-vForceDistribution = zeros(nNumberOfWires, 1);
+vForceDistribution = zeros(1, nNumberOfWires);
 
 
 
@@ -123,7 +123,7 @@ else
             vReducedForceMaximum(iReducedUnit) = vForceMaximum(iUnit);
             % And also reduce the structure matrix omitting the violated
             % cable's column
-            aReducedStructureMatrixAt(:, iReducedUnit) = aStructureMatrixAt(:, iUnit);
+            aReducedStructureMatrixAt(:,iReducedUnit) = aStructureMatrixAt(:,iUnit);
             
             % Counter so we know what our 
             iReducedUnit = iReducedUnit + 1;
@@ -134,10 +134,10 @@ else
         vReducedWrench = vWrench;
         % Modify external wrench by the violated force, either the maximum
         if iViolationType == 1
-            vReducedWrench = vReducedWrench + aStructureMatrixAt(:, iViolationIndex)*vForceMaximum(iUnit);
+            vReducedWrench = vReducedWrench + aStructureMatrixAt(:,iViolationIndex)*vForceMaximum(iUnit);
         % or minimum force
         else
-            vReducedWrench = vReducedWrench + aStructureMatrixAt(:, iViolationIndex)*vForceMinimum(iUnit);
+            vReducedWrench = vReducedWrench + aStructureMatrixAt(:,iViolationIndex)*vForceMinimum(iUnit);
         end
         
         % Recursively call the algorithm for advanced closed form, yet this

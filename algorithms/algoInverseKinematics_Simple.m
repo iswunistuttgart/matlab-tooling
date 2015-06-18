@@ -80,7 +80,7 @@ vCableLength = zeros(1, nNumberOfWires);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
-aPlatformRotation = reshape(Pose(4:12), 3, 3)';
+aPlatformRotation = reshape(Pose(4:12), 3, 3).';
 
 
 
@@ -88,11 +88,11 @@ aPlatformRotation = reshape(Pose(4:12), 3, 3)';
 % Loop over every pulley and ...
 for iUnit = 1:nNumberOfWires
     % ... calculate the cable vector
-    aCableVector(:, iUnit) = aPulleyPositions(:, iUnit) - ( vPlatformPosition + aPlatformRotation*aCableAttachments(:, iUnit) );
+    aCableVector(:,iUnit) = aPulleyPositions(:,iUnit) - ( vPlatformPosition + aPlatformRotation*aCableAttachments(:,iUnit) );
     % ... calculate the cable length
-    vCableLength(iUnit) = norm(aCableVector(:, iUnit));
+    vCableLength(iUnit) = norm(aCableVector(:,iUnit));
     % ... calculate the direciton of the unit vector of the current cable
-    aCableVectorUnit(:, iUnit) = aCableVector(:, iUnit)./vCableLength(iUnit);
+    aCableVectorUnit(:,iUnit) = aCableVector(:,iUnit)./vCableLength(iUnit);
 end
 
 
