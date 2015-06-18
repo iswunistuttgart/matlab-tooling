@@ -75,47 +75,47 @@ function [length, varargout] = algoInverseKinematics_Pulley(Pose, PulleyPosition
 
 %% Initialize variables
 % To unify variable names
-mCableAttachments = CableAttachments;
-mPulleyPositions = PulleyPositions;
+aCableAttachments = CableAttachments;
+aPulleyPositions = PulleyPositions;
 vPulleyRadius = PulleyRadius;
-mPulleyOrientations = PulleyOrientations;
+aPulleyOrientations = PulleyOrientations;
 % Get the number of wires
-iNumberOfWires = size(mPulleyPositions, 2);
+nNumberOfWires = size(aPulleyPositions, 2);
 % Holds the actual cable vector
-mCableVector = zeros(3, iNumberOfWires);
+aCableVector = zeros(3, nNumberOfWires);
 % Holds the normalized cable vector
-mCableVectorUnit = zeros(3, iNumberOfWires);
+aCableVectorUnit = zeros(3, nNumberOfWires);
 % Holds the cable lengths
-vCableLength = zeros(1, iNumberOfWires);
+vCableLength = zeros(1, nNumberOfWires);
 % Holds offset to the cable lengths
-vCableLengthOffset = zeros(1, iNumberOfWires);
+vCableLengthOffset = zeros(1, nNumberOfWires);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
-mPlatformRotation = reshape(Pose(4:12), 3, 3)';
+aPlatformRotation = reshape(Pose(4:12), 3, 3)';
 % Holds the rotation angle gamma and the wrapping angle beta
-mPulleyAngles = zeros(2, iNumberOfWires);
+aPulleyAngles = zeros(2, nNumberOfWires);
 
 
 
 %% Do the magic
 % Loop over every pulley and calculate the corrected pulley position i.e.,
 % a_{i, corr}
-for iUnit = 1:iNumberOfWires
+for iUnit = 1:nNumberOfWires
     % Rotation matrix to rotate any vector given in pulley coordinate
     % system K_A into the global coordinate system K_O
-    mRotation_kA2kO = rotz(mPulleyOrientations(3, iUnit))*roty(mPulleyOrientations(2, iUnit))*rotx(mPulleyOrientations(1, iUnit));
+    mRotation_kA2kO = rotz(aPulleyOrientations(3, iUnit))*roty(aPulleyOrientations(2, iUnit))*rotx(aPulleyOrientations(1, iUnit));
 
     % Vector from contact point of cable on pulley A to cable
     % attachment point on the platform B given in coordinates of system
     % A
-    v_A2B_in_kA = transpose(mRotation_kA2kO)*(vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit) - mPulleyPositions(:, iUnit));
+    v_A2B_in_kA = transpose(mRotation_kA2kO)*(vPlatformPosition + aPlatformRotation*aCableAttachments(:, iUnit) - aPulleyPositions(:, iUnit));
 
     % Determine the angle of rotation of the pulley to have the
     % pulley's x-axis point in the direction of the cable which points
     % towards B
     dRotationAngleAbout_kAz_Degree = atan2d(v_A2B_in_kA(2), v_A2B_in_kA(1));
-    mPulleyAngles(1, iUnit) = dRotationAngleAbout_kAz_Degree;
+    aPulleyAngles(1, iUnit) = dRotationAngleAbout_kAz_Degree;
 
     % Rotation matrix from pulley coordinate system K_P to pulley
     % coordinate system K_A
@@ -172,18 +172,18 @@ for iUnit = 1:iNumberOfWires
     % positive x-axis and the vector M to C
     v_M2P_in_kM = vPulleyRadius(iUnit).*[-1; 0; 0];
     dAngleWrap_Degree = acosd(dot(v_M2P_in_kM, v_M2C_in_kM)/(norm(v_M2P_in_kM)*norm(v_M2C_in_kM)));
-    mPulleyAngles(2, iUnit) = dAngleWrap_Degree;
+    aPulleyAngles(2, iUnit) = dAngleWrap_Degree;
 
     % Adjust the pulley position given the coordinates to point C
-    mPulleyPositions(:, iUnit) = mPulleyPositions(:, iUnit) + mRotation_kA2kO*(mRotation_kP2kA*(v_P2M_in_kP + v_M2C_in_kM));
+    aPulleyPositions(:, iUnit) = aPulleyPositions(:, iUnit) + mRotation_kA2kO*(mRotation_kP2kA*(v_P2M_in_kP + v_M2C_in_kM));
     vCableLengthOffset(iUnit) = pi/180*dAngleWrap_Degree*vPulleyRadius(iUnit);
     
     % ... calculate the cable vector
-    mCableVector(:, iUnit) = mPulleyPositions(:, iUnit) - ( vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit) );
+    aCableVector(:, iUnit) = aPulleyPositions(:, iUnit) - ( vPlatformPosition + aPlatformRotation*aCableAttachments(:, iUnit) );
     % ... calculate the cable length
-    vCableLength(iUnit) = norm(mCableVector(:, iUnit)) + vCableLengthOffset(iUnit);
+    vCableLength(iUnit) = norm(aCableVector(:, iUnit)) + vCableLengthOffset(iUnit);
     % ... calculate the direciton of the unit vector of the current cable
-    mCableVectorUnit(:, iUnit) = mCableVector(:, iUnit)./vCableLength(iUnit);
+    aCableVectorUnit(:, iUnit) = aCableVector(:, iUnit)./vCableLength(iUnit);
 end
 
 
@@ -195,18 +195,18 @@ length = vCableLength;
 % Further outputs as requested
 % Second output is the matrix of cable vectors from b_i to a_i
 if nargout >= 2
-    varargout{1} = mCableVector;
+    varargout{1} = aCableVector;
 end
 
 % Third output is the matrix of normalized cable vectors
 if nargout >= 3
-    varargout{2} = mCableVectorUnit;
+    varargout{2} = aCableVectorUnit;
 end
 
 % Fourth output will be the revolving and wrapping angles of the
 % pulleys
 if nargout >= 4
-    varargout{3} = mPulleyAngles;
+    varargout{3} = aPulleyAngles;
 end
 
 

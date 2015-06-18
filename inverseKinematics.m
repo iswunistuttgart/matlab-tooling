@@ -125,7 +125,7 @@ valFcn_CableAttachmens = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows',
 addRequired(ip, 'CableAttachments', valFcn_CableAttachmens);
 
 % We allow the user to explicitley flag which algorithm to use
-valFcn_Algorithm = @(x) any(validatestring(x, {'standard', 'pulley', 'catenary'}, mfilename, 'UseAdvanced'));
+valFcn_Algorithm = @(x) any(validatestring(lower(x), {'standard', 'pulley', 'catenary', 'catenary+pulley'}, mfilename, 'Algorithm'));
 addOptional(ip, 'Algorithm', 'standard', valFcn_Algorithm);
 
 % We might want to use the pulley orientations
@@ -136,6 +136,14 @@ addParameter(ip, 'PulleyOrientations', zeros(3, size(PulleyPositions, 2)), valFc
 % kinematics
 valFcn_PulleyRadius = @(x) validateattributes(x, {'numeric'}, {'vector', 'ncols', size(PulleyPositions, 2)}, mfilename, 'PulleyRadius');
 addParameter(ip, 'PulleyRadius', zeros(1, size(PulleyPositions, 2)), valFcn_PulleyRadius);
+
+% Use needs some more output? Of course, just use 'Verbose', 'yes' or 'on'
+valFcn_Verbose = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no', 'please'}, mfilename, 'Verbose'));
+addParameter(ip, 'Verbose', 'off', valFcn_Verbose);
+
+% Return a struct as the only return value of this function?
+valFcn_ReturnStruct = @(x) any(validatestring(lower(x), {'off', 'no', 'on', 'yes'}, mfilename, 'ReturnStruct'));
+addParameter(ip, 'ReturnStruct', 'off', valFcn_ReturnStruct);
 
 % Configuratio nfor the input parser
 ip.KeepUnmatched = true;
@@ -149,10 +157,12 @@ parse(ip, Pose, PulleyPositions, CableAttachments, varargin{:});
 %% Parse variables so we can use them natively
 chAlgorithm = ip.Results.Algorithm;
 vPlatformPose = ip.Results.Pose;
-mPulleyPositions = ip.Results.PulleyPositions;
-mPulleyOrientations = ip.Results.PulleyOrientations;
+aPulleyPositions = ip.Results.PulleyPositions;
+aPulleyOrientations = ip.Results.PulleyOrientations;
 vPulleyRadius = ip.Results.PulleyRadius;
-mCableAttachments = ip.Results.CableAttachments;
+aCableAttachments = ip.Results.CableAttachments;
+chVerbose = inCharToValidArgument(ip.Results.Verbose);
+chReturnStruct = inCharToValidArgument(ip.Results.ReturnStruct);
 
 
 
@@ -161,38 +171,77 @@ mCableAttachments = ip.Results.CableAttachments;
 switch lower(chAlgorithm)
     case 'catenary'
 %         [vCableLength, mCableVector, mCableUnitVector, mCableLine] = algoInverseKinematics_Catenary(vPlatformPose, mPulleyPositions, mCableAttachments, mPulleyOrientations, ?.?.?);
+    case 'catenary+pulley'
+%         [vCableLength, mCableVector, mCableUnitVector, mCableLine] = algoInverseKinematics_CatenaryPulley(vPlatformPose, mPulleyPositions, mCableAttachments, mPulleyOrientations, ?.?.?);
     % Advanced kinematics algorithm (including pulley radius)
     case 'pulley'
-        [vCableLength, mCableVector, mCableUnitVector, mPulleyAngles] = algoInverseKinematics_Pulley(vPlatformPose, mPulleyPositions, mCableAttachments, vPulleyRadius, mPulleyOrientations);
+        [vCableLength, aCableVector, aCableUnitVector, aPulleyAngles] = algoInverseKinematics_Pulley(vPlatformPose, aPulleyPositions, aCableAttachments, vPulleyRadius, aPulleyOrientations);
     % Simple kinematics algorithm (no pulley radius)
     case 'standard'
-        [vCableLength, mCableVector, mCableUnitVector] = algoInverseKinematics_Simple(vPlatformPose, mPulleyPositions, mCableAttachments);
+        [vCableLength, aCableVector, aCableUnitVector] = algoInverseKinematics_Simple(vPlatformPose, aPulleyPositions, aCableAttachments);
+    otherwise
+        [vCableLength, aCableVector, aCableUnitVector] = algoInverseKinematics_Simple(vPlatformPose, aPulleyPositions, aCableAttachments);
 end
 
 
 
 %% Assign output quantities
-length = vCableLength;
+if strcmp(chReturnStruct, 'on')
+    length = struct();
+    length.Length = vCableLength;
+    length.Vector = aCableVector;
+    length.UnitVector = aCableUnitVector;
+    length.PulleyAngles = zeros(2, size(aPulleyPositions, 2));
+    
+    switch chAlgorithm
+        case 'catenary'
+            
+        case 'catenary+pulley'
+            
+        case 'pulley'
+            length.PulleyAngles = aPulleyAngles;
+        otherwise
+    end
+% Return as matrices/vectors, not as struct
+else
+    length = vCableLength;
 
-%%% Assign all the other, optional output quantities
-% Second output argument is the matrix of cable directions vectors
-if nargout >= 2
-    varargout{1} = mCableVector;
-end
+    %%% Assign all the other, optional output quantities
+    % Second output argument is the matrix of cable directions vectors
+    if nargout >= 2
+        varargout{1} = aCableVector;
+    end
 
-% Third output is the matrix of normalized cable direction vectors
-if nargout >= 3
-    varargout{2} = mCableUnitVector;
-end
+    % Third output is the matrix of normalized cable direction vectors
+    if nargout >= 3
+        varargout{2} = aCableUnitVector;
+    end
 
-% Fourth output argument...
-if nargout >= 4
-    % For the advanced algorithms we are returning the wrapping angles
-    if chAlgorithm
-        varargout{3} = mPulleyAngles;
+    % Fourth output argument...
+    if nargout >= 4
+        % For the advanced algorithms we are returning the wrapping angles
+        switch chAlgorithm
+            case 'pulley'
+                varargout{3} = aPulleyAngles;
+            otherwise
+        end
     end
 end
 
+
+end
+
+
+function out = inCharToValidArgument(in)
+
+switch lower(in)
+    case {'on', 'yes', 'please'}
+        out = 'on';
+    case {'off', 'no', 'never'}
+        out = 'off';
+    otherwise
+        out = 'off';
+end
 
 end
 

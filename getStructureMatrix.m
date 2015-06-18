@@ -64,19 +64,19 @@ parse(ip, CableAttachments, CableVectors, varargin{:});
 
 
 %% Parse variables so we can use them natively
-mCableAttachments = ip.Results.CableAttachments;
-mCableVectors = ip.Results.CableVectors;
-mRotation = ip.Results.Rotation;
+aCableAttachments = ip.Results.CableAttachments;
+aCableVectors = ip.Results.CableVectors;
+aRotation = ip.Results.Rotation;
 
 
 
 %% Do the magic
-mStructureMatrix = algoStructureMatrix(mRotation*mCableAttachments, mCableVectors);
+aStructureMatrix = algoStructureMatrix(aRotation*aCableAttachments, aCableVectors);
 
 
 
 %% Assign output quantities
-StructureMatrix = mStructureMatrix;
+StructureMatrix = aStructureMatrix;
 
 
 end

@@ -48,19 +48,19 @@ function [Distribution, varargout] = algoForceDistribution_ClosedForm(Wrench, St
 % Wrench
 vWrench = Wrench;
 % Structure matrix to determine force distribution for
-mStructureMatrixAt = StructureMatrix;
+aStructureMatrixAt = StructureMatrix;
 % Number of cables (is being used quite often in the following code)
-iNumberOfWires = size(mStructureMatrixAt, 2);
+nNumberOfWires = size(aStructureMatrixAt, 2);
 
 % Force minimum, can be given a scalar or a vector
 if isscalar(ForceMinimum)
-    vForceMinimum = ForceMinimum.*ones(iNumberOfWires, 1);
+    vForceMinimum = ForceMinimum.*ones(nNumberOfWires, 1);
 else
     vForceMinimum = ForceMinimum(:);
 end
 % Force maximum, can be given a scalar or a vector
 if isscalar(ForceMaximum)
-    vForceMaximum = ForceMaximum.*ones(iNumberOfWires, 1);
+    vForceMaximum = ForceMaximum.*ones(nNumberOfWires, 1);
 else
     vForceMaximum = ForceMaximum(:);
 end
@@ -72,21 +72,21 @@ vForceMean = 0.5.*(vForceMinimum + vForceMaximum);
 %% Do the magic
 % Simple case where the number of wires matches the number of degrees of
 % freedom, we can just solve the linear equation system At*f = -w;
-if issquare(mStructureMatrixAt)
-    mForceDistribution = mStructureMatrixAt\(-vWrench);
+if issquare(aStructureMatrixAt)
+    aForceDistribution = aStructureMatrixAt\(-vWrench);
 % Non standard case, where we have more cables than degrees of freedom
 else
     % Solve A^t f_v = - ( w + A^t f_m )
     % Determine the pseudo inverse of A^t
-    mStructureMatrixPseudoInverse = transpose(mStructureMatrixAt)/(mStructureMatrixAt*transpose(mStructureMatrixAt));
+    aStructureMatrixPseudoInverse = transpose(aStructureMatrixAt)/(aStructureMatrixAt*transpose(aStructureMatrixAt));
     % And determine the force distribution
-    mForceDistribution = vForceMean - mStructureMatrixPseudoInverse*(vWrench + mStructureMatrixAt*vForceMean);
+    aForceDistribution = vForceMean - aStructureMatrixPseudoInverse*(vWrench + aStructureMatrixAt*vForceMean);
 end
 
 
 
 %% Create output quantities
-Distribution = mForceDistribution;
+Distribution = aForceDistribution;
 
 
 end

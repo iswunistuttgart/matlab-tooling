@@ -1,4 +1,4 @@
-function StructureMatrix = algoStructureMatrix(CableAttachments, CableVectors, varargin)
+function StructureMatrix = algoStructureMatrix(CableAttachments, CableVectors, Rotation)
 % ALGOSTRUCTUREMATRIX - Calculate the structure matrix for the given cable
 %   attachment points and cable vectors
 % 
@@ -38,41 +38,40 @@ function StructureMatrix = algoStructureMatrix(CableAttachments, CableVectors, v
 
 %% Parse Variables
 % Get number of wires
-iNumberOfWires = size(CableAttachments, 2);
+nNumberOfWires = size(CableAttachments, 2);
 % Create the structure matrix's matrix
-mStructureMatrix = zeros(6, iNumberOfWires);
+aStructureMatrix = zeros(6, nNumberOfWires);
 % Keeping variable names consistent
-mCableVectors = CableVectors;
-mCableAttachments = CableAttachments;
+aCableVectors = CableVectors;
+aCableAttachments = CableAttachments;
 
-%%% Process additional arguments
-% Third argument can be the platform's rotation at the given point
-if numel(varargin) >= 1
-    mRotation = varargin{1};
-% Platform rotation defaults to the "zero"-rotation if no argument given
+% Rotation may be given or not, so check for its existence
+if exist('Rotation', 'var')
+    aRotation = Rotation;
+% Platform rotation defaults to the "zero"-rotation if not provided
 else
-    mRotation = eye(3);
+    aRotation = eye(3);
 end
 
 
 
 %% Create the structure matrix
 % Loop over the wires being placed into the columns of A'
-for iUnit = 1:iNumberOfWires
+for iUnit = 1:nNumberOfWires
     % Ensure the cable vector is normalized
-    if norm(mCableVectors(:, iUnit)) ~= 1
-        mCableVectors(:, iUnit) = mCableVectors(:, iUnit)./norm(mCableVectors(:, iUnit));
+    if norm(aCableVectors(:, iUnit)) ~= 1
+        aCableVectors(:, iUnit) = aCableVectors(:, iUnit)./norm(aCableVectors(:, iUnit));
     end
     
     % Each column of A' is [u; cross((R*b), u)]';
-    mStructureMatrix(:, iUnit) = [mCableVectors(:, iUnit); ...
-                                    cross(mRotation*mCableAttachments(:, iUnit), mCableVectors(:, iUnit))];
+    aStructureMatrix(:, iUnit) = [aCableVectors(:, iUnit); ...
+                                    cross(aRotation*aCableAttachments(:, iUnit), aCableVectors(:, iUnit))];
 end
 
 
 
 %% Assign output quantities
-StructureMatrix = mStructureMatrix;
+StructureMatrix = aStructureMatrix;
 
 
 end

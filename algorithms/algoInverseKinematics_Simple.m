@@ -68,31 +68,31 @@ function [length, varargout] = algoInverseKinematics_Simple(Pose, PulleyPosition
 
 %% Initialize variables
 % To unify variable names
-mCableAttachments = CableAttachments;
-mPulleyPositions = PulleyPositions;
-iNumberOfWires = size(mPulleyPositions, 2);
+aCableAttachments = CableAttachments;
+aPulleyPositions = PulleyPositions;
+nNumberOfWires = size(aPulleyPositions, 2);
 % Holds the actual cable vector
-mCableVector = zeros(3, iNumberOfWires);
+aCableVector = zeros(3, nNumberOfWires);
 % Holds the normalized cable vector
-mCableVectorUnit = zeros(3, iNumberOfWires);
+aCableVectorUnit = zeros(3, nNumberOfWires);
 % Holds the cable lengths
-vCableLength = zeros(1, iNumberOfWires);
+vCableLength = zeros(1, nNumberOfWires);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
-mPlatformRotation = reshape(Pose(4:12), 3, 3)';
+aPlatformRotation = reshape(Pose(4:12), 3, 3)';
 
 
 
 %% Do the magic
 % Loop over every pulley and ...
-for iUnit = 1:iNumberOfWires
+for iUnit = 1:nNumberOfWires
     % ... calculate the cable vector
-    mCableVector(:, iUnit) = mPulleyPositions(:, iUnit) - ( vPlatformPosition + mPlatformRotation*mCableAttachments(:, iUnit) );
+    aCableVector(:, iUnit) = aPulleyPositions(:, iUnit) - ( vPlatformPosition + aPlatformRotation*aCableAttachments(:, iUnit) );
     % ... calculate the cable length
-    vCableLength(iUnit) = norm(mCableVector(:, iUnit));
+    vCableLength(iUnit) = norm(aCableVector(:, iUnit));
     % ... calculate the direciton of the unit vector of the current cable
-    mCableVectorUnit(:, iUnit) = mCableVector(:, iUnit)./vCableLength(iUnit);
+    aCableVectorUnit(:, iUnit) = aCableVector(:, iUnit)./vCableLength(iUnit);
 end
 
 
@@ -104,12 +104,12 @@ length = vCableLength;
 % Further outputs as requested
 % Second output is the matrix of cable vectors from b_i to a_i
 if nargout > 1
-    varargout{1} = mCableVector;
+    varargout{1} = aCableVector;
 end
 
 % Third output is the matrix of normalized cable vectors
 if nargout > 2
-    varargout{2} = mCableVectorUnit;
+    varargout{2} = aCableVectorUnit;
 end
 
 

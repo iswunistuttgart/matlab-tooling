@@ -47,19 +47,19 @@ function [Distribution, varargout] = algoForceDistribution_AdvancedClosedForm(Wr
 % Wrench
 vWrench = Wrench;
 % Structure matrix to determine force distribution for
-mStructureMatrixAt = StructureMatrix;
+aStructureMatrixAt = StructureMatrix;
 % Number of cables (is being used quite often in the following code)
-iNumberOfWires = size(mStructureMatrixAt, 2);
+nNumberOfWires = size(aStructureMatrixAt, 2);
 
 % Force minimum, can be given a scalar or a vector
 if isscalar(ForceMinimum)
-    vForceMinimum = ForceMinimum.*ones(iNumberOfWires, 1);
+    vForceMinimum = ForceMinimum.*ones(nNumberOfWires, 1);
 else
     vForceMinimum = ForceMinimum;
 end
 % Force maximum, can be given a scalar or a vector
 if isscalar(ForceMaximum)
-    vForceMaximum = ForceMaximum.*ones(iNumberOfWires, 1);
+    vForceMaximum = ForceMaximum.*ones(nNumberOfWires, 1);
 else
     vForceMaximum = ForceMaximum;
 end
@@ -67,22 +67,22 @@ end
 vForceMean = 0.5.*(vForceMinimum + vForceMaximum);
 
 % Initialize the force distribution holding vector
-vForceDistribution = zeros(iNumberOfWires, 1);
+vForceDistribution = zeros(nNumberOfWires, 1);
 
 
 
 %% Do the magic
 % Simple case where the number of wires matches the number of degrees of
 % freedom, we can just solve the linear equation system At*f = -w;
-if issquare(mStructureMatrixAt)
-    vForceDistribution = mStructureMatrixAt\(-vWrench);
+if issquare(aStructureMatrixAt)
+    vForceDistribution = aStructureMatrixAt\(-vWrench);
 % Non standard case, where we have more cables than degrees of freedom
 else
     % Solve A^t f_v & = - ( w + A^t f_m )
     % Determine the pseudo inverse of A^t
-    mStructureMatrixPseudeoInverse = transpose(mStructureMatrixAt)/(mStructureMatrixAt*transpose(mStructureMatrixAt));
+    aStructureMatrixPseudeoInverse = transpose(aStructureMatrixAt)/(aStructureMatrixAt*transpose(aStructureMatrixAt));
     % And determine the force distribution
-    vForceDistribution = vForceMean - mStructureMatrixPseudeoInverse*(vWrench + mStructureMatrixAt*vForceMean);
+    vForceDistribution = vForceMean - aStructureMatrixPseudeoInverse*(vWrench + aStructureMatrixAt*vForceMean);
     
     % Keeps the index of the violated force value
     iViolationIndex = 0;
@@ -90,7 +90,7 @@ else
     iViolationType = 0;
     % Keeps the violated amount
     dViolationAmount = 0;
-    for iUnit = 1:iNumberOfWires
+    for iUnit = 1:nNumberOfWires
         if vForceDistribution(iUnit) < vForceMinimum(iUnit)
             iViolationIndex = iUnit;
             iViolationType = -1;
@@ -105,14 +105,14 @@ else
     % Found a violation of forces?
     if iViolationIndex > 0
         % Get reduced maximum and minimum forces
-        vReducedForceMinimum = zeros(iNumberOfWires - 1, 1);
-        vReducedForceMaximum = zeros(iNumberOfWires - 1, 1);
+        vReducedForceMinimum = zeros(nNumberOfWires - 1, 1);
+        vReducedForceMaximum = zeros(nNumberOfWires - 1, 1);
         % Get reduced structure matrix
-        mReducedStructureMatrixAt = zeros(size(mStructureMatrixAt, 1), size(mStructureMatrixAt, 2));
+        aReducedStructureMatrixAt = zeros(size(aStructureMatrixAt, 1), size(aStructureMatrixAt, 2));
         
         iReducedUnit = 1;
         % Loop over all cables
-        for iUnit = 1:iNumberOfWires
+        for iUnit = 1:nNumberOfWires
             % Skip the limits violating cable
             if iUnit == iViolationIndex
                 continue
@@ -123,7 +123,7 @@ else
             vReducedForceMaximum(iReducedUnit) = vForceMaximum(iUnit);
             % And also reduce the structure matrix omitting the violated
             % cable's column
-            mReducedStructureMatrixAt(:, iReducedUnit) = mStructureMatrixAt(:, iUnit);
+            aReducedStructureMatrixAt(:, iReducedUnit) = aStructureMatrixAt(:, iUnit);
             
             % Counter so we know what our 
             iReducedUnit = iReducedUnit + 1;
@@ -134,20 +134,20 @@ else
         vReducedWrench = vWrench;
         % Modify external wrench by the violated force, either the maximum
         if iViolationType == 1
-            vReducedWrench = vReducedWrench + mStructureMatrixAt(:, iViolationIndex)*vForceMaximum(iUnit);
+            vReducedWrench = vReducedWrench + aStructureMatrixAt(:, iViolationIndex)*vForceMaximum(iUnit);
         % or minimum force
         else
-            vReducedWrench = vReducedWrench + mStructureMatrixAt(:, iViolationIndex)*vForceMinimum(iUnit);
+            vReducedWrench = vReducedWrench + aStructureMatrixAt(:, iViolationIndex)*vForceMinimum(iUnit);
         end
         
         % Recursively call the algorithm for advanced closed form, yet this
         % time with the reduced values
-        vReducedForceDistribution = algoForceDistribution_AdvancedClosedForm(vReducedWrench, mReducedStructureMatrixAt, vReducedForceMinimum, vReducedForceMaximum);
+        vReducedForceDistribution = algoForceDistribution_AdvancedClosedForm(vReducedWrench, aReducedStructureMatrixAt, vReducedForceMinimum, vReducedForceMaximum);
         
         % Restore initial cable force distribution from the reduced cable
         % forces as well as the violated cable force
         iReducedUnit = 1;
-        for iUnit = 1:iNumberOfWires
+        for iUnit = 1:nNumberOfWires
             % Violated unit?
             if iUnit == iViolationIndex
                 % Then take its maximum force if the maximum was violated
