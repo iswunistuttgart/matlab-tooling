@@ -1,17 +1,17 @@
 function [length, varargout] = inverseKinematics(Pose, PulleyPositions, CableAttachments, varargin)
 % INVERSEKINEMATICS - Perform inverse kinematics for the given robot
-%   Inverse kinematics means to determine the values for the joint
-%   variables (in this case cable lengths) for a given endeffector pose.
-%   This is quite a simple setup for cable-driven parallel robots because
-%   the equation for the kinematic loop has to be solved, which is the sole
-%   purpose of this method.
-%   It can determine the cable lengths for any given robot configuration
-%   (note that calculations will be done as if we were looking at a 3D/6DOF
-%   cable robot following necessary conventions, so adjust your variables
+%   Inverse kinematics means to determine the values for the joint variables
+%   (in this case cable lengths) for a given endeffector pose. This is quite a
+%   simple setup for cable-driven parallel robots because the equation for the
+%   kinematic loop has to be solved, which is the sole purpose of this method.
+%   
+%   It can determine the cable lengths for any given robot configuration (note
+%   that calculations will be done as if we were looking at a 3D/6DOF cable
+%   robot following necessary conventions, so adjust your variables
 %   accordingly). To determine the cable lengths, different algorithms may be
 %   used (please see below for the 'ALGORITHM' option). Note that all cable
 %   lengths will always be from the PulleyPosition to the platform, any free
-%   cable length that you might have before the last pulley needs to be added by
+%   cable length that you might have before the last pulley need to be added by
 %   you manually after running this method
 % 
 %   LENGTH = INVERSEKINEMATICS(POSE, PULLEYPOSITIONS, CABLEATTACHMENTS)
@@ -20,16 +20,6 @@ function [length, varargout] = inverseKinematics(Pose, PulleyPositions, CableAtt
 %   
 %   LENGTH = INVERSEKINEMATICS(POSE, PULLEYPOSITIONS, CABLEATTACHMENTS,
 %   ALGORITHM) performs inverse kinematics according to the selected algorithm.
-%   Implemented algorithms are
-%       'Simple'            Standard straight-line model
-%       'Pulley'            Pulley kinematics with pulley radius and rotation
-%                           included
-%       'CatenarySimple'    TO COME Using a catenary approach the cable length will be
-%                           calculated assuming ideal cable entry points (i.e.,
-%                           no rotation or radius of the pulleys.
-%       'CatenaryPulley'    TO COME Most advanced algorithm to determine catenary cable
-%                           line with the inclusion of pulleys that is rotation
-%                           of the pulley and cable wrapping around the pulley.
 %   
 %   LENGTH = INVERSEKINEMATICS(POSE, ..., 'PulleyOrientations',
 %   mPulleyOrientations) performs non-standard inverse kinematics given the
@@ -70,9 +60,20 @@ function [length, varargout] = inverseKinematics(Pose, PulleyPositions, CableAtt
 %   column count) and the order must match the real linkage of cable
 %   attachment on the platform to pulley.
 % 
-%   USEADVANCED: Optional positional parameter argument that tells the
+%   ALGORITHM: Optional positional parameter argument that tells the
 %   script to use advanced inverse kinematics algorithms to determining the
-%   cable length. Must be a logical value i.e, true or false
+%   cable length.
+%   Implemented algorithms are
+%       'Simple'            Standard straight-line model
+%       'Pulley'            Pulley kinematics with pulley radius and rotation
+%                           included
+%       'Catenary'          TO COME Using a catenary approach the cable length
+%                           will be calculated assuming ideal cable entry points
+%                           (i.e., no rotation or radius of the pulleys.
+%       'Catenary+Pulley'   TO COME Most advanced algorithm to determine
+%                           catenary cable line with the inclusion of pulleys
+%                           that is rotation of the pulley and cable wrapping
+%                           around the pulley.
 %   
 %   'PulleyOrientations': Matrix of orientations for each pulley w.r.t. the
 %   global coordinate system. Every pulley's orientation is stored in a
@@ -86,22 +87,41 @@ function [length, varargout] = inverseKinematics(Pose, PulleyPositions, CableAtt
 %   i.e., WINCHPULLEYRADIUS is a vector of 1xM values where M must match
 %   the number of pulleyes in PULLEYPOSITIONS and the order must be the same,
 %   too.
+%   
+%   'ReturnStruct': Allows to have just one return value which then is a struct
+%   of all the available variables as per the algorithm. Can be set to any valid
+%   string of 'off', 'no', 'on', 'yes', 'please'. Only 'on', 'yes', and 'please'
+%   will actually return a struct then
 % 
 %   Outputs:
 % 
-%   LENGTH: Length is a vector of size 1xM with the cable lengths
-%   determined using either simple or advanced kinematics
+%   LENGTH: Length is a vector of size 1xM with the cable lengths determined
+%   using either simple or advanced kinematics. If option 'ReturnStruct' is
+%   given, then length will be a structure of available variables such as
+%   'Length', 'Vector', 'UnitVector', ...
 %
-%   CABLEVECTOR: Vectors of each cable from attachment point to (corrected)
-%   pulley point
+%   VECTOR: Vectors of each cable from attachment point to (corrected) pulley
+%   point
 %   
-%   CABLEUNITVECTOR: Normalized vector for each cable from attachment point
-%   to its (corrected) pulley point
+%   UNITVECTOR: Normalized vector for each cable from attachment point to its
+%   (corrected) pulley point
+%   
+%   PULLEYANGLES: Matrix of gamma and beta angles of rotation and wrapping angle
+%   of pulley and cable on pulley respectively, given as 2xM matrix where the
+%   first row is the rotation about the z-axis of the pulley, and the second
+%   row is the wrapping angle about the pulley. Returned only for algorithms
+%   'pulley' and 'catenary+pulley'
 % 
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-04-03
+% Date: 2015-06-18
 % Changelog:
+%   2015-06-18
+%       * Replace option 'UseAdvanced' with 'Algorithm' and implement logic for
+%       allowing to use 'catenary' and 'catenary+pulley' as algorithm
+%       * Add option 'ReturnStruct' to return a struct of all available
+%       variables instead of a long list of variable varargouts
+%       * Change 'Winch' to 'Pulley' in all its forms
 %   2015-04-22: Add commentary for outputs CableVector and CableUnitVector
 %   2015-04-03: Initial release
 
@@ -161,7 +181,6 @@ aPulleyPositions = ip.Results.PulleyPositions;
 aPulleyOrientations = ip.Results.PulleyOrientations;
 vPulleyRadius = ip.Results.PulleyRadius;
 aCableAttachments = ip.Results.CableAttachments;
-chVerbose = inCharToValidArgument(ip.Results.Verbose);
 chReturnStruct = inCharToValidArgument(ip.Results.ReturnStruct);
 
 
@@ -169,29 +188,32 @@ chReturnStruct = inCharToValidArgument(ip.Results.ReturnStruct);
 %% Do the magic
 %%% What algorithm to use?
 switch lower(chAlgorithm)
+    % Catenary kinematics
     case 'catenary'
 %         [vCableLength, mCableVector, mCableUnitVector, mCableLine] = algoInverseKinematics_Catenary(vPlatformPose, mPulleyPositions, mCableAttachments, mPulleyOrientations, ?.?.?);
+    % Catenary kinematics with pulley deflection
     case 'catenary+pulley'
 %         [vCableLength, mCableVector, mCableUnitVector, mCableLine] = algoInverseKinematics_CatenaryPulley(vPlatformPose, mPulleyPositions, mCableAttachments, mPulleyOrientations, ?.?.?);
     % Advanced kinematics algorithm (including pulley radius)
     case 'pulley'
-        [vCableLength, aCableVector, aCableUnitVector, aPulleyAngles] = algoInverseKinematics_Pulley(vPlatformPose, aPulleyPositions, aCableAttachments, vPulleyRadius, aPulleyOrientations);
+        [vCableLength, aCableVector, aCableUnitVector, aCorrectedPulleyPositions, aPulleyAngles] = algoInverseKinematics_Pulley(vPlatformPose, aPulleyPositions, aCableAttachments, vPulleyRadius, aPulleyOrientations);
     % Simple kinematics algorithm (no pulley radius)
     case 'standard'
         [vCableLength, aCableVector, aCableUnitVector] = algoInverseKinematics_Simple(vPlatformPose, aPulleyPositions, aCableAttachments);
     otherwise
         [vCableLength, aCableVector, aCableUnitVector] = algoInverseKinematics_Simple(vPlatformPose, aPulleyPositions, aCableAttachments);
 end
-
+% end ```siwtch lower(chAlgorithm)```
 
 
 %% Assign output quantities
 if strcmp(chReturnStruct, 'on')
     length = struct();
     length.Length = vCableLength;
-    length.Vector = aCableVector;
-    length.UnitVector = aCableUnitVector;
     length.PulleyAngles = zeros(2, size(aPulleyPositions, 2));
+    length.PulleyPosition = aPulleyPositions;
+    length.UnitVector = aCableUnitVector;
+    length.Vector = aCableVector;
     
     switch chAlgorithm
         case 'catenary'
@@ -200,8 +222,11 @@ if strcmp(chReturnStruct, 'on')
             
         case 'pulley'
             length.PulleyAngles = aPulleyAngles;
+            length.PulleyPosition = aCorrectedPulleyPositions;
         otherwise
     end
+    
+    length = orderfields(length);
 % Return as matrices/vectors, not as struct
 else
     length = vCableLength;
@@ -242,6 +267,7 @@ switch lower(in)
     otherwise
         out = 'off';
 end
+% end ```switch lower(in)```
 
 end
 
