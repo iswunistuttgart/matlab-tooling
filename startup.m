@@ -8,4 +8,5 @@ end
 
 addpath(fullfile(pwd, 'algorithms'));
 addpath(fullfile(pwd, 'helpers'));
+addpath(fullfile(pwd, 'wip'));
 addpath(fullfile(pwd));
