@@ -53,15 +53,15 @@ nNumberOfWires = size(aStructureMatrixAt, 2);
 
 % Force minimum, can be given a scalar or a vector
 if isscalar(ForceMinimum)
-    vForceMinimum = ForceMinimum.*ones(1, nNumberOfWires);
+    vForceMinimum = ForceMinimum.*ones(nNumberOfWires, 1);
 else
-    vForceMinimum = ForceMinimum;
+    vForceMinimum = reshape(ForceMinimum, nNumberOfWires, 1);
 end
 % Force maximum, can be given a scalar or a vector
 if isscalar(ForceMaximum)
-    vForceMaximum = ForceMaximum.*ones(1, nNumberOfWires);
+    vForceMaximum = ForceMaximum.*ones(nNumberOfWires, 1);
 else
-    vForceMaximum = ForceMaximum;
+    vForceMaximum = reshape(ForceMaximum, nNumberOfWires, 1);
 end
 % Vector of mean force values
 vForceMean = 0.5.*(vForceMinimum + vForceMaximum);
