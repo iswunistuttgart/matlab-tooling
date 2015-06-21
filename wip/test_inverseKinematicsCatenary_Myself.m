@@ -11,14 +11,17 @@ dFmax = 3000;
 vPose = [0,0,0, 1,0,0, 0,1,0, 0,0,1];
 vPosition = reshape(vPose(1:3), 3, 1);
 aRotation = reshape(vPose(4:12), 3, 3)';
+aSelectForcesFromX = [-1, 0, 0; ...
+                        0, 0, 0; ...
+                        0, -1, 0];
 
 % First, we need to get the angles of the connection line from a_i to b_i
 vAngleOfRotationOfKc = zeros(size(cfg_gears_a, 2));
 
 for iCable = 1:Robot.Meta.NumberOfWires
-    vDirectionAi2Bi = ( vPosition + aRotation*Robot.Platform.Anchor.Position(:, iCable) ) - Robot.Pulley.Position(:, iCable);
+    vDirectionAi2Bi_in_0 = ( vPosition + aRotation*Robot.Platform.Anchor.Position(:, iCable) ) - Robot.Pulley.Position(:, iCable);
     
-    vAngleOfRotationOfKc(iCable) = atan2d(vDirectionAi2Bi(2), vDirectionAi2Bi(1));
+    vAngleOfRotationOfKc(iCable) = atan2d(vDirectionAi2Bi_in_0(2), vDirectionAi2Bi_in_0(1));
 end
 
 %% Create conditions for optimization
@@ -39,7 +42,7 @@ vInitForceDistribution = algoForceDistribution_AdvancedClosedForm([Robot.Environ
 
 vInitState = zeros(3*Robot.Meta.NumberOfWires, 1);
 
-aAnchorPositionsIn0 = zeros(3, Robot.Meta.NumberOfWires);
+aAnchorPositionsInC = zeros(3, Robot.Meta.NumberOfWires);
 
 
 %%% Linear equality contraints Ax = B
@@ -48,25 +51,30 @@ vBeq = zeros(6, 1);
 vBeq(1:3,:) = -(Robot.Environment.GravitationalConstant*Robot.Environment.ForceFieldDirection*Robot.Platform.Mass);
 
 for iCable = 1:Robot.Meta.NumberOfWires
-    dOffset = (iCable - 1)*(3 -1);
-    % Anchor positions in 0
-    aAnchorPositionsIn0(:, iCable) = aRotation*Robot.Platform.Anchor.Position(:, iCable);
+    dOffset = (iCable - 1)*(3 - 1);
+    dOffsetAeq = (iCable - 1)*(4 - 1);
+    aTransformCto0 = rotz(vAngleOfRotationOfKc(iCable));
+    
+    % Anchor positions in C
+%     aAnchorPositionsInC(:, iCable) = aRotation*Robot.Platform.Anchor.Position(:, iCable);
+    aAnchorPositionsInC(:, iCable) = -transpose(aTransformCto0)*(vPosition + aRotation*Robot.Platform.Anchor.Position(:, iCable) - Robot.Pulley.Position(:, iCable));
     
     % Forces
-    aTransformCto0 = rotz(vAngleOfRotationOfKc(iCable));
-    aAeq(1:3, nIndexForcesX(iCable)) = aTransformCto0(:, 1);
-    aAeq(1:3, nIndexForcesZ(iCable)) = aTransformCto0(:, 3);
+    aAeq(1:3, [1:3] + dOffsetAeq) = aTransformCto0*aSelectForcesFromX;
+%     aAeq(1:3, nIndexForcesX(iCable)) = aTransformCto0*aSelectForcesFromX;
+%     aAeq(1:3, nIndexForcesZ(iCable)) = aTransformCto0*aSelectForcesFromX;
     
     % Torques
     vPlatformAnchorIn0 = aRotation*Robot.Platform.Anchor.Position(:, iCable);
-    aTorqueOfCableIn0 = vec2skew(vPlatformAnchorIn0)*aTransformCto0;
-    aAeq(4:6, nIndexForcesX(iCable)) = aTorqueOfCableIn0(:, 1);
-    aAeq(4:6, nIndexForcesZ(iCable)) = aTorqueOfCableIn0(:, 3);
+    aTorqueOfCableIn0 = vec2skew(vPlatformAnchorIn0)*aTransformCto0*aSelectForcesFromX;
+    aAeq(4:6, [1:3] + dOffsetAeq) = aTorqueOfCableIn0;
+%     aAeq(4:6, nIndexForcesX(iCable)) = aTorqueOfCableIn0(:, 1);
+%     aAeq(4:6, nIndexForcesZ(iCable)) = aTorqueOfCableIn0(:, 3);
     
     % Initial state
-    vForceInBi = transpose(aTransformCto0)*aCableUnitVector(:, iCable).*vInitForceDistribution(iCable);
-    vInitState(iCable + 0 + dOffset) = vForceInBi(1);
-    vInitState(iCable + 1 + dOffset) = vForceInBi(3);
+    vForceOfBiInC = transpose(aTransformCto0)*aCableUnitVector(:, iCable).*vInitForceDistribution(iCable);
+    vInitState(iCable + 0 + dOffset) = vForceOfBiInC(1);
+    vInitState(iCable + 1 + dOffset) = vForceOfBiInC(3);
     vInitState(iCable + 2 + dOffset) = vInitLength(iCable);
 end
 
@@ -76,15 +84,6 @@ vB = [];
 
 
 %%% Bounds
-% Upper bounds (length doesn't matter but forces must be smaller than force
-% maximum)
-vBoundsUpper = Inf(3*Robot.Meta.NumberOfWires, 1);
-% vBoundsUpper(nIndexForcesX) = 0;
-% vBoundsUpper(nIndexForcesZ) = 0;
-% Limit the cable length to the maximum of all available cable lengths for the
-% given pose using pulley kinematics?
-% vBoundsUpper(nIndexLength) = max(inverseKinematics(vPose, Robot.Pulley.Position, Robot.Platform.Anchor.Position, 'pulley', 'PulleyRadius', Robot.Pulley.Radius, 'PulleyRotation', Robot.Pulley.Rotation));
-
 % Lower bounds (length must be greater than zero and the forces must be greater
 % than force minimum)
 vBoundsLower = -Inf(3*Robot.Meta.NumberOfWires, 1);
@@ -93,16 +92,26 @@ vBoundsLower = -Inf(3*Robot.Meta.NumberOfWires, 1);
 % Minimum length for the cables must obviously be zero ;)
 vBoundsLower(nIndexLength) = 0;
 
+% Upper bounds (length doesn't matter but forces must be smaller than force
+% maximum)
+vBoundsUpper = Inf(3*Robot.Meta.NumberOfWires, 1);
+% vBoundsUpper(nIndexForcesX) = 0;
+% vBoundsUpper(nIndexForcesZ) = 0;
+% Limit the cable length to the maximum of all available cable lengths for the
+% given pose using pulley kinematics?
+% vBoundsUpper(nIndexLength) = 0;
+% vBoundsUpper(nIndexLength) = max(inverseKinematics(vPose, Robot.Pulley.Position, Robot.Platform.Anchor.Position, 'pulley', 'PulleyRadius', Robot.Pulley.Radius, 'PulleyRotation', Robot.Pulley.Rotation));
+
 
 %%% Non-linear inequality constraints
-
+% SEE nonlcon
 
 %% Run the optimization
 
-inOptimizationFunction = @(x) norm(vInitLength(:) - reshape(x(nIndexLength), Robot.Meta.NumberOfWires, 1)) + norm(sqrt(x(nIndexForcesX).^2 + x(nIndexForcesZ).^2) - vInitForceDistribution);
+inOptimizationFunction = @(x) norm(reshape(x(nIndexLength), Robot.Meta.NumberOfWires, 1) - vInitLength(:)) + norm(vInitForceDistribution - sqrt(x(nIndexForcesX).^2 + x(nIndexForcesZ).^2));
 
 
-[f, fval, exitflag, output] = fmincon(inOptimizationFunction, vInitState, aA, vB, aAeq, vBeq, vBoundsLower, vBoundsUpper, @(x) nonlcon(x, aAnchorPositionsIn0, dE, dA0, dRho, dG, dFmin, dFmax));
+[f, fval, exitflag, output] = fmincon(inOptimizationFunction, vInitState, aA, vB, aAeq, vBeq, vBoundsLower, vBoundsUpper, @(x) nonlcon(x, aAnchorPositionsInC, dE, dA0, dRho, dG, dFmin, dFmax));
 
 if nargout >= 1
     varargout{1} = fval;
