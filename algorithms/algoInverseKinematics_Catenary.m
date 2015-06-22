@@ -1,4 +1,4 @@
-function [length, varargout] = algoInverseKinematics_Catenary(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties)
+function [length, varargout] = algoInverseKinematics_Catenary(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant)
 % ALGOINVERSEKINEMATICS_CATENARY - Perform inverse kinematics for the given
 %   pose of the virtual robot using catenary lines
 %   Inverse kinematics means to determine the values for the joint
@@ -86,6 +86,12 @@ vCableLength = zeros(1, nNumberOfCables);
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
 aPlatformRotation = reshape(Pose(4:12), 3, 3).';
+% Get the gravity constant to a default value if it wasn't set
+if exist('GravityConstant', 'var')
+    dGravityConstant = GravityConstant;
+else
+    dGravityConstant = 9.81;
+end
 
 
 
@@ -185,7 +191,7 @@ end
     aLinearInequalityConstraints, vLinearInequalityConstraints, ...
     aLinearEqualityConstraints, vLinearEqualityConstraints, ...
     vLowerBoundaries, vUpperBoundaries, ...
-    @(vOptimizationVector) algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dE, dA0, dRho, dG, dFmin, dFmax));
+    @(vOptimizationVector) algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, CableProperties.YoungsModulus, CableProperties.UnstrainedSection, CableProperties.Density, dGravityConstant, min(CableForceLimits), max(CableForceLimits)));
 
 
 %% Output parsing
