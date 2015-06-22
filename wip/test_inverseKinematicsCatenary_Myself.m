@@ -1,5 +1,11 @@
 function [f, varargout] = test_inverseKinematicsCatenary_Myself()
-load(fullfile(pwd, '..', 'IPAnema3-2'));
+if exist(fullfile(pwd, '..', 'IPAnema3-2.mat'), 'file')
+    load(fullfile(pwd, '..', 'IPAnema3-2.mat'));
+elseif exist(fullfile(pwd, 'IPAnema3-2.mat'), 'file')
+    load(fullfile(pwd, 'IPAnema3-2.mat'))
+else
+    error('No suitable model file found');
+end
 
 dE = 200*10^9;
 dA0 = 32.6/1000;
@@ -51,8 +57,8 @@ vBeq = zeros(6, 1);
 vBeq(1:3,:) = -(Robot.Environment.GravitationalConstant*Robot.Environment.ForceFieldDirection*Robot.Platform.Mass);
 
 for iCable = 1:Robot.Meta.NumberOfWires
-    dOffset = (iCable - 1)*(3 - 1);
-    dOffsetAeq = (iCable - 1)*(4 - 1);
+    dOffset = (iCable - 1)*2;
+    dOffsetAeq = (iCable - 1)*3;
     aTransformCto0 = rotz(vAngleOfRotationOfKc(iCable));
     
     % Anchor positions in C
@@ -73,9 +79,9 @@ for iCable = 1:Robot.Meta.NumberOfWires
     
     % Initial state
     vForceOfBiInC = transpose(aTransformCto0)*aCableUnitVector(:, iCable).*vInitForceDistribution(iCable);
-    vInitState(iCable + 0 + dOffset) = vForceOfBiInC(1);
-    vInitState(iCable + 1 + dOffset) = vForceOfBiInC(3);
-    vInitState(iCable + 2 + dOffset) = vInitLength(iCable);
+    vInitState(1 + dOffsetAeq) = vForceOfBiInC(1);
+    vInitState(2 + dOffsetAeq) = vForceOfBiInC(3);
+    vInitState(3 + dOffsetAeq) = vInitLength(iCable);
 end
 
 %%% Linear inequality constraints 
