@@ -225,6 +225,7 @@ if strcmp(chReturnStruct, 'on')
             length.PulleyPosition = aCorrectedPulleyPositions;
         otherwise
     end
+    % end switch chAlgorithm
     
     length = orderfields(length);
 % Return as matrices/vectors, not as struct
@@ -251,7 +252,9 @@ else
             otherwise
         end
     end
+    % end if nargout >= 4
 end
+% end if strcmp(chReturnStruct, 'on')
 
 
 end
