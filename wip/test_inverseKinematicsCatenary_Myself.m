@@ -56,6 +56,7 @@ aAeq = zeros(6, 3*Robot.Meta.NumberOfWires);
 vBeq = zeros(6, 1);
 vBeq(1:3,:) = -(Robot.Environment.GravitationalConstant*Robot.Environment.ForceFieldDirection*Robot.Platform.Mass);
 
+% Create the entries of aAeq per cable
 for iCable = 1:Robot.Meta.NumberOfWires
     dOffset = (iCable - 1)*2;
     dOffsetAeq = (iCable - 1)*3;
@@ -63,7 +64,7 @@ for iCable = 1:Robot.Meta.NumberOfWires
     
     % Anchor positions in C
 %     aAnchorPositionsInC(:, iCable) = aRotation*Robot.Platform.Anchor.Position(:, iCable);
-    aAnchorPositionsInC(:, iCable) = -transpose(aTransformCto0)*(vPosition + aRotation*Robot.Platform.Anchor.Position(:, iCable) - Robot.Pulley.Position(:, iCable));
+    aAnchorPositionsInC(:, iCable) = transpose(aTransformCto0)*(vPosition + aRotation*Robot.Platform.Anchor.Position(:, iCable) - Robot.Pulley.Position(:, iCable));
     
     % Forces
     aAeq(1:3, [1:3] + dOffsetAeq) = aTransformCto0*aSelectForcesFromX;
@@ -78,7 +79,8 @@ for iCable = 1:Robot.Meta.NumberOfWires
 %     aAeq(4:6, nIndexForcesZ(iCable)) = aTorqueOfCableIn0(:, 3);
     
     % Initial state
-    vForceOfBiInC = transpose(aTransformCto0)*aCableUnitVector(:, iCable).*vInitForceDistribution(iCable);
+%     vForceOfBiInC = transpose(aTransformCto0)*(vPosition + aRotation*Robot.Platform.Anchor.Position(:, iCable) + aCableUnitVector(:, iCable).*vInitForceDistribution(iCable));
+    vForceOfBiInC = transpose(aTransformCto0)*(-aCableUnitVector(:, iCable)).*vInitForceDistribution(iCable);
     vInitState(1 + dOffsetAeq) = vForceOfBiInC(1);
     vInitState(2 + dOffsetAeq) = vForceOfBiInC(3);
     vInitState(3 + dOffsetAeq) = vInitLength(iCable);
