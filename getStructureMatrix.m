@@ -29,6 +29,11 @@ function [StructureMatrix, varargout] = getStructureMatrix(CableAttachments, Cab
 %   either from Yaw-Pitch-Roll, Tait-Bryan angles, or other rotation formalisms.
 %   If not provided, a non-rotated platform is assumed i.e., ROTATION = eye(3).
 %   
+%   'ReturnStruct': Allows to have just one return value which then is a struct
+%   of all the available variables as per the algorithm. Can be set to any valid
+%   string of 'off', 'no', 'on', 'yes', 'please'. Only 'on', 'yes', and 'please'
+%   will actually return a struct then
+%   
 %   
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
 % Date: 2015-05-10
@@ -54,6 +59,10 @@ addRequired(ip, 'CableVectors', valFcn_CableVectors);
 valFcn_Rotation = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', 3, 'ncols', 3}, mfilename, 'Rotation');
 addOptional(ip, 'Rotation', eye(3), valFcn_Rotation);
 
+% Return a struct as the only return value of this function?
+valFcn_ReturnStruct = @(x) any(validatestring(lower(x), {'off', 'no', 'on', 'yes'}, mfilename, 'ReturnStruct'));
+addParameter(ip, 'ReturnStruct', 'off', valFcn_ReturnStruct);
+
 % Configuration for the input parser
 ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
@@ -67,6 +76,7 @@ parse(ip, CableAttachments, CableVectors, varargin{:});
 aCableAttachments = ip.Results.CableAttachments;
 aCableVectors = ip.Results.CableVectors;
 aRotation = ip.Results.Rotation;
+chReturnStruct = inCharToValidArgument(ip.Results.ReturnStruct);
 
 
 
@@ -76,8 +86,32 @@ aStructureMatrix = algoStructureMatrix(aRotation*aCableAttachments, aCableVector
 
 
 %% Assign output quantities
-StructureMatrix = aStructureMatrix;
+% Struct requested as return value?
+if strcmp(chReturnStruct, 'on')
+    StructureMatrix = struct();
+    StructureMatrix.StructureMatrix = aStructureMatrix;
+    StructureMatrix = orderfields(StructureMatrix);
+% No struct as return value
+else
+    StructureMatrix = aStructureMatrix;
+end
+% end if strcmpi(chReturnStruct, 'on');
 
+
+end
+
+
+function out = inCharToValidArgument(in)
+
+switch lower(in)
+    case {'on', 'yes', 'please'}
+        out = 'on';
+    case {'off', 'no', 'never'}
+        out = 'off';
+    otherwise
+        out = 'off';
+end
+% end ```switch lower(in)```
 
 end
 
