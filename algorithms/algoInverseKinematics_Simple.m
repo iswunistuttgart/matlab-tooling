@@ -17,13 +17,15 @@ function [length, varargout] = algoInverseKinematics_Simple(Pose, PulleyPosition
 %   performs simple inverse kinematics with the cables running from a_i to
 %   b_i for the given pose
 % 
-%   [LENGTH, CABLEVECTORS] = ALGOINVERSEKINEMATICS_SIMPLE(...) also provides the
-%   vectors of the cable directions from platform to attachment point given
-%   in the global coordinate system
+%   [LENGTH, CABLEUNITVECTOR] = ALGOINVERSEKINEMATICS_SIMPLE(...) also provides
+%   the unit vectors for each cable which might come in handy at times because
+%   it provides the direction of the force created by the cable on the mobile
+%   platform.
 % 
-%   [LENGTH, CABLEVECTORS, CABLEUNITVECTORS] = ALGOINVERSEKINEMATICS_SIMPLE(...)
-%   also provides the unit vectors for each cable which might come in handy
-%   at times
+%   [LENGTH, CABLEUNITVECTOR, CABLESHAPE] = ALGOINVERSEKINEMATICS_SIMPLE(...)
+%   additionally returns the shape of the cable in the cable's local frame with
+%   a discretization of K = 10e4 points
+%   
 %   
 %   Inputs:
 %   
@@ -52,17 +54,21 @@ function [length, varargout] = algoInverseKinematics_Simple(Pose, PulleyPosition
 % 
 %   LENGTH: Length is a vector of size 1xM with the cable lengths
 %   determined using either simple or advanced kinematics
-%
-%   CABLEVECTOR: Vectors of each cable from attachment point to corrected
-%   pulley point given as 3xM matrix
 %   
 %   CABLEUNITVECTOR: Normalized vector for each cable from attachment point
 %   to its corrected pulley point as 3xM matrix
+%   
+%   CABLESHAPE: Array of [2xKxM] points with the cable shape. First dimension is
+%   the cable's local frame's x and z coordinate, second is the discretization
+%   along the length of L with K-many steps, M is the number of cables
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-04-22
+% Date: 2015-06-24
 % Changelog:
-%   2015-04-22: Initial release
+%   2015-06-24
+%       * Add return value CABLESHAPE and remove CABLEVECTOR
+%   2015-04-22
+%       * Initial release
 
 
 
@@ -70,29 +76,36 @@ function [length, varargout] = algoInverseKinematics_Simple(Pose, PulleyPosition
 % To unify variable names
 aCableAttachments = CableAttachments;
 aPulleyPositions = PulleyPositions;
-nNumberOfWires = size(aPulleyPositions, 2);
+nNumberOfCables = size(aPulleyPositions, 2);
 % Holds the actual cable vector
-aCableVector = zeros(3, nNumberOfWires);
+aCableVector = zeros(3, nNumberOfCables);
 % Holds the normalized cable vector
-aCableVectorUnit = zeros(3, nNumberOfWires);
+aCableVectorUnit = zeros(3, nNumberOfCables);
 % Holds the cable lengths
-vCableLength = zeros(1, nNumberOfWires);
+vCableLength = zeros(1, nNumberOfCables);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
 aPlatformRotation = reshape(Pose(4:12), 3, 3).';
+% Hold the local rotation angles of each cable's local frame relative to K_0
+% vPulleyAngles = zeros(1, nNumberOfCables);
+% This will hold the return value of the cable shape
+nDiscretizationPoints = 10e4;
+aCableShape = zeros(2, nDiscretizationPoints, nNumberOfCables);
 
 
 
 %% Do the magic
 % Loop over every pulley and ...
-for iUnit = 1:nNumberOfWires
-    % ... calculate the cable vector
-    aCableVector(:,iUnit) = aPulleyPositions(:,iUnit) - ( vPlatformPosition + aPlatformRotation*aCableAttachments(:,iUnit) );
-    % ... calculate the cable length
-    vCableLength(iUnit) = norm(aCableVector(:,iUnit));
-    % ... calculate the direciton of the unit vector of the current cable
-    aCableVectorUnit(:,iUnit) = aCableVector(:,iUnit)./vCableLength(iUnit);
+for iCable = 1:nNumberOfCables
+    % Calculate the cable vector
+    aCableVector(:,iCable) = aPulleyPositions(:,iCable) - ( vPlatformPosition + aPlatformRotation*aCableAttachments(:,iCable) );
+    
+    % Calculate the cable length
+    vCableLength(iCable) = norm(aCableVector(:,iCable));
+    
+    % Calculate the direciton of the unit vector of the current cable
+    aCableVectorUnit(:,iCable) = aCableVector(:,iCable)./vCableLength(iCable);
 end
 
 
@@ -102,14 +115,39 @@ end
 length = vCableLength;
 
 % Further outputs as requested
-% Second output is the matrix of cable vectors from b_i to a_i
+% Second output is the matrix of normalized cable vectors
 if nargout > 1
-    varargout{1} = aCableVector;
+    varargout{1} = aCableVectorUnit;
 end
 
-% Third output is the matrix of normalized cable vectors
+% Third output is the cable shape
 if nargout > 2
-    varargout{2} = aCableVectorUnit;
+    %%% Calculate the cable shape if requested
+    for iCable = 1:nNumberOfCables
+        % ... calculate the angle of rotation of the cable local frame K_c
+        % relative to K_0
+        vA2B_in_0 = ( vPlatformPosition + aPlatformRotation*aCableAttachments(:, iCable) ) - aPulleyPositions(:, iCable);
+
+        % Angle of rotation of the frame C about z_0 in degree
+        dRotationAngleAbout_kCz_Degree = atan2d(vA2B_in_0(2), vA2B_in_0(1));
+        % Rotation matrix about K_C
+        aRotation_kC2kA = rotz(dRotationAngleAbout_kCz_Degree);
+
+        % Vector from A to B in K_C
+        vA2B_in_C = transpose(aRotation_kC2kA)*vA2B_in_0;
+        % Normalize the vector from A^c to B^c
+        vCableUnitVector_in_C = vA2B_in_C./norm(vA2B_in_C);
+
+        % Calculate the z coordinate of the cable in its local frame
+        % parametrized as
+        % x = L_t*cos(dAngleOfCableWithXc) with 0 <= L_t <= L_i
+        % t = L_t*sin(dAngleOfCableWithXc) with 0 <= L_t <= L_i
+        vLinspaceOfCableLength = linspace(0, vCableLength(iCable), nDiscretizationPoints);
+        aCableShape(1, :, iCable) = vCableUnitVector_in_C(1).*vLinspaceOfCableLength;
+        aCableShape(2, :, iCable) = vCableUnitVector_in_C(3).*vLinspaceOfCableLength;
+    end
+    
+    varargout{2} = aCableShape;
 end
 
 
