@@ -22,9 +22,13 @@ function [length, varargout] = algoInverseKinematics_Simple(Pose, PulleyPosition
 %   it provides the direction of the force created by the cable on the mobile
 %   platform.
 % 
-%   [LENGTH, CABLEUNITVECTOR, CABLESHAPE] = ALGOINVERSEKINEMATICS_SIMPLE(...)
-%   additionally returns the shape of the cable in the cable's local frame with
-%   a discretization of K = 10e4 points
+%   [LENGTH, CABLEUNITVECTOR, PULLEYANGLES] = ALGOINVERSEKINEMATICS_SIMPLE(...)
+%   additionally returns the angle of rotation that the cable local frame has
+%   relative to the world frame's z_0
+% 
+%   [LENGTH, CABLEUNITVECTOR, PULLEYANGLES, CABLESHAPE] =
+%   ALGOINVERSEKINEMATICS_SIMPLE(...) additionally returns the shape of the
+%   cable in the cable's local frame with a discretization of K = 10e4 points
 %   
 %   
 %   Inputs:
@@ -58,6 +62,10 @@ function [length, varargout] = algoInverseKinematics_Simple(Pose, PulleyPosition
 %   CABLEUNITVECTOR: Normalized vector for each cable from attachment point
 %   to its corrected pulley point as 3xM matrix
 %   
+%   PULLEYANGLES: Vector of gamma angles of rotation of the cable plane relative
+%   to the world frame, given as 1xM vector where the column is the respective
+%   pulley
+%   
 %   CABLESHAPE: Array of [2xKxM] points with the cable shape. First dimension is
 %   the cable's local frame's x and z coordinate, second is the discretization
 %   along the length of L with K-many steps, M is the number of cables
@@ -67,6 +75,7 @@ function [length, varargout] = algoInverseKinematics_Simple(Pose, PulleyPosition
 % Changelog:
 %   2015-06-24
 %       * Add return value CABLESHAPE and remove CABLEVECTOR
+%       * Add return value PULLEYANGLES
 %   2015-04-22
 %       * Initial release
 
@@ -88,9 +97,9 @@ vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
 aPlatformRotation = reshape(Pose(4:12), 3, 3).';
 % Hold the local rotation angles of each cable's local frame relative to K_0
-% vPulleyAngles = zeros(1, nNumberOfCables);
+aPulleyAngles = zeros(1, nNumberOfCables);
 % This will hold the return value of the cable shape
-nDiscretizationPoints = 10e4;
+nDiscretizationPoints = 10e3;
 aCableShape = zeros(2, nDiscretizationPoints, nNumberOfCables);
 
 
@@ -120,21 +129,32 @@ if nargout > 1
     varargout{1} = aCableVectorUnit;
 end
 
-% Third output is the cable shape
+% Third output is the rotation angle of each cable plane
 if nargout > 2
     %%% Calculate the cable shape if requested
     for iCable = 1:nNumberOfCables
         % ... calculate the angle of rotation of the cable local frame K_c
         % relative to K_0
-        vA2B_in_0 = ( vPlatformPosition + aPlatformRotation*aCableAttachments(:, iCable) ) - aPulleyPositions(:, iCable);
+        vA2B_in_0 = ( vPlatformPosition + aPlatformRotation*aCableAttachments(:,iCable) ) - aPulleyPositions(:,iCable);
 
         % Angle of rotation of the frame C about z_0 in degree
         dRotationAngleAbout_kCz_Degree = atan2d(vA2B_in_0(2), vA2B_in_0(1));
+        
+        aPulleyAngles(1,iCable) = dRotationAngleAbout_kCz_Degree;
+    end
+    
+    varargout{2} = aPulleyAngles;
+end
+
+% Fourth output is the cable shape
+if nargout > 3
+    %%% Calculate the cable shape if requested
+    for iCable = 1:nNumberOfCables
         % Rotation matrix about K_C
-        aRotation_kC2kA = rotz(dRotationAngleAbout_kCz_Degree);
+        aRotation_kC2kA = rotz(aPulleyAngles(1,iCable));
 
         % Vector from A to B in K_C
-        vA2B_in_C = transpose(aRotation_kC2kA)*vA2B_in_0;
+        vA2B_in_C = transpose(aRotation_kC2kA)*(vPlatformPosition + aPlatformRotation*aCableAttachments(:,iCable) - aPulleyPositions(:,iCable));
         % Normalize the vector from A^c to B^c
         vCableUnitVector_in_C = vA2B_in_C./norm(vA2B_in_C);
 
@@ -143,11 +163,11 @@ if nargout > 2
         % x = L_t*cos(dAngleOfCableWithXc) with 0 <= L_t <= L_i
         % t = L_t*sin(dAngleOfCableWithXc) with 0 <= L_t <= L_i
         vLinspaceOfCableLength = linspace(0, vCableLength(iCable), nDiscretizationPoints);
-        aCableShape(1, :, iCable) = vCableUnitVector_in_C(1).*vLinspaceOfCableLength;
-        aCableShape(2, :, iCable) = vCableUnitVector_in_C(3).*vLinspaceOfCableLength;
+        aCableShape(1,:,iCable) = vCableUnitVector_in_C(1).*vLinspaceOfCableLength;
+        aCableShape(2,:,iCable) = vCableUnitVector_in_C(3).*vLinspaceOfCableLength;
     end
     
-    varargout{2} = aCableShape;
+    varargout{3} = aCableShape;
 end
 
 
