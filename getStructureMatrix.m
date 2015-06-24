@@ -36,9 +36,12 @@ function [StructureMatrix, varargout] = getStructureMatrix(CableAttachments, Cab
 %   
 %   
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-05-10
+% Date: 2015-06-19
 % Changelog:
-%   2015-05-10: Initial release
+%   2015-06-19
+%       * Add option 'ReturnStruct'
+%   2015-05-10
+%       * Initial release
 
 
 

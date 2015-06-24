@@ -46,7 +46,7 @@ aCableVectors = CableVectors;
 aCableAttachments = CableAttachments;
 
 % Rotation may be given or not, so check for its existence
-if exist('Rotation', 'var')
+if nargin >= 3
     aRotation = Rotation;
 % Platform rotation defaults to the "zero"-rotation if not provided
 else
