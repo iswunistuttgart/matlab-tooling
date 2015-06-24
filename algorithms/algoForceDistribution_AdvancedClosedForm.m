@@ -108,7 +108,7 @@ else
         vReducedForceMinimum = zeros(nNumberOfWires - 1, 1);
         vReducedForceMaximum = zeros(nNumberOfWires - 1, 1);
         % Get reduced structure matrix
-        aReducedStructureMatrixAt = zeros(size(aStructureMatrixAt, 1), size(aStructureMatrixAt, 2));
+        aReducedStructureMatrixAt = zeros(size(aStructureMatrixAt, 1), size(aStructureMatrixAt, 2) - 1);
         
         iReducedUnit = 1;
         % Loop over all cables
