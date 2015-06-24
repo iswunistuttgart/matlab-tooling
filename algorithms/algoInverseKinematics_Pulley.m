@@ -111,7 +111,7 @@ aPlatformRotation = reshape(Pose(4:12), 3, 3).';
 % Holds the rotation angle gamma and the wrapping angle beta
 aPulleyAngles = zeros(2, nNumberOfCables);
 % This will hold the return value of the cable shape
-nDiscretizationPoints = 10e4;
+nDiscretizationPoints = 10e3;
 aCableShape = zeros(2, nDiscretizationPoints, nNumberOfCables);
 
 
