@@ -1,6 +1,6 @@
-function StructureMatrix = algoStructureMatrix(CableAttachments, CableVectors, Rotation)
+function StructureMatrix = algoStructureMatrix_1R3T(CableAttachments, CableVectors, Rotation)
 % ALGOSTRUCTUREMATRIX - Calculate the structure matrix for the given cable
-%   attachment points and cable vectors
+%   attachment points and cable vectors of a 3R3T cable robot
 % 
 %   STRUCTUREMATRIX = ALGOSTRUCTUREMATRIX(CABLEATTACHMENTS, CABLEVECTORS)
 %   determines the structure matrix for the given cable attachment points
@@ -27,11 +27,9 @@ function StructureMatrix = algoStructureMatrix(CableAttachments, CableVectors, R
 %   given the cable vectors. Is of size 6xM
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-06-13
+% Date: 2015-06-25
 % Changelog:
-%   2015-06-13:
-%       * Add optional argument for the current rotation to method
-%   2015-04-22:
+%   2015-06-25:
 %       * Initial release
 
 
@@ -64,8 +62,11 @@ for iUnit = 1:nNumberOfWires
     end
     
     % Each column of A' is [u; cross((R*b), u)]';
-    aStructureMatrix(:,iUnit) = [aCableVectors(:,iUnit); ...
-                                    cross(aRotation*aCableAttachments(:,iUnit), aCableVectors(:,iUnit))];
+    
+    aStructureMatrix(1,iUnit) = aCableVectors(1,iUnit);
+    aStructureMatrix(2,iUnit) = aCableVectors(2,iUnit);
+    vCrossProduct = cross(aRotation*aCableAttachments(:,iUnit), aCableVectors(:,iUnit));
+    aStructureMatrix(3,iUnit) = vCrossProduct(3);
 end
 
 
