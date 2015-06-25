@@ -1,4 +1,4 @@
-function [StructureMatrix, varargout] = getStructureMatrix(CableAttachments, CableVectors, varargin)
+function [StructureMatrix, varargout] = getStructureMatrix(MotionPattern, CableAttachments, CableVectors, varargin)
 % GETSTRUCTUREMATRIX(CableAttachments, CableVectors) gets the structure matrix
 %   for the given cable attachment and vector combination
 %   
@@ -36,8 +36,10 @@ function [StructureMatrix, varargout] = getStructureMatrix(CableAttachments, Cab
 %   
 %   
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-06-19
+% Date: 2015-06-25
 % Changelog:
+%   2015-06-25
+%       * Add option 'MotionPattern'
 %   2015-06-19
 %       * Add option 'ReturnStruct'
 %   2015-05-10
@@ -50,6 +52,10 @@ function [StructureMatrix, varargout] = getStructureMatrix(CableAttachments, Cab
 ip = inputParser;
 
 %%% This fills in the parameters for the function
+% We need the motion pattern
+valFcn_MotionPattern = @(x) any(validatestring(upper(x), {'2T', '3T', '1R2T', '3R3T'}), mfilename, 'MotionPattern');
+addRequired(ip, 'MotionPattern', valFcn_MotionPattern);
+
 % We need the b_i's
 valFcn_CableAttachmens = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', 3, 'ncols', size(CableVectors, 2)}, mfilename, 'CableAttachments');
 addRequired(ip, 'CableAttachments', valFcn_CableAttachmens);
@@ -71,11 +77,12 @@ ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
-parse(ip, CableAttachments, CableVectors, varargin{:});
+parse(ip, MotionPattern, CableAttachments, CableVectors, varargin{:});
 
 
 
 %% Parse variables so we can use them natively
+chMotionPattern = ip.Results.MotionPattern;
 aCableAttachments = ip.Results.CableAttachments;
 aCableVectors = ip.Results.CableVectors;
 aRotation = ip.Results.Rotation;
@@ -84,7 +91,18 @@ chReturnStruct = inCharToValidArgument(ip.Results.ReturnStruct);
 
 
 %% Do the magic
-aStructureMatrix = algoStructureMatrix(aRotation*aCableAttachments, aCableVectors);
+switch chMotionPattern
+    case '2T'
+        aStructureMatrix = algoStructureMatrix_2T(aCableAttachments, aCableVectors);
+    case '3T'
+        aStructureMatrix = algoStructureMatrix_3T(aCableAttachments, aCableVectors);
+    case '1R2T'
+        aStructureMatrix = algoStructureMatrix_1R2T(aCableAttachments, aCableVectors, aRotation);
+    case '3R3T'
+        aStructureMatrix = algoStructureMatrix_3R3T(aCableAttachments, aCableVectors, aRotation);
+    otherwise
+        error('Unsupported or unknown motion pattern');
+end
 
 
 
@@ -92,7 +110,9 @@ aStructureMatrix = algoStructureMatrix(aRotation*aCableAttachments, aCableVector
 % Struct requested as return value?
 if strcmp(chReturnStruct, 'on')
     StructureMatrix = struct();
+    
     StructureMatrix.StructureMatrix = aStructureMatrix;
+    
     StructureMatrix = orderfields(StructureMatrix);
 % No struct as return value
 else
