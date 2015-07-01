@@ -91,7 +91,7 @@ function varargout = plotRobotPoses(Time, Poses, varargin)
 hAxes = false;
 % Check if the first argument is an axes handle, then we just have to shift all
 % other arguments by one
-if ~isempty(varargin) && allAxes(Poses)
+if ~isempty(varargin) && allAxes(Time)
     hAxes = Time;
     Time = Poses;
     Poses = varargin{1};
