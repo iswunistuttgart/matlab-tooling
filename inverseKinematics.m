@@ -196,14 +196,14 @@ switch lower(chAlgorithm)
 %         [vCableLength, mCableVector, mCableUnitVector, mCableLine] = algoInverseKinematics_CatenaryPulley(vPlatformPose, mPulleyPositions, mCableAttachments, mPulleyOrientations, ?.?.?);
     % Advanced kinematics algorithm (including pulley radius)
     case 'pulley'
-        [vCableLength, aCableVector, aCableUnitVector, aCorrectedPulleyPositions, aPulleyAngles] = algoInverseKinematics_Pulley(vPlatformPose, aPulleyPositions, aCableAttachments, vPulleyRadius, aPulleyOrientations);
+        [vCableLength, aCableUnitVector, aCorrectedPulleyPositions, aPulleyAngles] = algoInverseKinematics_Pulley(vPlatformPose, aPulleyPositions, aCableAttachments, vPulleyRadius, aPulleyOrientations);
     % Simple kinematics algorithm (no pulley radius)
     case 'standard'
-        [vCableLength, aCableVector, aCableUnitVector] = algoInverseKinematics_Simple(vPlatformPose, aPulleyPositions, aCableAttachments);
+        [vCableLength, aCableUnitVector] = algoInverseKinematics_Simple(vPlatformPose, aPulleyPositions, aCableAttachments);
     otherwise
-        [vCableLength, aCableVector, aCableUnitVector] = algoInverseKinematics_Simple(vPlatformPose, aPulleyPositions, aCableAttachments);
+        [vCableLength, aCableUnitVector] = algoInverseKinematics_Simple(vPlatformPose, aPulleyPositions, aCableAttachments);
 end
-% end ```siwtch lower(chAlgorithm)```
+% end ```switch lower(chAlgorithm)```
 
 
 %% Assign output quantities
@@ -213,8 +213,7 @@ if strcmp(chReturnStruct, 'on')
     length.PulleyAngles = zeros(2, size(aPulleyPositions, 2));
     length.PulleyPosition = aPulleyPositions;
     length.UnitVector = aCableUnitVector;
-    length.Vector = aCableVector;
-    
+        
     switch chAlgorithm
         case 'catenary'
             
@@ -233,26 +232,21 @@ else
     length = vCableLength;
 
     %%% Assign all the other, optional output quantities
-    % Second output argument is the matrix of cable directions vectors
+    % Second output argument is the matrix of normalized cable direction vectors
     if nargout >= 2
-        varargout{1} = aCableVector;
+        varargout{1} = aCableUnitVector;
     end
 
-    % Third output is the matrix of normalized cable direction vectors
+    % Third output 
     if nargout >= 3
-        varargout{2} = aCableUnitVector;
-    end
-
-    % Fourth output argument...
-    if nargout >= 4
         % For the advanced algorithms we are returning the wrapping angles
         switch chAlgorithm
             case 'pulley'
-                varargout{3} = aPulleyAngles;
+                varargout{2} = aPulleyAngles;
             otherwise
         end
     end
-    % end if nargout >= 4
+    % end if nargout >= 3
 end
 % end if strcmp(chReturnStruct, 'on')
 
