@@ -13,17 +13,24 @@ function [length, varargout] = algoInverseKinematics_Catenary(Pose, PulleyPositi
 %   loop can be used as well as the advanced pulley kinematics (considering
 %   pulley radius and rotatability).
 % 
-%   LENGTH = ALGOINVERSEKINEMATICS_PULLEY(POSE, PULLEYPOSITIONS, CABLEATTACHMENTS)
+%   LENGTH = ALGOINVERSEKINEMATICS_CATENARY(POSE, PULLEYPOSITIONS, CABLEATTACHMENTS)
 %   performs simple inverse kinematics with the cables running from a_i to
 %   b_i for the given pose
 % 
-%   [LENGTH, CABLEVECTORS] = ALGOINVERSEKINEMATICS_PULLEY(...) also provides the
-%   vectors of the cable directions from platform to attachment point given
-%   in the global coordinate system
-% 
-%   [LENGTH, CABLEVECTORS, CABLEUNITVECTORS] = ALGOINVERSEKINEMATICS_PULLEY(...)
-%   also provides the unit vectors for each cable which might come in handy
-%   at times
+%   [LENGTH, CABLEUNITVECTORS] = ALGOINVERSEKINEMATICS_CATENARY(...) also
+%   provides the unit vectors for each cable which might come in handy at times
+%   
+%   [LENGTH, CABLEUNITVECTORS, PULLEYANGLES] =
+%   ALGOINVERSEKINEMATICS_CATENARY(...) furthermore returns the angle of
+%   rotation of the pulley about its z-axos so that it's pointing towards the
+%   platform
+%   
+%   [LENGTH, CABLEUNITVECTORS, PULLEYANGLES, CABLESHAPE] =
+%   ALGOINVERSEKINEMATICS_CATENARY(...) will return the cable shape for each
+%   cable. CABLESHAPE is a matrix of dimension 2x10e3xM where the first
+%   dimension is either the cable's local x- or z-axis, the second dimension the
+%   corresponding x- or z-coordinates, and the third dimension is the cable
+%   number
 %   
 %   Inputs:
 %   
@@ -40,7 +47,7 @@ function [length, varargout] = algoInverseKinematics_Catenary(Pose, PulleyPositi
 %   points in CABLEATTACHMENTS (i.e., its column count) and the order must
 %   mach the real linkage of pulley to cable attachment on the platform
 % 
-%   CABLEATTACHMENTS: Matrix of cable attachment points w.r.t. the
+%   CABLEATTACHMENTS: Matrix of cable attachment points w.r.t. the platforms 
 %   platforms coordinate system. Each attachment point has its own column
 %   and the rows are the x, y, and z-value, respectively, i.e.,
 %   CABLEATTACHMENTS must be a matrix of 3xM values. The number of cables
@@ -64,9 +71,14 @@ function [length, varargout] = algoInverseKinematics_Catenary(Pose, PulleyPositi
 %   matrix
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-04-22
+% Date: 2015-06-22
 % Changelog:
-%   2015-04-22: Initial release
+%   2015-07-15
+%       * Update documentation
+%   2015-06-24
+%       * Add return value CABLESHAPE
+%   2015-06-22
+%       * Initial release
 
 
 
@@ -150,7 +162,7 @@ vLinearInequalityConstraints = zeros(6, 1);
 vInitialStateForOptimization(nIndexLength) = vInitialLength;
 
 % Initial guessing of the force distribution is necessary, too
-vInitForceDistribution = algoForceDistribution_AdvancedClosedForm(Wrench, getStructureMatrix(aCableAttachments, aInitCableUnitVector, aPlatformRotation), min(CableForceLimits), max(CableForceLimits));
+vInitForceDistribution = algoForceDistribution_AdvancedClosedForm(Wrench, getStructureMatrix('3R3T', aCableAttachments, aInitCableUnitVector, aPlatformRotation), min(CableForceLimits), max(CableForceLimits));
 
 %%% Boundaries
 % Lower boundaries: Forces are not bound but the minimum cable length is set to
@@ -250,9 +262,11 @@ if nargout >= 4
     % Calculate the cable coordinates for the catenary line
     for iCable = 1:nNumberOfCables
         vLinspaceCableLength = linspace(0, vCableLength(iCable), nDiscretizationPoints);
+        % X-Coordinate
         aCableShape(1,:,iCable) = vCableForcesX(iCable).*vLinspaceCableLength./(dCablePropYoungsModulus*dCablePropUnstrainedSection) ...
             + abs(vCableForcesX(iCable))./(dCablePropDensity.*dGravityConstant).*(asinh((vCableForcesZ(iCable) + dCablePropDensity.*dGravityConstant.*(vLinspaceCableLength - vCableLength(iCable)))./vCableForcesX(iCable)) - asinh((vCableForcesZ(iCable) - dCablePropDensity.*dGravityConstant.*vCableLength(iCable))./vCableForcesX(iCable)));
         
+        % Z-Coordinate
         aCableShape(2,:,iCable) = vCableForcesZ(iCable)./(dCablePropYoungsModulus.*dCablePropUnstrainedSection).*vLinspaceCableLength ...
             + dCablePropDensity.*dGravityConstant./(dCablePropYoungsModulus.*dCablePropUnstrainedSection).*(vLinspaceCableLength./2 - vCableLength(iCable)).*vLinspaceCableLength ...
             + 1./(dCablePropDensity.*dGravityConstant)*(sqrt(vCableForcesX(iCable).^2 + (vCableForcesZ(iCable) + dCablePropDensity.*dGravityConstant.*(vLinspaceCableLength - vCableLength(iCable))).^2) - sqrt(vCableForcesX(iCable).^2 + (vCableForcesZ(iCable) - dCablePropDensity.*dGravityConstant.*vCableLength(iCable)).^2));
