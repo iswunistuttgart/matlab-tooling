@@ -53,7 +53,7 @@ ip = inputParser;
 
 %%% This fills in the parameters for the function
 % We need the motion pattern
-valFcn_MotionPattern = @(x) any(validatestring(upper(x), {'2T', '3T', '1R2T', '3R3T'}), mfilename, 'MotionPattern');
+valFcn_MotionPattern = @(x) any(validatestring(upper(x), {'2T', '3T', '1R2T', '3R3T'}, mfilename, 'MotionPattern'));
 addRequired(ip, 'MotionPattern', valFcn_MotionPattern);
 
 % We need the b_i's
