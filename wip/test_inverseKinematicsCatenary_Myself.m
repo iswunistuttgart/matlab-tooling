@@ -44,7 +44,7 @@ nIndexLength = 3:3:(3*Robot.Meta.NumberOfWires);
 % Initial length from straight line
 [vInitLength, aCableUnitVector] = inverseKinematics(vPose, Robot.Pulley.Position, Robot.Platform.Anchor.Position);
 % Initial force distribution
-vInitForceDistribution = algoForceDistribution_AdvancedClosedForm([Robot.Environment.ForceFieldDirection.*Robot.Environment.GravitationalConstant; 0; 0; 0], getStructureMatrix(Robot.Platform.Anchor.Position, aCableUnitVector), 100, 3000);
+vInitForceDistribution = algoForceDistribution_AdvancedClosedForm([Robot.Environment.ForceFieldDirection.*Robot.Environment.GravitationalConstant; 0; 0; 0], getStructureMatrix('3R3T', Robot.Platform.Anchor.Position, aCableUnitVector), 100, 3000);
 
 vInitState = zeros(3*Robot.Meta.NumberOfWires, 1);
 
