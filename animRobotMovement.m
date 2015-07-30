@@ -93,22 +93,22 @@ addOptional(ip, 'Grid', 'off', valFcn_Grid);
 % Allow user to enable/disable plotting a trace of the trajectory
 valFcn_TraceTrajectory = @(x) any(validatestring(x, {'on', 'off', 'yes'}, mfilename, 'TraceTrajectory'));
 addOptional(ip, 'TraceTrajectory', 'off', valFcn_TraceTrajectory);
-% 
-% % Allow user to set the xlabel ...
-% valFcn_XLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'XLabel');
-% addOptional(ip, 'XLabel', false, valFcn_XLabel);
-% 
-% % Allow user to set the ylabel ...
-% valFcn_YLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'YLabel');
-% addOptional(ip, 'YLabel', false, valFcn_YLabel);
-% 
-% % And allow user to set the zlabel
-% valFcn_ZLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'ZLabel');
-% addOptional(ip, 'ZLabel', false, valFcn_ZLabel);
-% 
-% % Maybe a title is provided and shall be plotted, too?
-% valFcn_Title = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Title');
-% addOptional(ip, 'Title', false, valFcn_Title);
+
+% Allow user to set the xlabel ...
+valFcn_XLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'XLabel');
+addOptional(ip, 'XLabel', false, valFcn_XLabel);
+
+% Allow user to set the ylabel ...
+valFcn_YLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'YLabel');
+addOptional(ip, 'YLabel', false, valFcn_YLabel);
+
+% And allow user to set the zlabel
+valFcn_ZLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'ZLabel');
+addOptional(ip, 'ZLabel', false, valFcn_ZLabel);
+
+% Maybe a title is provided and shall be plotted, too?
+valFcn_Title = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Title');
+addOptional(ip, 'Title', 'Time passed: $%0.3f$ $\\left[ \\mathrm{m} \\right]$', valFcn_Title);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -129,7 +129,10 @@ aRotations = ip.Results.Rotation;
 % Get the cable attachment points
 aAttachmentPoints = ip.Results.AttachmentPoints;
 % New figure handle
-hFig = figure;
+if ~ishandle(hAxes)
+    hFig = figure;
+    hAxes = gca;
+end
 % New axes handle
 hAxes = gca;
 % General plot style
@@ -148,44 +151,63 @@ mxdViewport = ip.Results.Viewport;
 % Grid options
 chGrid = ip.Results.Grid;
 % Get the desired figure title (works only in standalone mode)
-% chTitle = ip.Results.Title;
+chTitle = ip.Results.Title;
 % Get provided axes labels
-% chXLabel = ip.Results.XLabel;
-% chYLabel = ip.Results.YLabel;
-% chZLabel = ip.Results.ZLabel;
+chXLabel = ip.Results.XLabel;
+chYLabel = ip.Results.YLabel;
+chZLabel = ip.Results.ZLabel;
+% Trajectory tracing
+chTraceTrajectory = ip.Results.TraceTrajectory;
 
-% Calculate the axes limits
-% if isempty(aAnchorPoints)
+% Is this our own plot?
+bOwnPlot = isempty(get(hAxes, 'Children'));
+
+
+
+%% Set figure properties
+% Only if its a seaprate plot and not a subplot
+if bOwnPlot
+    % Set viewport
+    view(hAxes, mxdViewport)
+    
+    % Calculate the axes limits
     dMinX = 1.1*(min(aPoses(:, 1)) - abs(max(max(aAttachmentPoints))));
     dMaxX = 1.1*(max(aPoses(:, 1)) + abs(max(max(aAttachmentPoints))));
     dMinY = 1.1*(min(aPoses(:, 2)) - abs(max(max(aAttachmentPoints))));
     dMaxY = 1.1*(max(aPoses(:, 2)) + abs(max(max(aAttachmentPoints))));
     dMinZ = 1.1*(min(aPoses(:, 3)) - abs(max(max(aAttachmentPoints))));
     dMaxZ = 1.1*(max(aPoses(:, 3)) + abs(max(max(aAttachmentPoints))));
-% end
+    
+    % Set the axes limits
+    set(hAxes, 'XLimMode', 'manual');
+    set(hAxes, 'XLim', [dMinX dMaxX]);
+    set(hAxes, 'YLimMode', 'manual');
+    set(hAxes, 'YLim', [dMinY dMaxY]);
+    set(hAxes, 'ZLimMode', 'manual');
+    set(hAxes, 'ZLim', [dMinZ dMaxZ]);
 
-
-
-%% Set figure properties
-% Set the axes limits
-set(hAxes, 'XLimMode', 'manual');
-set(hAxes, 'XLim', [dMinX dMaxX]);
-set(hAxes, 'YLimMode', 'manual');
-set(hAxes, 'YLim', [dMinY dMaxY]);
-set(hAxes, 'ZLimMode', 'manual');
-set(hAxes, 'ZLim', [dMinZ dMaxZ]);
-
-% Set viewport
-view(hAxes, mxdViewport)
-
-% Set a grid?
-if any(strcmp(chGrid, {'on', 'minor'}))
-    % For minor grids we will also enable the "major" grid
-    if strcmpi(chGrid, 'minor')
-        grid(hAxes, 'on');
+    % Set a grid?
+    if any(strcmp(chGrid, {'on', 'minor'}))
+        % For minor grids we will also enable the "major" grid
+        if strcmpi(chGrid, 'minor')
+            grid(hAxes, 'on');
+        end
+        % Set grid on
+        grid(hAxes, chGrid);
     end
-    % Set grid on
-    grid(hAxes, chGrid);
+    
+    % Set x-axis label, if provided
+    if chXLabel
+        xlabel(hAxes, chXLabel);
+    end
+    % Set y-axis label, if provided
+    if chYLabel
+        ylabel(hAxes, chYLabel);
+    end
+    % Set z-axis label, if provided
+    if chZLabel
+        zlabel(hAxes, chZLabel);
+    end
 end
 
 % We will be plotting multiple objects, so we'll have to hold the plot
@@ -208,39 +230,45 @@ set(hTargetPlotPlatform, 'Parent', hTargetGroupPlatform);
 hTitle = title(hAxes, 'Initializing...');
 set(hTitle, 'Interpreter', 'latex');
 
+% Time counter to pace the drawing
 dTimeStart = tic;
+dMaxAnimationTime = vTime(end);
 
 % Step over the simulation time
-for iTime = 1:size(vTime)
-    set(hTitle, 'String', sprintf('$%0.3f$ $\\left[ \\mathrm{s} \\right]$', vTime(iTime)));
+for iTime = 1:1:size(vTime)
+    % Adjust the title to display the current time
+    if bOwnPlot
+        set(hTitle, 'String', sprintf(chTitle, vTime(iTime)));
+    end
     % Extract the current pose and rotation
     vCurrentPose = aPoses(iTime, :)';
-    aCurrentRotation = aRotations(iTime, :)
-%     aCurrentRotation(:)'
+    aCurrentRotation = aRotations(iTime, :);
     
     % Make a transformation matrix given the current pose (i.e., shift) and
     % rotation to be used with the hgtransform group
-    aTransformationPlatform = makehgtform('translate', vCurrentPose)*...
-        makehgtform('zrotate', aCurrentRotation(3))*...
-        makehgtform('yrotate', aCurrentRotation(2))*...
-        makehgtform('xrotate', aCurrentRotation(1));
-    
-    % Apply the calculated transformation to the platform
-    set(hTargetGroupPlatform, 'Matrix', aTransformationPlatform);
-    
-%     % Calculate the position of each cable attachment's actual position
-%     aCurrentRotation = rotz(rad2deg(aCurrentRotation(3)))*roty(rad2deg(aCurrentRotation(2)))*rotx(rad2deg(aCurrentRotation(1)));
-%     aCurrentAttachmentPoints = repmat(vCurrentPose, 1, size(aAttachmentPoints, 2)) + aCurrentRotation*aAttachmentPoints;
-%     [aCurrentAttachmentPointsBoundingBox, aCurrentAttachmentPointsBoundingBoxFaces] = boundingbox3(aCurrentAttachmentPoints(1, :), aCurrentAttachmentPoints(2, :), aCurrentAttachmentPoints(3, :));
+%     aTransformationPlatform = makehgtform('translate', vCurrentPose)*...
+%         makehgtform('zrotate', aCurrentRotation(3))*...
+%         makehgtform('yrotate', aCurrentRotation(2))*...
+%         makehgtform('xrotate', aCurrentRotation(1));
 %     
-%     set(hTargetPlotPlatform, ...
-%         'Faces', aCurrentAttachmentPointsBoundingBoxFaces, ...
-%         'Vertices', aCurrentAttachmentPointsBoundingBox);
+%     % Apply the calculated transformation to the platform
+%     set(hTargetGroupPlatform, 'Matrix', aTransformationPlatform);
     
-    % Plot the path of the trajectory that has passed so far
-    set(hTargetPlotTrajectory, 'XData', aPoses(1:iTime, 1), 'YData', aPoses(1:iTime, 2), 'ZData', aPoses(1:iTime, 3));
+    % Calculate the position of each cable attachment's actual position
+    aCurrentRotation = rotz(rad2deg(aCurrentRotation(3)))*roty(rad2deg(aCurrentRotation(2)))*rotx(rad2deg(aCurrentRotation(1)));
+    aCurrentAttachmentPointsBoundingBox = transpose(repmat(vCurrentPose, 1, size(aAttachmentPoints, 2)) + aCurrentRotation*transpose(aInitialAttachmentPointsBoundingBox));
+    % And update the platform patch to a new position
+    set(hTargetPlotPlatform, ...
+        'Vertices', aCurrentAttachmentPointsBoundingBox);
     
+    % Plot the path of the trajectory that has passed so far (if requested)
+    if any(strcmp(chTraceTrajectory, {'on', 'yes'}))
+        set(hTargetPlotTrajectory, 'XData', aPoses(1:iTime, 1), 'YData', aPoses(1:iTime, 2), 'ZData', aPoses(1:iTime, 3));
+    end
+    
+    % Pacer to draw only at a rate of about 30 frames per second
     if toc(dTimeStart) > 1/30
+%         drawnow update;
         drawnow;
         
         dTimeStart = tic;
