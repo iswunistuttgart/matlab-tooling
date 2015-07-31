@@ -16,7 +16,7 @@ Fp = 50; % [N]
 % Fp = 0;
 % Fp = 10*dMassCable*g;
 % Angle the force Fp has with the x-axis at node N+1
-phi = deg2rad(-45);
+phi = deg2rad(90);
 % phi = deg2rad(0);
 % phi = deg2rad(180);
 
@@ -38,8 +38,8 @@ for iNode = fliplr(1:nNodes+1)
     vLoadForceMag(end) = sqrt(sum(aLoadForceDirn(:, iNode).^2));
 end
 
-for iNode = 2:size(vNodePosition, 2)
-    vNodePosition(:, iNode) = dNodeDistance.*[cos(vLoadForceAngle(iNode - 1)); sin(vLoadForceAngle(iNode - 1))] + vNodePosition(:, iNode - 1);
+for iNode = 1:size(vNodePosition, 2)
+    vNodePosition(:, iNode + 1) = dNodeDistance.*[cos(vLoadForceAngle(iNode)); sin(vLoadForceAngle(iNode))] + vNodePosition(:, iNode);
 end
 
 
