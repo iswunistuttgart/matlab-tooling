@@ -20,45 +20,51 @@ dCableForceMinimum = stCableProperties.ForceMinimum;
 
 %% Initialize the parameters for the optimization function
 % This is the state we will perform optimziation over which is
-% [F_x1 F_z1 L_01, F_x2 F_z2 L_02, ..., F_xm F_zm L_0z]
-vInitialStateForOptimization = zeros(3, 1);
+% [F_x1 F_z1 L_01]
+vInitialStateForOptimization = zeros(2, 1);
 
 %%% Linear equality constraints Ax = b
 % Linear equality constraints matrix A
-aLinearEqualityConstraints = zeros(6, 3);
+% aLinearEqualityConstraints = zeros(2, 3);
+aLinearEqualityConstraints = [];
 % Linear equality constraints vector b
-Wrench = dGravityConstant.*dAttachedMass.*[0,0,-1, 0,0,0]';r
-vLinearEqualityConstraints = zeros(6, 1) - Wrench;
+% Wrench = dGravityConstant.*dAttachedMass.*[0; -1];
+% vLinearEqualityConstraints = zeros(2, 1) - Wrench;
+% vLinearEqualityConstraints = zeros(2, 1);% - Wrench;
+vLinearEqualityConstraints = [];
 
 
 %%% Linear inequality constraints Ax <= b
 % Linear inequality constraints matrix A
-aLinearInequalityConstraints = zeros(6, 3);
+% aLinearInequalityConstraints = zeros(2, 3);
+aLinearInequalityConstraints = [];
 % Linear inequality constraints vector b
-vLinearInequalityConstraints = zeros(6, 1);
+% vLinearInequalityConstraints = zeros(2, 1);
+vLinearInequalityConstraints = [];
 
-nIndexForceX = 1;
-nIndexForceZ = 2;
-nIndexLength = 3;
+% nIndexForceX = 1;
+% nIndexForceZ = 2;
+% nIndexLength = 3;
+nIndexAngle = 1;
+nIndexLength = 2;
 
 dInitialLength = cableShapeFor_Simple(vEnd);
-vInitialStateForOptimization(3) = dInitialLength;
-dInitForceDistribution = dAttachedMass;
-dAngleOfCableWithX_rad = atan2(vEnd(2), vEnd(1));
-vInitialStateForOptimization(1) = cos(dAngleOfCableWithX_rad)*dInitForceDistribution;
-vInitialStateForOptimization(2) = sin(dAngleOfCableWithX_rad)*dInitForceDistribution;
+vInitialStateForOptimization(nIndexLength) = dInitialLength;
+
+dInitForceDistribution = dAttachedMass*dGravityConstant;
+vInitialStateForOptimization(nIndexAngle) = atan2(vEnd(2), vEnd(1));
 
 %%% Boundaries
-% Lower boundaries: Forces are not bound but the minimum cable length is set to
-% 0
-vLowerBoundaries = -Inf(3, 1);
+% Lower boundaries: Forces are not bound (wrt linear boundaries) but the
+% minimum cable length is set to 0
+vLowerBoundaries = -Inf(2, 1);
 vLowerBoundaries(nIndexLength) = 0;
 
 % Upper boundaries: Totally unlimited
-vUpperBoundaries = Inf(3, 1);
+vUpperBoundaries = Inf(2, 1);
 
-% Optimization target function
-inOptimizationTargetFunction = @(x) norm(x(nIndexLength) - dInitialLength) + norm(dInitForceDistribution - sqrt(sum(x([nIndexForceX, nIndexForceZ]).^2)));
+% Optimization target function with x = [Thetag_1, L_01] %% x = [F_x1, F_z1, L_01]
+inOptimizationTargetFunction = @(x) norm(x(nIndexLength) - vInitialStateForOptimization(nIndexLength)) + norm(x(nIndexAngle) - vInitialStateForOptimization(nIndexAngle));
 
 
 
@@ -67,13 +73,16 @@ inOptimizationTargetFunction = @(x) norm(x(nIndexLength) - dInitialLength) + nor
     aLinearInequalityConstraints, vLinearInequalityConstraints, ...
     aLinearEqualityConstraints, vLinearEqualityConstraints, ...
     vLowerBoundaries, vUpperBoundaries, ...
-    @(vOptimizationVector) cableShapeFor_Catenary_nonlinearBoundaries(vOptimizationVector, vEnd, dCablePropYoungsModulus, dCablePropUnstrainedSection, dCablePropDensity, dGravityConstant, dCableForceMinimum, dCableForceMaximum));
+    @(vOptimizationVector) cableShapeFor_Catenary_nonlinearBoundaries(vOptimizationVector, vEnd, dCablePropYoungsModulus, dCablePropUnstrainedSection, dCablePropDensity, dGravityConstant, dCableForceMinimum, dCableForceMaximum, dInitForceDistribution));
+
+% exitflag
+% fval
 
 % Extract the solutions from the final optimized vector
 % Forces X
-dCableForceX = xFinal(nIndexForceX);
+dCableForceX = dInitForceDistribution*cos(xFinal(1));
 % Forces Z
-dCableForceZ = xFinal(nIndexForceZ);
+dCableForceZ = dInitForceDistribution*sin(xFinal(1));
 % Cable length
 dCableLength = xFinal(nIndexLength);
 
@@ -105,17 +114,17 @@ end
 end
 
 
-function [c, ceq] = cableShapeFor_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedCableSection, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum)
+function [c, ceq] = cableShapeFor_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedCableSection, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum, dInitForceDistribution)
 
 %% Quickhand variables
 % Number of wires
 nNumberOfCables = size(aAnchorPositionsInC, 2);
 % For forces F_x
-vForcesX = vOptimizationVector(1:3:end);
+vForcesX = [dInitForceDistribution*cos(vOptimizationVector(1))];
 % For forces F_z
-vForcesZ = vOptimizationVector(2:3:end);
+vForcesZ = [dInitForceDistribution*sin(vOptimizationVector(1))];
 % Length L_0 components
-vLength = vOptimizationVector(3:3:end);
+vLength = vOptimizationVector(2);
 
 
 %% Initialize the output variables
@@ -123,11 +132,13 @@ vLength = vOptimizationVector(3:3:end);
 c = zeros(nNumberOfCables*2, 1);
 % Nonlinear equality constraints are x_{end, i} and z_{end, i}
 ceq = zeros(nNumberOfCables*2, 1);
+% ceq = zeros(nNumberOfCables*3, 1);
 
+iCable = 1;
 
 %% Do the magic
 % Set the equality constraints
-for iCable = 1:nNumberOfCables
+% for iCable = 1:nNumberOfCables
     dOffset = (iCable-1)*2;
     
     %%% Equalities
@@ -141,11 +152,15 @@ for iCable = 1:nNumberOfCables
         + 1/(dCablePropDensity*dGravity)*(sqrt(vForcesX(iCable)^2 + vForcesZ(iCable)^2) - sqrt(vForcesX(iCable)^2 + (vForcesZ(iCable) - dCablePropDensity*dGravity*vLength(iCable))^2)) ...
         - aAnchorPositionsInC(2, iCable);
     
-    %%% Inequalities
-    % Min force
-    c(iCable + 0 + dOffset) = dForceMinimum - sqrt(vForcesX(iCable)^2 + vForcesZ(iCable)^2);
-    % Max force
-    c(iCable + 1 + dOffset) = sqrt(vForcesX(iCable)^2 + vForcesZ(iCable)^2) - dForceMaximum;
-end
+    % Amount of force on the cable must be equal to the amount of
+    % gravitational force of the attached mass
+%     ceq(iCable + 2 + dOffset) = dInitForceDistribution - vOptimizationVector(1);
+    
+%     %%% Inequalities
+%     % Min force
+%     c(iCable + 0 + dOffset) = dForceMinimum - sqrt(vForcesX(iCable)^2 + vForcesZ(iCable)^2);
+%     % Max force
+%     c(iCable + 1 + dOffset) = sqrt(vForcesX(iCable)^2 + vForcesZ(iCable)^2) - dForceMaximum;
+% end
 
 end
