@@ -152,9 +152,11 @@ vLinearEqualityConstraints = zeros(6, 1) - Wrench;
 
 %%% Linear inequality constraints Ax <= b
 % Linear inequality constraints matrix A
-aLinearInequalityConstraints = zeros(6, 3*nNumberOfCables);
+% aLinearInequalityConstraints = zeros(6, 3*nNumberOfCables);
+aLinearInequalityConstraints = [];
 % Linear inequality constraints vector b
-vLinearInequalityConstraints = zeros(6, 1);
+% vLinearInequalityConstraints = zeros(6, 1);
+vLinearInequalityConstraints = [];
 
 % To populate the initial cable lengths and forces, we will use the straight
 % line to get initial values
@@ -215,7 +217,7 @@ end
     aLinearInequalityConstraints, vLinearInequalityConstraints, ...
     aLinearEqualityConstraints, vLinearEqualityConstraints, ...
     vLowerBoundaries, vUpperBoundaries, ...
-    @(vOptimizationVector) algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedSection, dCablePropDensity, dGravityConstant, min(CableForceLimits), max(CableForceLimits)));
+    @(vOptimizationVector) algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedSection, dCablePropDensity, dGravityConstant, min(CableForceLimits), max(CableForceLimits), nIndexForcesX, nIndexForcesZ, nIndexLength));
 
 % Extract the solutions from the final optimized vector
 % Forces X
@@ -227,10 +229,11 @@ vCableLength = xFinal(nIndexLength);
 
 
 %% Output parsing
-% First output is the cable lengths
+% First output is the cable lengths (currently, these are the unstrained
+% cable lengths)
 length = vCableLength;
 
-% Further outputs as requested
+%%% Further outputs as requested
 % Second output is the matrix of normalized cable vectors
 if nargout >= 2
     % To get the cable force unit vectors we will have to take the forces of the
@@ -242,9 +245,12 @@ if nargout >= 2
         % Get the force vector in C
         vForceVector_in_C = [vCableForcesX(iCable), 0, vCableForcesZ(iCable)]';
         
-        vForceVector_in_0 = aRotation_kC2k0*vForceVector_in_C;
+        % Transform force vector in K_0
+        vForceVector_in_0 = -aRotation_kC2k0*vForceVector_in_C;
         
-        aCableVectorUnit(:,iCable) = -vForceVector_in_0./norm(vForceVector_in_0);
+        % And calculate the force vector from the components of the
+        % resulted cable force in K_0
+        aCableVectorUnit(:,iCable) = vForceVector_in_0./norm(vForceVector_in_0);
     end
     
     varargout{1} = aCableVectorUnit;
@@ -279,17 +285,17 @@ end
 end
 
 
-function [c, ceq] = algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedCableSection, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum)
+function [c, ceq] = algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedCableSection, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum, nIndexForcesX, nIndexForcesZ, nIndexLength)
 
 %% Quickhand variables
 % Number of wires
 nNumberOfCables = size(aAnchorPositionsInC, 2);
 % For forces F_x
-vForcesX = vOptimizationVector(1:3:end);
+vForcesX = vOptimizationVector(nIndexForcesX);
 % For forces F_z
-vForcesZ = vOptimizationVector(2:3:end);
+vForcesZ = vOptimizationVector(nIndexForcesZ);
 % Length L_0 components
-vLength = vOptimizationVector(3:3:end);
+vLength = vOptimizationVector(nIndexLength);
 
 
 %% Initialize the output variables
