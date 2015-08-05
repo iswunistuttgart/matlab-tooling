@@ -2,3 +2,4 @@
 *.asv
 *.m~
 slprj*
+*.lcl.mat
