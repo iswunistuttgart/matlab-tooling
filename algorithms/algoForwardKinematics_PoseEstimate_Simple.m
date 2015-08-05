@@ -1,8 +1,8 @@
-function [PoseEstimate] = algoForwardKinematics_PoseEstimateSimple(CableLength, PulleyPosition, CableAttachment)
-% ALGOFORWARDKINEMATICS_POSEESTIMATESIMPLE estimates the initial pose for
+function [PoseEstimate] = algoForwardKinematics_PoseEstimate_Simple(CableLength, PulleyPosition, CableAttachment)
+% ALGOFORWARDKINEMATICS_POSEESTIMATE_SIMPLE estimates the initial pose for
 %   foward kinematics
 % 
-%   POSEESTIMATE = ALGOFORWARDKINEMATICS_POSEESTIMATESIMPLE(CABLELENGTH,
+%   POSEESTIMATE = ALGOFORWARDKINEMATICS_POSEESTIMATE_SIMPLE(CABLELENGTH,
 %   PULLEYPOSITION, CABLEATTACHMENT) calculates the center of the bounding
 %   box of the given pulley positions and cable attachments
 %   
@@ -14,7 +14,7 @@ function [PoseEstimate] = algoForwardKinematics_PoseEstimateSimple(CableLength, 
 %   PULLEYPOSITIONS: Matrix of pulley positions w.r.t. the world frame. Each
 %   pulley has its own column and the rows are the x, y, and z-value,
 %   respectively i.e., PULLEYPOSITIONS must be a matrix of 3xM values. The
-%   number of pulleyes i.e., N, must match the number of cable attachment
+%   number of pulleys i.e., N, must match the number of cable attachment
 %   points in CABLEATTACHMENTS (i.e., its column count) and the order must
 %   mach the real linkage of pulley to cable attachment on the platform
 % 
@@ -22,7 +22,7 @@ function [PoseEstimate] = algoForwardKinematics_PoseEstimateSimple(CableLength, 
 %   platforms coordinate system. Each attachment point has its own column
 %   and the rows are the x, y, and z-value, respectively, i.e.,
 %   CABLEATTACHMENTS must be a matrix of 3xM values. The number of cables
-%   i.e., N, must match the number of pulleyes in PULLEYPOSITIONS (i.e., its
+%   i.e., N, must match the number of pulleys in PULLEYPOSITIONS (i.e., its
 %   column count) and the order must match the real linkage of cable
 %   attachment on the platform to pulley.
 % 
@@ -41,7 +41,7 @@ function [PoseEstimate] = algoForwardKinematics_PoseEstimateSimple(CableLength, 
 
 
 %% Initialize variables
-vCableLengths = CableLength(:);
+vCableLengths = reshape(CableLength, 1, numel(CableLength));
 aPulleyPositions = PulleyPosition;
 aCableAttachments = CableAttachment;
 % By default we will estimate to the center of the world coordinate system
