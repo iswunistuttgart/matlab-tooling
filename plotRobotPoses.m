@@ -135,7 +135,7 @@ addOptional(ip, 'Viewport', [-13, 10], valFcn_Viewport);
 
 % Allow user to choose grid style (either 'on', 'off', or 'minor')
 valFcn_Grid = @(x) any(validatestring(x, {'on', 'off', 'minor'}, mfilename, 'Grid'));
-addOptional(ip, 'Grid', false, valFcn_Grid);
+addOptional(ip, 'Grid', 'off', valFcn_Grid);
 
 % Allow user to set the xlabel ...
 valFcn_XLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'XLabel');
@@ -186,10 +186,7 @@ cLineSpec = ip.Results.LineSpec;
 % 3D viewport (only used for 3d plot style)
 vViewport = ip.Results.Viewport;
 % Grid options
-chGrid = ip.Results.Grid;
-if islogical(chGrid) && isequal(chGrid, true)
-    chGrid = 'on';
-end
+chGrid = inCharToValidArgument(ip.Results.Grid);
 % Get the desired figure title (works only in standalone mode)
 chTitle = ip.Results.Title;
 % Get provided axes labels
@@ -229,20 +226,20 @@ switch chPlotStyle
 %             zlim(hAxes, zlim().*1.05);
             
             % Set x-axis label, if provided
-            if chXLabel
+            if ~isempty(strtim(chXLabel))
                 xlabel(hAxes, chXLabel);
             end
             % Set y-axis label, if provided
-            if chYLabel
+            if ~isempty(strtim(chYLabel))
                 ylabel(hAxes, chYLabel);
             end
             % Set z-axis label, if provided
-            if chZLabel
+            if ~isempty(strtim(chZLabel))
                 zlabel(hAxes, chZLabel);
             end
             
             % Set a figure title?
-            if chTitle
+            if ~isempty(strtim(chTitle))
                 title(hAxes, chTitle);
             end
             
@@ -250,7 +247,7 @@ switch chPlotStyle
             view(vViewport);
             
             % Set a grid?
-            if chGrid
+            if any(strcmp(chGrid, {'on', 'minor'}))
                 % Set grid on
                 grid(hAxes, chGrid);
                 % For minor grids we will also enable the "major" grid
@@ -289,21 +286,21 @@ switch chPlotStyle
 %             ylim(hAxes, ylim().*1.05);
             
             % Set x-axis label, if provided
-            if chXLabel
+            if ~isempty(strtim(chXLabel))
                 xlabel(hAxes, chXLabel);
             end
             % Set y-axis label, if provided
-            if chYLabel
+            if ~isempty(strtim(chYLabel))
                 ylabel(hAxes, chYLabel);
             end
             
             % Set a figure title?
-            if chTitle
+            if ~isempty(strtim(chTitle))
                 title(hAxes, chTitle);
             end
             
             % Set a grid?
-            if chGrid
+            if any(strcmp(chGrid, {'on', 'minor'}))
                 % Set grid on
                 grid(hAxes, chGrid);
                 % For minor grids we will also enable the "major" grid
@@ -326,21 +323,21 @@ switch chPlotStyle
 %             ylim(hAxes, ylim().*1.05);
             
             % Set x-axis label, if provided
-            if chXLabel
+            if ~isempty(strtim(chXLabel))
                 xlabel(hAxes, chXLabel);
             end
             % Set y-axis label, if provided
-            if chYLabel
+            if ~isempty(strtim(chYLabel))
                 ylabel(hAxes, chYLabel);
             end
             
             % Set a figure title?
-            if chTitle
+            if ~isempty(strtim(chTitle))
                 title(hAxes, chTitle);
             end
             
             % Set a grid?
-            if chGrid
+            if any(strcmp(chGrid, {'on', 'minor'}))
                 % Set grid on
                 grid(hAxes, chGrid);
                 % For minor grids we will also enable the "major" grid
@@ -377,6 +374,21 @@ function result = allAxes(h)
 
 result = all(all(ishghandle(h))) && ...
          length(findobj(h,'type','axes','-depth',0)) == length(h);
+end
+
+
+function out = inCharToValidArgument(in)
+
+switch lower(in)
+    case {'on', 'yes', 'please'}
+        out = 'on';
+    case {'off', 'no', 'never'}
+        out = 'off';
+    otherwise
+        out = 'off';
+end
+% end ```switch lower(in)```
+
 end
 
 %------------- END OF CODE --------------
