@@ -115,9 +115,8 @@ valFcn_PlotSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 
 addOptional(ip, 'PlotSpec', {}, valFcn_PlotSpec);
 
 % Bounding box about the winch positions? May be any numeric or logical value
-% valFcn_BoundingBox = @(x) valFcn_AnythingTrueOrFalse(x);
-valFcn_BoundingBox = @(x) validateattributes(x, {'numeric', 'logical'}, {}, mfilename, 'BoundingBox');
-addOptional(ip, 'BoundingBox', false, valFcn_BoundingBox);
+valFcn_BoundingBox = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no', 'please'}, mfilename, 'BoundingBox'));
+addOptional(ip, 'BoundingBox', 'off', valFcn_BoundingBox);
 
 % Maybe the bounding box must have other spec as the ones we use here?
 valFcn_BoundingBoxSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'BoundingBoxSpec');
@@ -146,7 +145,7 @@ addOptional(ip, 'HomePositionSpec', {}, valFcn_HomePositionSpec);
 
 % Allow user to choose grid style (either 'on', 'off', or 'minor')
 valFcn_Grid = @(x) any(validatestring(x, {'on', 'off', 'minor'}, mfilename, 'Grid'));
-addOptional(ip, 'Grid', false, valFcn_Grid);
+addOptional(ip, 'Grid', 'off', valFcn_Grid);
 
 % Allow user to set the xlabel ...
 valFcn_XLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'XLabel');
@@ -196,7 +195,7 @@ cWinchLabelSpec = ip.Results.WinchLabelSpec;
 % Plot spec
 cPlotSpec = ip.Results.PlotSpec;
 % Bounding box?
-bBoundingBox = ip.Results.BoundingBox;
+chBoundingBox = inCharToValidArgument(ip.Results.BoundingBox);
 % Spec on the bounding box
 cBoundingBoxSpec = ip.Results.BoundingBoxSpec;
 % Viewport settings
@@ -263,7 +262,7 @@ end
 
 
 % Plot the bounding box?
-if bBoundingBox
+if strcmp(chBoundingBox, 'on')
     % Get the bounding box for the winch positions
     [mWinchPositionsBoundingBox, mWinchPositionsBoundingBoxFaces] = boundingbox3(mWinchPositions(1, :), mWinchPositions(2, :), mWinchPositions(3, :));
     
@@ -279,20 +278,20 @@ end
 % This is stuff we are only going to do if we're in our own plot
 if bOwnPlot
     % Set x-axis label, if provided
-    if chXLabel
+    if ~isempty(strtim(chXLabel))
         xlabel(hAxes, chXLabel);
     end
     % Set y-axis label, if provided
-    if chYLabel
+    if ~isempty(strtim(chYLabel))
         ylabel(hAxes, chYLabel);
     end
     % Set z-axis label, if provided
-    if chZLabel
+    if ~isempty(strtim(chZLabel))
         zlabel(hAxes, chZLabel);
     end
     
     % Set a figure title?
-    if chTitle
+    if ~isempty(strtim(chTitle))
         title(hAxes, chTitle);
     end
     
@@ -300,7 +299,7 @@ if bOwnPlot
     view(hAxes, mxdViewport);
     
     % Set a grid?
-    if chGrid
+    if any(strcmp(chGrid, {'on', 'minor'}))
         % Set grid on
         grid(hAxes, chGrid);
         % For minor grids we will also enable the "major" grid
@@ -343,6 +342,21 @@ function result = allAxes(h)
 
 result = all(all(ishghandle(h))) && ...
          length(findobj(h,'type','axes','-depth',0)) == length(h);
+
+end
+
+
+function out = inCharToValidArgument(in)
+
+switch lower(in)
+    case {'on', 'yes', 'please'}
+        out = 'on';
+    case {'off', 'no', 'never'}
+        out = 'off';
+    otherwise
+        out = 'off';
+end
+% end ```switch lower(in)```
 
 end
 
