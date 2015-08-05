@@ -1,4 +1,4 @@
-function [length, varargout] = algoInverseKinematics_Catenary(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant)
+function [length, varargout] = algoInverseKinematics_Catenary(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions)
 % ALGOINVERSEKINEMATICS_CATENARY - Perform inverse kinematics for the given
 %   pose of the virtual robot using catenary lines
 %   Inverse kinematics means to determine the values for the joint
@@ -13,9 +13,10 @@ function [length, varargout] = algoInverseKinematics_Catenary(Pose, PulleyPositi
 %   loop can be used as well as the advanced pulley kinematics (considering
 %   pulley radius and rotatability).
 % 
-%   LENGTH = ALGOINVERSEKINEMATICS_CATENARY(POSE, PULLEYPOSITIONS, CABLEATTACHMENTS)
-%   performs simple inverse kinematics with the cables running from a_i to
-%   b_i for the given pose
+%   LENGTH = ALGOINVERSEKINEMATICS_CATENARY(POSE, PULLEYPOSITIONS,
+%   CABLEATTACHMENTS, WRENCH, CABLEFORCELIMITS, CABLEPROPERTIES,
+%   GRAVITYCONSTANT) performs catenary based inverse kinematics with the cables
+%   running from PULLEYPOSITIONS to CABLEATTACHMENTS for the given pose
 % 
 %   [LENGTH, CABLEUNITVECTORS] = ALGOINVERSEKINEMATICS_CATENARY(...) also
 %   provides the unit vectors for each cable which might come in handy at times
@@ -31,6 +32,10 @@ function [length, varargout] = algoInverseKinematics_Catenary(Pose, PulleyPositi
 %   dimension is either the cable's local x- or z-axis, the second dimension the
 %   corresponding x- or z-coordinates, and the third dimension is the cable
 %   number
+%
+%   LENGTH = ALGOINVERSEKINEMATICS_CATENARY(..., SOLVEROPTIONS) allows to
+%   override some pre-adjusted solver options. See input argument SOLVEROPTIONS
+%   further down for specific details
 %   
 %   Inputs:
 %   
@@ -43,7 +48,7 @@ function [length, varargout] = algoInverseKinematics_Catenary(Pose, PulleyPositi
 %   PULLEYPOSITIONS: Matrix of pulley positions w.r.t. the world frame. Each
 %   pulley has its own column and the rows are the x, y, and z-value,
 %   respectively i.e., PULLEYPOSITIONS must be a matrix of 3xM values. The
-%   number of pulleyes i.e., N, must match the number of cable attachment
+%   number of pulleys i.e., N, must match the number of cable attachment
 %   points in CABLEATTACHMENTS (i.e., its column count) and the order must
 %   mach the real linkage of pulley to cable attachment on the platform
 % 
@@ -51,9 +56,17 @@ function [length, varargout] = algoInverseKinematics_Catenary(Pose, PulleyPositi
 %   platforms coordinate system. Each attachment point has its own column
 %   and the rows are the x, y, and z-value, respectively, i.e.,
 %   CABLEATTACHMENTS must be a matrix of 3xM values. The number of cables
-%   i.e., N, must match the number of pulleyes in PULLEYPOSITIONS (i.e., its
+%   i.e., N, must match the number of pulleys in PULLEYPOSITIONS (i.e., its
 %   column count) and the order must match the real linkage of cable
 %   attachment on the platform to pulley.
+%
+%   SOLVEROPTIONS: A struct of optimization options to set for the fmincon
+%   solver. All values may be overriden and this function makes use of the
+%   following pre-overriden options
+%   
+%       Algorithm:  'trust-region-reflective'
+%       Display:    'off'
+%       TolX:       1e-12
 % 
 %   Outputs:
 % 
@@ -71,8 +84,10 @@ function [length, varargout] = algoInverseKinematics_Catenary(Pose, PulleyPositi
 %   matrix
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-06-22
+% Date: 2015-08-05
 % Changelog:
+%   2015-08-05
+%       * Add optional input argument SOLVEROPTIONS
 %   2015-07-15
 %       * Update documentation
 %   2015-06-24
@@ -98,21 +113,28 @@ vCableLength = zeros(1, nNumberOfCables);
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
 aPlatformRotation = reshape(Pose(4:12), 3, 3).';
-% Get the gravity constant (7th argument) to the given value
-if nargin >= 7
-    dGravityConstant = GravityConstant;
 % Gravity constant not set so set a default value
-else
-    dGravityConstant = 9.81;
-end
+dGravityConstant = 9.81;
+% Custom solver options may be given to override the defaults
+stSolverOptionsGiven = struct();
 % Get the cable properties struct
 stCableProperties = CableProperties;
 % And extract its fields
 dCablePropYoungsModulus = stCableProperties.YoungsModulus;
 dCablePropUnstrainedSection = stCableProperties.UnstrainedSection;
 dCablePropDensity = stCableProperties.Density;
+% Get the gravity constant (7th argument) to the given value
+if nargin >= 7
+    dGravityConstant = GravityConstant;
+end
+% Custom solver options may be provided as the 8th argument
+if nargin >= 8
+    stSolverOptionsGiven = SolverOptions;
+end
 
+% Number of discretization points for cable shape determination
 nDiscretizationPoints = 10e3;
+% And array holding these values
 aCableShape = zeros(2, nDiscretizationPoints, nNumberOfCables);
 
 
@@ -179,6 +201,7 @@ vUpperBoundaries = Inf(3*nNumberOfCables, 1);
 inOptimizationTargetFunction = @(x) norm(reshape(x(nIndexLength), nNumberOfCables, 1) - vInitialLength(:)) + norm(vInitForceDistribution - sqrt(x(nIndexForcesX).^2 + x(nIndexForcesZ).^2));
 
 
+
 %% Do the magic
 % Loop over every pulley and calculate the corrected pulley position i.e.,
 % a_{i, corr}
@@ -212,14 +235,38 @@ for iCable = 1:nNumberOfCables
     vInitialStateForOptimization(nIndexForcesZ(iCable)) = vForceOfBiInC(3);
 end
 
-%% Run optimization
-[xFinal, fval, exitflag, output] = fmincon(inOptimizationTargetFunction, vInitialStateForOptimization, ...
-    aLinearInequalityConstraints, vLinearInequalityConstraints, ...
-    aLinearEqualityConstraints, vLinearEqualityConstraints, ...
-    vLowerBoundaries, vUpperBoundaries, ...
-    @(vOptimizationVector) algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedSection, dCablePropDensity, dGravityConstant, min(CableForceLimits), max(CableForceLimits), nIndexForcesX, nIndexForcesZ, nIndexLength));
 
-% Extract the solutions from the final optimized vector
+
+%% Run optimization
+% Set our default optimization options
+opSolverOptions = optimoptions('fmincon');
+opSolverOptions.Algorithm = 'trust-region-reflective';
+opSolverOptions.Display = 'off';
+opSolverOptions.TolX = 1e-12;
+% And parse custom solver options
+if ~isempty(stSolverOptionsGiven)
+    % Get the fields of the struct provided
+    ceFields = fieldnames(stSolverOptionsGiven);
+    % And assign each given value to the solver options
+    for iField = 1:numel(ceFields)
+        opSolverOptions.(ceFields{iField}) = stSolverOptionsGiven.(ceFields{iField});
+    end
+end
+
+% Perform the actual optimization
+[xFinal, fval, exitflag, output] = fmincon(inOptimizationTargetFunction, ... % Optimization function
+    vInitialStateForOptimization, ... % Initial state to start optimization at
+    aLinearInequalityConstraints, vLinearInequalityConstraints, ... % Linear inequality constraints
+    aLinearEqualityConstraints, vLinearEqualityConstraints, ... % Linear equality constraints
+    vLowerBoundaries, vUpperBoundaries, ... % Lower and upper boundaries
+    @(vOptimizationVector) algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedSection, dCablePropDensity, dGravityConstant, min(CableForceLimits), max(CableForceLimits), nIndexForcesX, nIndexForcesZ, nIndexLength), ... % Nonlinear constraints function
+    opSolverOptions ... % Solver options
+);
+
+
+
+%% Output parsing
+%%% Extract the solutions from the final optimized vector
 % Forces X
 vCableForcesX = xFinal(nIndexForcesX);
 % Forces Z
@@ -227,10 +274,8 @@ vCableForcesZ = xFinal(nIndexForcesZ);
 % Cable length
 vCableLength = xFinal(nIndexLength);
 
-
-%% Output parsing
-% First output is the length of the strained cable so we need to calculate
-% the strained cable length
+% First output is the length of the strained cable so we need to calculate the
+% strained cable length
 for iCable = 1:size(vCableLength)
     vCableLength(iCable) = vCableLength(iCable) + 1./(2*dCablePropDensity*dGravityConstant*dCablePropYoungsModulus*dCablePropUnstrainedSection)*(...
         vCableForcesZ(iCable)*sqrt(vCableForcesX(iCable).^2 + vCableForcesZ(iCable).^2) + ...
@@ -307,11 +352,13 @@ vForcesZ = vOptimizationVector(nIndexForcesZ);
 vLength = vOptimizationVector(nIndexLength);
 
 
+
 %% Initialize the output variables
 % Nonlinear inequality constraints are f_max and f_min
 c = zeros(nNumberOfCables*2, 1);
 % Nonlinear equality constraints are x_{end, i} and z_{end, i}
 ceq = zeros(nNumberOfCables*2, 1);
+
 
 
 %% Do the magic
