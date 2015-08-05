@@ -42,7 +42,7 @@ function [length, varargout] = algoInverseKinematics_Simple(Pose, PulleyPosition
 %   PULLEYPOSITIONS: Matrix of pulley positions w.r.t. the world frame. Each
 %   pulley has its own column and the rows are the x, y, and z-value,
 %   respectively i.e., PULLEYPOSITIONS must be a matrix of 3xM values. The
-%   number of pulleyes i.e., N, must match the number of cable attachment
+%   number of pulleys i.e., N, must match the number of cable attachment
 %   points in CABLEATTACHMENTS (i.e., its column count) and the order must
 %   mach the real linkage of pulley to cable attachment on the platform
 % 
@@ -50,7 +50,7 @@ function [length, varargout] = algoInverseKinematics_Simple(Pose, PulleyPosition
 %   platforms coordinate system. Each attachment point has its own column
 %   and the rows are the x, y, and z-value, respectively, i.e.,
 %   CABLEATTACHMENTS must be a matrix of 3xM values. The number of cables
-%   i.e., N, must match the number of pulleyes in PULLEYPOSITIONS (i.e., its
+%   i.e., N, must match the number of pulleys in PULLEYPOSITIONS (i.e., its
 %   column count) and the order must match the real linkage of cable
 %   attachment on the platform to pulley.
 % 
