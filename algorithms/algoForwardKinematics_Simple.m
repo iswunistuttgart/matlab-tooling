@@ -73,7 +73,10 @@ vInitialStateForOptimization = algoForwardKinematics_PoseEstimate_Simple(vCableL
 opSolverOptions = optimoptions('lsqnonlin');
 opSolverOptions.Algorithm = 'levenberg-marquardt';
 opSolverOptions.Display = 'off';
+opSolverOptions.TolFun = 1e-10;
 opSolverOptions.TolX = 1e-12;
+% opSolverOptions.ScaleProblem = 'Jacobian';
+opSolverOptions.FinDiffType = 'central';
 
 % Given any user-defined solver options? Process them now
 if ~isempty(stSolverOptionsGiven)
@@ -103,13 +106,13 @@ vPosition = xFinal(1:3);
 % Extract the quaternion rotation and ...
 % vRotation = xFinal(4:7);
 % Extract the yaw-pitch-roll rotation angles and ...
-vRotation = xFinal(4:6);
+vRotation = xFinal(4:6)'
 % ... transform it into a rotation matrix
 % aRotation = spinCalc('QtoDCM', vRotation, 1e-5, 0);
-aRotation = rotz(vRotation(1))*roty(vRotation(2))*rotx(vRotation(1));
+aRotation = rotz(vRotation(3))*roty(vRotation(2))*rotx(vRotation(1));
 
 % Build the final estimated pose
-vPoseEstimate = [reshape(vPosition, 1, 3), reshape(transpose(aRotation), 1, 9)];
+vPoseEstimate = [reshape(vPosition, 1, 3), rotationMatrixToRow(aRotation)];
 
 
 
@@ -148,14 +151,14 @@ aTargetCableLength = TargetCableLength;
 vPosition = vEstimatedPose(1:3);
 % And rotation from the estimated pose
 % vRotation = vEstimatedPose(4:7).';
-vRotation = vEstimatedPose(4:6).';
+vRotation = vEstimatedPose(4:6);
 % Transform the rotation given in quaternions to a DCM (direct cosine
 % matrix)
 % aRotation = spinCalc('QtoDCM', vRotation, 1e-4, 0);
-aRotation = rotz(vRotation(1))*roty(vRotation(2))*rotx(vRotation(1));
+aRotation = rotz(vRotation(3))*roty(vRotation(2))*rotx(vRotation(1));
 % Create the needed pose for the inverse kinematics algorithm composed of
 % [x, y, z, R11, R12, R13, R21, R22, R23, R31, R32, R33]
-vEstimatedPose = [reshape(vPosition, 1, 3), reshape(aRotation, 1, 9)];
+vEstimatedPose = [reshape(vPosition, 1, 3), rotationMatrixToRow(aRotation)];
 % Array holding the Jacobian
 aJacobian = zeros(nNumberOfCables, 6);
 
@@ -168,45 +171,47 @@ vLengths = algoInverseKinematics_Simple(vEstimatedPose, aPulleyPositions, aCable
 
 %% And build the target optimization vector
 % Get the vector difference of all cable lengths ...
-vEvaluatedFunction = vLengths(:) - aTargetCableLength(:);
+vEvaluatedFunction = vLengths(:).^2 - aTargetCableLength(:).^2;
 
 % Also calculate the Jacobian?
 if nargout > 1
     % Code taken from WireCenter, therefore not super beautiful and not
     % following code conventions either, but for now it must work
-    t1 = cos(vRotation(1));
-	t2 = cos(vRotation(2));
-	t3 = t1*t2;
-	t5 = sin(vRotation(1));
-	t6 = cos(vRotation(3));
-	t8 = sin(vRotation(2));
-	t10 = sin(vRotation(3));
-    
+    t1 = cos(vRotation(3));
+    t2 = cos(vRotation(2));
+    t3 = sin(vRotation(3));
+    t4 = cos(vRotation(1));
+    t5 = sin(vRotation(2));
+    t6 = sin(vRotation(1));
     for iCable = 1:nNumberOfCables
-		t4 = t3 * aCableAttachments(1,iCable);
-		t9 = t1 * t8;
-		t12 = -t5 * t6 + t9 * t10;
-		t13 = t12 * aCableAttachments(2,iCable);
-		t16 = t5 * t10 + t9 * t6;
-		t17 = t16 * aCableAttachments(3,iCable);
-		t18 = vPosition(1) + t4 + t13 + t17 - aPulleyPositions(1,iCable);
-		t19 = t5 * t2;
-		t20 = t19 * aCableAttachments(1,iCable);
-		t22 = t5 * t8;
-		t24 = t1 * t6 + t22 * t10;
-		t28 = -t1 * t10 + t22 * t6;
-		t30 = vPosition(2) + t20 + t24 * aCableAttachments(2,iCable) + t28 * aCableAttachments(3,iCable) - aPulleyPositions(2,iCable);
-		t32 = t2 * t10;
-		t34 = t2 * t6;
-		t36 = vPosition(3) - t8 * aCableAttachments(1,iCable) + t32 * aCableAttachments(2,iCable) + t34 * aCableAttachments(3,iCable) - aPulleyPositions(3,iCable);
-		t45 = t10 * aCableAttachments(2,iCable);
-		t47 = t6 * aCableAttachments(3,iCable);
-        aJacobian(iCable,1) = 0.2e1 * t18;
-		aJacobian(iCable,2) = 0.2e1 * t30;
-        aJacobian(iCable,3) = 0.2e1 * t36;
-        aJacobian(iCable,4) = 0.2e1 * t18 * (-t20 - t24 * aCableAttachments(2,iCable) - t28 * aCableAttachments(3,iCable)) + 0.2e1 * t30 * (t4 + t13 + t17);
-        aJacobian(iCable,5) = 0.2e1 * t18 * (-t9 * aCableAttachments(1,iCable) + t3 * t45 + t3 * t47) + 0.2e1 * t30 * (-t22 * aCableAttachments(1,iCable) + t19 * t45 + t19 * t47) + 0.2e1 * t36 * (-t2 * aCableAttachments(1,iCable) - t8 * t10 * aCableAttachments(2,iCable) - t8 * t6 * aCableAttachments(3,iCable));
-        aJacobian(iCable,6) = 0.2e1 * t18 * (t16 * aCableAttachments(2,iCable) - t12 * aCableAttachments(3,iCable)) + 0.2e1 * t30 * (t28 * aCableAttachments(2,iCable) - t24 * aCableAttachments(3,iCable)) + 0.2e1 * t36 * (t34 * aCableAttachments(2,iCable) - t32 * aCableAttachments(3,iCable));
+        t7 = t1 * t6;
+        t8 = t3 * t4;
+        t9 = t7 * t5 - t8;
+        t10 = t1 * t4;
+        t11 = t3 * t6;
+        t12 = t10 * t5 + t11;
+        t13 = t2 * aCableAttachments(1,iCable);
+        t14 = t13 * t1;
+        t15 = t9 * aCableAttachments(2,iCable);
+        t16 = t12 * aCableAttachments(3,iCable);
+        t17 = t15 + t16 + t14 - aPulleyPositions(1,iCable) + vPosition(1);
+        t10 = t11 * t5 + t10;
+        t7 = t8 * t5 - t7;
+        t8 = t13 * t3;
+        t11 = t10 * aCableAttachments(2,iCable) + t7 * aCableAttachments(3,iCable) + t8 - aPulleyPositions(2,iCable) + vPosition(2);
+        t18 = aCableAttachments(2,iCable) * t6;
+        t19 = aCableAttachments(3,iCable) * t4;
+        t20 = t19 + t18;
+        t21 = t5 * aCableAttachments(1,iCable);
+        t22 = t2 * t20 - t21 - aPulleyPositions(3,iCable) + vPosition(3);
+        t18 = -t2 * (t19 + t18) + t21;
+        t19 = 0.2e1;
+        aJacobian(iCable,:) = [t19 * t17, ...
+                                t19 * t11, ...
+                                t19 * t22, ...
+                                t19 * (t17 * (t12 * aCableAttachments(2,iCable) - t9 * aCableAttachments(3,iCable)) + t11 * (-t10 * aCableAttachments(3,iCable) + t7 * aCableAttachments(2,iCable)) + t22 * t2 * (t4 * aCableAttachments(2,iCable) - t6 * aCableAttachments(3,iCable))), ...
+                                 -t19 * (t17 * t1 * t18 + t11 * t3 * t18 + t22 * (t20 * t5 + t13)), ...
+                                 -t19 * (-t11 * (t15 + t16 + t14) + t17 * (t10 * aCableAttachments(2,iCable) + t7 * aCableAttachments(3,iCable) + t8))];
     end
 end
 
@@ -222,36 +227,6 @@ if nargout > 1
 end
 
 end
-
-
-% function [c, ceq] = algoForwardKinematics_Simple_NonlinearConstraints(vOptimizationVector)
-% 
-% %% Initialize Variables
-% vNonlinearInequalityConstraints = [];
-% vNonlinearEqualityConstraints = [];
-% % Extract the position from the optimizaton vector
-% vPosition = vOptimizationVector(1:3);
-% % Extract the quaternion rotation from the optimization vector
-% vRotation = vOptimizationVector(4:end);
-% % Convert quaternions to a DCM
-% aRotation = spinCalc('QtoDCM', vRotation, 1e-5, 0);
-% 
-% 
-% 
-% %% Calculate the non-linear equality constraints
-% vNonlinearEqualityConstraints(1) = norm(vRotation) - 1;
-% 
-% 
-% 
-% %% Assign output quantities
-% % Non-linear inequality constraints
-% c = vNonlinearInequalityConstraints;
-% % Non-linear equality constraints
-% ceq = vNonlinearEqualityConstraints;
-% 
-% 
-% 
-% end
 
 %------------- END OF CODE --------------
 % Please send suggestions for improvement of this file to the original
