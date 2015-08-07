@@ -77,6 +77,7 @@ vInitialStateForOptimization = algoForwardKinematics_PoseEstimate_Simple(vCableL
 opSolverOptions = optimoptions('lsqnonlin');
 opSolverOptions.Algorithm = 'levenberg-marquardt';
 opSolverOptions.Display = 'off';
+opSolverOptions.TolFun = 1e-10;
 opSolverOptions.TolX = 1e-12;
 
 % Given any user-defined solver options? Process them now
@@ -85,6 +86,12 @@ if ~isempty(stSolverOptionsGiven)
     ceFields = fieldnames(stSolverOptionsGiven);
     % And assign each given value to the solver options
     for iField = 1:numel(ceFields)
+        % For now we will skip the Jacobian option because it does not work for
+        % the Jacobian determined isn't correct
+        if strcmpi(ceFields{iField}, 'Jacobian')
+            continue
+        end
+        
         opSolverOptions.(ceFields{iField}) = stSolverOptionsGiven.(ceFields{iField});
     end
 end
@@ -113,7 +120,7 @@ vRotation = xFinal(4:6);
 aRotation = rotz(vRotation(3))*roty(vRotation(2))*rotx(vRotation(1));
 
 % Build the final estimated pose
-vPoseEstimate = [reshape(vPosition, 1, 3), reshape(transpose(aRotation), 1, 9)];
+vPoseEstimate = [reshape(vPosition, 1, 3), rotationMatrixToRow(aRotation)];
 
 
 
@@ -166,7 +173,7 @@ vRotation = vEstimatedPose(4:6).';
 aRotation = rotz(vRotation(3))*roty(vRotation(2))*rotx(vRotation(1));
 % Create the needed pose for the inverse kinematics algorithm composed of
 % [x, y, z, R11, R12, R13, R21, R22, R23, R31, R32, R33]
-vEstimatedPose = [reshape(vPosition, 1, 3), reshape(aRotation, 1, 9)];
+vEstimatedPose = [reshape(vPosition, 1, 3), rotationMatrixToRow(aRotation)];
 % Array holding the Jacobian
 aJacobian = zeros(nNumberOfCables, 6);
 
@@ -180,7 +187,7 @@ vLengths = algoInverseKinematics_Pulley(vEstimatedPose, aPulleyPosition, aCableA
 
 %% And build the target optimization vector
 % Get the vector difference of all cable lengths ...
-vEvaluatedFunction = vLengths(:) - vTargetCableLength(:);
+vEvaluatedFunction = vLengths(:).^2 - vTargetCableLength(:).^2;
 
 % Also calculate the Jacobian?
 if nargout > 1
@@ -364,36 +371,6 @@ if nargout > 1
 end
 
 end
-
-
-% function [c, ceq] = algoForwardKinematics_Simple_NonlinearConstraints(vOptimizationVector)
-% 
-% %% Initialize Variables
-% vNonlinearInequalityConstraints = [];
-% vNonlinearEqualityConstraints = [];
-% % Extract the position from the optimizaton vector
-% vPosition = vOptimizationVector(1:3);
-% % Extract the quaternion rotation from the optimization vector
-% vRotation = vOptimizationVector(4:end);
-% % Convert quaternions to a DCM
-% aRotation = spinCalc('QtoDCM', vRotation, 1e-5, 0);
-% 
-% 
-% 
-% %% Calculate the non-linear equality constraints
-% vNonlinearEqualityConstraints(1) = norm(vRotation) - 1;
-% 
-% 
-% 
-% %% Assign output quantities
-% % Non-linear inequality constraints
-% c = vNonlinearInequalityConstraints;
-% % Non-linear equality constraints
-% ceq = vNonlinearEqualityConstraints;
-% 
-% 
-% 
-% end
 
 %------------- END OF CODE --------------
 % Please send suggestions for improvement of this file to the original
