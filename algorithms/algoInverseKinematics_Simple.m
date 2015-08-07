@@ -95,7 +95,7 @@ vCableLength = zeros(1, nNumberOfCables);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
-aPlatformRotation = reshape(Pose(4:12), 3, 3).';
+aPlatformRotation = rotationRowToMatrix(Pose(4:12));
 % Hold the local rotation angles of each cable's local frame relative to K_0
 aPulleyAngles = zeros(1, nNumberOfCables);
 % This will hold the return value of the cable shape
@@ -135,10 +135,7 @@ if nargout > 2
     for iCable = 1:nNumberOfCables
         % ... calculate the angle of rotation of the cable local frame K_c
         % relative to K_0
-        vA2B_in_0 = ( vPlatformPosition + aPlatformRotation*aCableAttachments(:,iCable) ) - aPulleyPositions(:,iCable);
-
-        % Angle of rotation of the frame C about z_0 in degree
-        dRotationAngleAbout_kCz_Degree = atan2d(vA2B_in_0(2), vA2B_in_0(1));
+        dRotationAngleAbout_kCz_Degree = atan2d(aCableVector(2,iCable), aCableVector(1,iCable));
         
         aPulleyAngles(1,iCable) = dRotationAngleAbout_kCz_Degree;
     end
@@ -154,7 +151,7 @@ if nargout > 3
         aRotation_kC2kA = rotz(aPulleyAngles(1,iCable));
 
         % Vector from A to B in K_C
-        vA2B_in_C = transpose(aRotation_kC2kA)*(vPlatformPosition + aPlatformRotation*aCableAttachments(:,iCable) - aPulleyPositions(:,iCable));
+        vA2B_in_C = transpose(aRotation_kC2kA)*(-aCableVector(:,iCable));
         % Normalize the vector from A^c to B^c
         vCableUnitVector_in_C = vA2B_in_C./norm(vA2B_in_C);
 

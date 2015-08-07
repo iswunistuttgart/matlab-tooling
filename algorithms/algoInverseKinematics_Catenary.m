@@ -112,7 +112,7 @@ vCableLength = zeros(1, nNumberOfCables);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
-aPlatformRotation = reshape(Pose(4:12), 3, 3).';
+aPlatformRotation = rotationRowToMatrix(Pose(4:12));
 % Gravity constant not set so set a default value
 dGravityConstant = 9.81;
 % Custom solver options may be given to override the defaults

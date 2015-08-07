@@ -107,7 +107,7 @@ vCableLengthOffset = zeros(1, nNumberOfCables);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
-aPlatformRotation = reshape(Pose(4:12), 3, 3).';
+aPlatformRotation = rotationRowToMatrix(Pose(4:12));
 % Holds the rotation angle gamma and the wrapping angle beta
 aPulleyAngles = zeros(2, nNumberOfCables);
 % This will hold the return value of the cable shape
@@ -244,7 +244,7 @@ if nargout >= 5
         % point towards the 
         aRotation_kC2kP = rotz(aPulleyAngles(1,iUnit));
         aRotation_kP2kO = rotz(aPulleyOrientations(3,iUnit))*roty(aPulleyOrientations(2,iUnit))*rotx(aPulleyOrientations(1,iUnit));
-        vAc2B_in_C = transpose(aRotation_kC2kP)*(transpose(aRotation_kP2kO)*(vPlatformPosition + aPlatformRotation*aCableAttachments(:,iUnit) - aPulleyPositionsCorrected(:,iUnit)));
+        vAc2B_in_C = transpose(aRotation_kC2kP)*(transpose(aRotation_kP2kO)*(-aCableVector(:,iUnit)));
         vAc2B_in_C_normed = vAc2B_in_C./norm(vAc2B_in_C);
 
         % The shape of the cable on the pulley can be easily inferred from a
