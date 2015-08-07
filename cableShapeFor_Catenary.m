@@ -20,7 +20,7 @@ dCableForceMinimum = stCableProperties.ForceMinimum;
 
 %% Initialize the parameters for the optimization function
 % This is the state we will perform optimziation over which is
-% [F_x1 F_z1 L_01]
+% [theta, L_0]
 vInitialStateForOptimization = zeros(2, 1);
 
 %%% Linear equality constraints Ax = b
