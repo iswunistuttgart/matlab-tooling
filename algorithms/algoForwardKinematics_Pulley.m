@@ -130,14 +130,15 @@ Pose = vPoseEstimate;
 
 % Second output, first optional may be the output struct from the optimization
 if nargout > 1
-    stOutput = output;
-    stOutput.resnorm = resnorm;
-    stOutput.residual = residual;
-    stOutput.exitflag = exitflag;
-    stOutput.lambda = lambda;
-    stOutput.jacobian = jacobian;
+    stBenchmark = struct();
+    stBenchmark.output = output;
+    stBenchmark.resnorm = resnorm;
+    stBenchmark.residual = residual;
+    stBenchmark.exitflag = exitflag;
+    stBenchmark.lambda = lambda;
+    stBenchmark.jacobian = jacobian;
     
-    varargout{1} = stOutput;
+    varargout{1} = orderfields(stBenchmark);
 end
 
 
