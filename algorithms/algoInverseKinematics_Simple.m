@@ -135,7 +135,7 @@ if nargout > 2
     for iCable = 1:nNumberOfCables
         % ... calculate the angle of rotation of the cable local frame K_c
         % relative to K_0
-        dRotationAngleAbout_kCz_Degree = atan2d(aCableVector(2,iCable), aCableVector(1,iCable));
+        dRotationAngleAbout_kCz_Degree = atan2d(-aCableVector(2,iCable), -aCableVector(1,iCable));
         
         aPulleyAngles(1,iCable) = dRotationAngleAbout_kCz_Degree;
     end
