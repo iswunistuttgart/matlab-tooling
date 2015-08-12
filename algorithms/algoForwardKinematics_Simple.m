@@ -74,9 +74,9 @@ opSolverOptions = optimoptions('lsqnonlin');
 opSolverOptions.Algorithm = 'levenberg-marquardt';
 opSolverOptions.Display = 'off';
 opSolverOptions.TolFun = 1e-8;
-opSolverOptions.TolX = 1e-10;
-opSolverOptions.InitDamping = 1e-10;
-opSolverOptions.ScaleProblem = 'Jacobian';
+opSolverOptions.TolX = 1e-12;
+% opSolverOptions.InitDamping = 1e-10;
+% opSolverOptions.ScaleProblem = 'Jacobian';
 % opSolverOptions.FinDiffType = 'central';
 
 % Given any user-defined solver options? Process them now
@@ -107,7 +107,7 @@ vPosition = xFinal(1:3);
 % Extract the quaternion rotation and ...
 % vRotation = xFinal(4:7);
 % Extract the yaw-pitch-roll rotation angles and ...
-vRotation = xFinal(4:6)'
+vRotation = xFinal(4:6)';
 % ... transform it into a rotation matrix
 % aRotation = spinCalc('QtoDCM', vRotation, 1e-5, 0);
 aRotation = rotz(vRotation(3))*roty(vRotation(2))*rotx(vRotation(1));
@@ -123,14 +123,15 @@ Pose = vPoseEstimate;
 
 % Second output, first optional may be the output struct from the optimization
 if nargout > 1
-    stOutput = output;
-    stOutput.resnorm = resnorm;
-    stOutput.residual = residual;
-    stOutput.exitflag = exitflag;
-    stOutput.lambda = lambda;
-    stOutput.jacobian = jacobian;
+    stBenchmark = struct();
+    stBenchmark.output = output;
+    stBenchmark.resnorm = resnorm;
+    stBenchmark.residual = residual;
+    stBenchmark.exitflag = exitflag;
+    stBenchmark.lambda = lambda;
+    stBenchmark.jacobian = jacobian;
     
-    varargout{1} = stOutput;
+    varargout{1} = orderfields(stBenchmark);
 end
 
 
@@ -180,30 +181,30 @@ vEvaluatedFunction = vLengths(:).^2 - aTargetCableLength(:).^2;
 if nargout > 1
     % Code taken from WireCenter, therefore not super beautiful and not
     % following code conventions either, but for now it must work
-    t1 = cos(vRotation(3));
+    t1 = cos(vRotation(1));
     t2 = cos(vRotation(2));
-    t3 = sin(vRotation(3));
-    t4 = cos(vRotation(1));
+    t3 = sin(vRotation(1));
+    t4 = cos(vRotation(3));
     t5 = sin(vRotation(2));
-    t6 = sin(vRotation(1));
+    t6 = sin(vRotation(3));
+    t7 = t1*t6;
+    t8 = t3*t4;
+    t9 = t7*t5-t8;
+    t10 = t1*t4;
+    t11 = t3*t6;
+    t12 = t10*t5+t11;
     for iCable = 1:nNumberOfCables
-        t7 = t1*t6;
-        t8 = t3*t4;
-        t9 = t7*t5-t8;
-        t10 = t1*t4;
-        t11 = t3*t6;
-        t12 = t10*t5+t11;
         t13 = t2*aCableAttachments(1,iCable);
         t14 = t13*t1;
         t15 = t9*aCableAttachments(2,iCable);
         t16 = t12*aCableAttachments(3,iCable);
-        t17 = t15+t16+t14-aPulleyPositions(1,iCable)+vPosition(1);
+        t17 = vPosition(1)-aPulleyPositions(1,iCable)+t15+t16+t14;
         t10 = t11*t5+t10;
         t7 = t8*t5-t7;
         t8 = t13*t3;
         t11 = t10*aCableAttachments(2,iCable)+t7*aCableAttachments(3,iCable)+t8-aPulleyPositions(2,iCable)+vPosition(2);
-        t18 = aCableAttachments(2,iCable)*t6;
-        t19 = aCableAttachments(3,iCable)*t4;
+        t18 = t4*aCableAttachments(3,iCable);
+        t19 = t6*aCableAttachments(2,iCable);
         t20 = t19+t18;
         t21 = t5*aCableAttachments(1,iCable);
         t22 = t2*t20-t21-aPulleyPositions(3,iCable)+vPosition(3);
@@ -212,9 +213,9 @@ if nargout > 1
         aJacobian(iCable,:) = [t19*t17, ...
                 t19*t11, ...
                 t19*t22, ...
-                -t19*(t11*(t10*aCableAttachments(3,iCable)-t7*aCableAttachments(2,iCable))-t17*(t12*aCableAttachments(2,iCable)-t9*aCableAttachments(3,iCable))-t22*t2*(t4*aCableAttachments(2,iCable)-t6*aCableAttachments(3,iCable))), ...
+                -t19*(t17*(t10*aCableAttachments(2,iCable)+t7*aCableAttachments(3,iCable)+t8)-t11*(t15+t16+t14)), ...
                 -t19*(t17*t1*t18+t11*t3*t18+t22*(t20*t5+t13)), ...
-                -t19*(-t11*(t15+t16+t14)+t17*(t10*aCableAttachments(2,iCable)+t7*aCableAttachments(3,iCable)+t8))];
+                t19*(t11*(-t10*aCableAttachments(3,iCable)+t7*aCableAttachments(2,iCable))+t17*(t12*aCableAttachments(2,iCable)-t9*aCableAttachments(3,iCable))+t22*t2*(t4*aCableAttachments(2,iCable)-t6*aCableAttachments(3,iCable)))];
     end
 end
 
