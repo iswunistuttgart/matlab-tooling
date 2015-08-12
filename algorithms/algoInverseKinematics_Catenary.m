@@ -174,11 +174,11 @@ vLinearEqualityConstraints = zeros(6, 1) - Wrench;
 
 %%% Linear inequality constraints Ax <= b
 % Linear inequality constraints matrix A
-% aLinearInequalityConstraints = zeros(6, 3*nNumberOfCables);
-aLinearInequalityConstraints = [];
+aLinearInequalityConstraints = zeros(6, 3*nNumberOfCables);
+% aLinearInequalityConstraints = [];
 % Linear inequality constraints vector b
-% vLinearInequalityConstraints = zeros(6, 1);
-vLinearInequalityConstraints = [];
+vLinearInequalityConstraints = zeros(6, 1);
+% vLinearInequalityConstraints = [];
 
 % To populate the initial cable lengths and forces, we will use the straight
 % line to get initial values
@@ -240,9 +240,11 @@ end
 %% Run optimization
 % Set our default optimization options
 opSolverOptions = optimoptions('fmincon');
-opSolverOptions.Algorithm = 'trust-region-reflective';
+% trust-region-reflective does not work (read the docs)
+% opSolverOptions.Algorithm = 'sqp';
 opSolverOptions.Display = 'off';
 opSolverOptions.TolX = 1e-12;
+opSolverOptions.TolFun = 1e-10;
 % And parse custom solver options
 if ~isempty(stSolverOptionsGiven)
     % Get the fields of the struct provided
@@ -254,7 +256,7 @@ if ~isempty(stSolverOptionsGiven)
 end
 
 % Perform the actual optimization
-[xFinal, fval, exitflag, output] = fmincon(inOptimizationTargetFunction, ... % Optimization function
+[xFinal, fval, exitflag, output, lambda, grad, hessian] = fmincon(inOptimizationTargetFunction, ... % Optimization function
     vInitialStateForOptimization, ... % Initial state to start optimization at
     aLinearInequalityConstraints, vLinearInequalityConstraints, ... % Linear inequality constraints
     aLinearEqualityConstraints, vLinearEqualityConstraints, ... % Linear equality constraints
@@ -262,7 +264,6 @@ end
     @(vOptimizationVector) algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedSection, dCablePropDensity, dGravityConstant, min(CableForceLimits), max(CableForceLimits), nIndexForcesX, nIndexForcesZ, nIndexLength), ... % Nonlinear constraints function
     opSolverOptions ... % Solver options
 );
-
 
 
 %% Output parsing
@@ -276,14 +277,14 @@ vCableLength = xFinal(nIndexLength);
 
 % First output is the length of the strained cable so we need to calculate the
 % strained cable length
-for iCable = 1:size(vCableLength)
-    vCableLength(iCable) = vCableLength(iCable) + 1./(2*dCablePropDensity*dGravityConstant*dCablePropYoungsModulus*dCablePropUnstrainedSection)*(...
-        vCableForcesZ(iCable)*sqrt(vCableForcesX(iCable).^2 + vCableForcesZ(iCable).^2) + ...
-        + vCableForcesX(iCable).^2*asinh(vCableForcesZ(iCable)./abs(vCableForcesZ(iCable))) + ...
-        - (vCableForcesZ(iCable) - dCablePropDensity*dGravityConstant*vCableLength(iCable))*sqrt(vCableForcesX(iCable).^2 + (vCableForcesZ(iCable) - dCablePropDensity*dGravityConstant*vCableLength(iCable)).^2) + ...
-        - vCableForcesX(iCable).^2*asinh((vCableForcesZ(iCable) - dCablePropDensity*dGravityConstant*vCableLength(iCable))./abs(vCableForcesX(iCable)))...
-        );
-end
+% for iCable = 1:size(vCableLength)
+%     vCableLength(iCable) = vCableLength(iCable) + 1./(2*dCablePropDensity*dGravityConstant*dCablePropYoungsModulus*dCablePropUnstrainedSection)*(...
+%         vCableForcesZ(iCable)*sqrt(vCableForcesX(iCable).^2 + vCableForcesZ(iCable).^2) + ...
+%         + vCableForcesX(iCable).^2*asinh(vCableForcesZ(iCable)./abs(vCableForcesZ(iCable))) + ...
+%         - (vCableForcesZ(iCable) - dCablePropDensity*dGravityConstant*vCableLength(iCable))*sqrt(vCableForcesX(iCable).^2 + (vCableForcesZ(iCable) - dCablePropDensity*dGravityConstant*vCableLength(iCable)).^2) + ...
+%         - vCableForcesX(iCable).^2*asinh((vCableForcesZ(iCable) - dCablePropDensity*dGravityConstant*vCableLength(iCable))./abs(vCableForcesX(iCable)))...
+%         );
+% end
 % And assign the output quantity
 length = vCableLength;
 
@@ -333,6 +334,21 @@ if nargout >= 4
     end
     
     varargout{3} = aCableShape;
+end
+
+% Very last output argument is information on the algorithm (basically, all the
+% information acquirable by fmincon
+if nargout >= 5
+    stBenchmark = struct();
+    stBenchmark.x = xFinal;
+    stBenchmark.fval = fval;
+    stBenchmark.exitflag = exitflag;
+    stBenchmark.output = output;
+    stBenchmark.lambda = lambda;
+    stBenchmark.grad = grad;
+    stBenchmark.hessian = hessian;
+    
+    varargout{4} = orderfields(stBenchmark);
 end
 
 
