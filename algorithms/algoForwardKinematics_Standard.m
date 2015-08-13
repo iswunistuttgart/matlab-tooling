@@ -1,8 +1,8 @@
-function [Pose, varargout] = algoForwardKinematics_Simple(CableLength, PulleyPosition, CableAttachment, SolverOptions)
-% ALGOFORWARDKINEMATICS_SIMPLE estimates the robot pose with standard
+function [Pose, varargout] = algoForwardKinematics_Standard(CableLength, PulleyPosition, CableAttachment, SolverOptions)
+% ALGOFORWARDKINEMATICS_STANDARD estimates the robot pose with standard
 %   pulley kinematics
 % 
-%   POSE = ALGOFORWARDKINEMATICS_SIMPLE(CABLELENGTH, PULLEYPOSITION,
+%   POSE = ALGOFORWARDKINEMATICS_STANDARD(CABLELENGTH, PULLEYPOSITION,
 %   CABLEATTACHMENT) estimates the pose given the cable lengths for the robot
 %   defined defined by the given pulley positions and cable attachment points
 %   
@@ -90,7 +90,7 @@ if ~isempty(stSolverOptionsGiven)
 end
 
 % Optimization target function
-inOptimizationTargetVectorFunction = @(vEstimatedPose) algoForwardKinematics_Simple_TargetFunction(vEstimatedPose, vCableLength, aPulleyPosition, aCableAttachment);
+inOptimizationTargetVectorFunction = @(vEstimatedPose) algoForwardKinematics_Standard_TargetFunction(vEstimatedPose, vCableLength, aPulleyPosition, aCableAttachment);
 
 % And now finally run the optimization
 [xFinal, resnorm, residual, exitflag, output, lambda, jacobian] = lsqnonlin(inOptimizationTargetVectorFunction, ...
@@ -139,7 +139,7 @@ end
 end
 
 
-function [VectorValuedFunction, Jacobian] = algoForwardKinematics_Simple_TargetFunction(EstimatedPose, TargetCableLength, PulleyPositions, CableAttachments)
+function [VectorValuedFunction, Jacobian] = algoForwardKinematics_Standard_TargetFunction(EstimatedPose, TargetCableLength, PulleyPositions, CableAttachments)
 
 %% Preparing variables
 % Number of cables
@@ -167,9 +167,9 @@ aJacobian = zeros(nNumberOfCables, 6);
 
 
 %% Calculate the cable length for the current pose estimate
-% Calculate the cable lengths for the estimated pose using the simple
-% inverse kinematics algorithm
-vLengths = algoInverseKinematics_Simple(vEstimatedPose, aPulleyPositions, aCableAttachments);
+% Calculate the cable lengths for the estimated pose using the standard inverse
+% kinematics algorithm
+vLengths = algoInverseKinematics_Standard(vEstimatedPose, aPulleyPositions, aCableAttachments);
 
 
 

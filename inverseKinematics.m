@@ -15,7 +15,7 @@ function [length, varargout] = inverseKinematics(Pose, PulleyPositions, CableAtt
 %   you manually after running this method
 % 
 %   LENGTH = INVERSEKINEMATICS(POSE, PULLEYPOSITIONS, CABLEATTACHMENTS)
-%   performs simple inverse kinematics with the cables running from a_i to
+%   performs standard inverse kinematics with the cables running from a_i to
 %   b_i for the given pose
 %   
 %   LENGTH = INVERSEKINEMATICS(POSE, PULLEYPOSITIONS, CABLEATTACHMENTS,
@@ -64,7 +64,7 @@ function [length, varargout] = inverseKinematics(Pose, PulleyPositions, CableAtt
 %   script to use advanced inverse kinematics algorithms to determining the
 %   cable length.
 %   Implemented algorithms are
-%       'Simple'            Standard straight-line model
+%       'Standard'          Standard straight-line model
 %       'Pulley'            Pulley kinematics with pulley radius and rotation
 %                           included
 %       'Catenary'          TO COME Using a catenary approach the cable length
@@ -197,11 +197,11 @@ switch lower(chAlgorithm)
     % Advanced kinematics algorithm (including pulley radius)
     case 'pulley'
         [vCableLength, aCableUnitVector, aCorrectedPulleyPositions, aPulleyAngles] = algoInverseKinematics_Pulley(vPlatformPose, aPulleyPositions, aCableAttachments, vPulleyRadius, aPulleyOrientations);
-    % Simple kinematics algorithm (no pulley radius)
+    % Standard kinematics algorithm (no pulley radius)
     case 'standard'
-        [vCableLength, aCableUnitVector] = algoInverseKinematics_Simple(vPlatformPose, aPulleyPositions, aCableAttachments);
+        [vCableLength, aCableUnitVector] = algoInverseKinematics_Standard(vPlatformPose, aPulleyPositions, aCableAttachments);
     otherwise
-        [vCableLength, aCableUnitVector] = algoInverseKinematics_Simple(vPlatformPose, aPulleyPositions, aCableAttachments);
+        [vCableLength, aCableUnitVector] = algoInverseKinematics_Standard(vPlatformPose, aPulleyPositions, aCableAttachments);
 end
 % end ```switch lower(chAlgorithm)```
 
