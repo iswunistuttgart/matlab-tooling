@@ -1,7 +1,102 @@
 % Gravitational constant
-g = 9.81; % [kg m/s^2]
+dGravitationConstant = 9.81; % [kg m/s^2]
 % Number of nodes
 nNodes = 25; % []
+% Weight of the cable in total
+nCableWeight = 0.5; % [kg]
+% Length of Cable
+nCableLength = 5;
+% Weight of each node
+dNodeWeight = nCableWeight./nNodes; % [kg]
+% Distance between each node
+dNodeDistance = nCableLength./nNodes; % [m]
+% Number of "lengths" we have
+nNodeLengths = nNodes + 1;
+% Array of forces on each node
+aNodeForceDirections = zeros(2, nNodes+2);
+vNodeForceAmounts = zeros(1, nNodes+2);
+vNodeForceAngle = zeros(1, nNodes+2);
+
+% Force applied to bi
+dLoadForceAmount = 50; % [N]
+% Angle of force with respect to global x-axis
+dLoadForceAngle = deg2rad(-25); % [deg]
+
+
+aNodeForceDirections(1,end) = dLoadForceAmount.*cos(dLoadForceAngle);
+aNodeForceDirections(2,end) = dLoadForceAmount.*sin(dLoadForceAngle);
+vNodeForceAmounts(end) = dLoadForceAmount;
+vNodeForceAngle(end) = dLoadForceAngle;
+
+vNodeGravitationalForce = dNodeWeight.*dGravitationConstant.*[0; -1];
+
+for iNode = nNodes:-1:0
+    iNodeIndex = iNode+1;
+    vNodeForce = (aNodeForceDirections(:,iNodeIndex+1) + vNodeGravitationalForce);
+    aNodeForceDirections(:,iNodeIndex) = vNodeForce;
+    vNodeForceAmounts(iNodeIndex) = norm(aNodeForceDirections(:,iNodeIndex));
+    vNodeForceAngle(iNodeIndex) = atan2(aNodeForceDirections(2,iNodeIndex), aNodeForceDirections(1,iNodeIndex));
+end
+
+% To keep the calculated node positions
+aNodePositions = zeros(2, nNodes+2);
+
+for iNode = 1:nNodes+1
+    iNodeIndex = iNode + 1;
+    aNodePositions(:,iNodeIndex) = aNodePositions(:,iNodeIndex-1) + dNodeDistance.*[cos(vNodeForceAngle(iNodeIndex)); sin(vNodeForceAngle(iNodeIndex))];
+end
+
+figure; plot(aNodePositions(1, :), aNodePositions(2, :), aNodePositions(1, [1, end]), aNodePositions(2, [1, end]), 'r');
+
+
+
+return;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 % Total length of cable
 dLength = 10; % [m]
 % Unit weight of the cable
@@ -16,31 +111,58 @@ Fp = 50; % [N]
 % Fp = 0;
 % Fp = 10*dMassCable*g;
 % Angle the force Fp has with the x-axis at node N+1
-phi = deg2rad(90);
+phi = deg2rad(-23);
 % phi = deg2rad(0);
 % phi = deg2rad(180);
 
 
 
-aLoadForceDirn = zeros(2, nNodes + 2);
-vLoadForceAngle = zeros(1, nNodes + 2);
-vLoadForceMag = zeros(1, nNodes + 2);
-vNodePosition = zeros(2, nNodes + 2);
 
-aLoadForceDirn(:, end) = (Fp.*[cos(phi); sin(phi)] + dMassNode*g.*[0; -1]);
-vLoadForceAngle(end) = atan2(aLoadForceDirn(2, end), aLoadForceDirn(1, end));
 
-% Loop over all nodes starting at the last node to calculate their load forces
-% and angles of these forces
-for iNode = fliplr(1:nNodes+1)
-    aLoadForceDirn(:, iNode) = aLoadForceDirn(:, iNode + 1) + dMassNode.*g.*[0; -1];
-    vLoadForceAngle(iNode) = atan2(aLoadForceDirn(2, iNode), aLoadForceDirn(1, iNode));
-    vLoadForceMag(end) = sqrt(sum(aLoadForceDirn(:, iNode).^2));
-end
 
-for iNode = 1:size(vNodePosition, 2)
-    vNodePosition(:, iNode + 1) = dNodeDistance.*[cos(vLoadForceAngle(iNode)); sin(vLoadForceAngle(iNode))] + vNodePosition(:, iNode);
-end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% aLoadForceDirn = zeros(2, nNodes + 2);
+% vLoadForceAngle = zeros(1, nNodes + 2);
+% vLoadForceMag = zeros(1, nNodes + 2);
+% vNodePosition = zeros(2, nNodes + 2);
+% 
+% aLoadForceDirn(:, end) = (Fp.*[cos(phi); sin(phi)] + dMassNode*g.*[0; -1]);
+% vLoadForceAngle(end) = atan2(aLoadForceDirn(2, end), aLoadForceDirn(1, end));
+% 
+% % Loop over all nodes starting at the last node to calculate their load forces
+% % and angles of these forces
+% for iNode = fliplr(1:nNodes+1)
+%     aLoadForceDirn(:, iNode) = aLoadForceDirn(:, iNode + 1) + dMassNode.*g.*[0; -1];
+%     vLoadForceAngle(iNode) = atan2(aLoadForceDirn(2, iNode), aLoadForceDirn(1, iNode));
+%     vLoadForceMag(end) = sqrt(sum(aLoadForceDirn(:, iNode).^2));
+% end
+% 
+% for iNode = 1:size(vNodePosition, 2)
+%     vNodePosition(:, iNode + 1) = dNodeDistance.*[cos(vLoadForceAngle(iNode)); sin(vLoadForceAngle(iNode))] + vNodePosition(:, iNode);
+% end
 
 
 
