@@ -48,7 +48,7 @@ vLinearInequalityConstraints = [];
 nIndexAngle = 1;
 nIndexLength = 2;
 
-dInitialLength = cableShapeFor_Simple(vEnd);
+dInitialLength = cableShapeFor_Standard(vEnd);
 vInitialStateForOptimization(nIndexLength) = dInitialLength;
 
 dInitForceDistribution = dAttachedMass*dGravityConstant;

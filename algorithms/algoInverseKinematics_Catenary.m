@@ -71,7 +71,7 @@ function [length, varargout] = algoInverseKinematics_Catenary(Pose, PulleyPositi
 %   Outputs:
 % 
 %   LENGTH: Length is a vector of size 1xM with the cable lengths
-%   determined using either simple or advanced kinematics
+%   determined using either catenary kinematics
 %
 %   CABLEVECTOR: Vectors of each cable from attachment point to corrected
 %   pulley point given as 3xM matrix

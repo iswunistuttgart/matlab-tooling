@@ -97,7 +97,7 @@ if ~isempty(stSolverOptionsGiven)
 end
 
 % Optimization target function
-inOptimizationTargetVectorFunction = @(vEstimatedPose) algoForwardKinematics_Simple_TargetFunction(vEstimatedPose, vCableLength, aPulleyPosition, aCableAttachment, vPulleyRadius, aPulleyOrientation);
+inOptimizationTargetVectorFunction = @(vEstimatedPose) algoForwardKinematics_Pulley_TargetFunction(vEstimatedPose, vCableLength, aPulleyPosition, aCableAttachment, vPulleyRadius, aPulleyOrientation);
 
 % And now finally run the optimization
 [xFinal, resnorm, residual, exitflag, output, lambda, jacobian] = lsqnonlin(inOptimizationTargetVectorFunction, ...
@@ -146,7 +146,7 @@ end
 end
 
 
-function [VectorValuedFunction, Jacobian] = algoForwardKinematics_Simple_TargetFunction(EstimatedPose, TargetCableLength, PulleyPosition, CableAttachment, PulleyRadius, PulleyOrientation)
+function [VectorValuedFunction, Jacobian] = algoForwardKinematics_Pulley_TargetFunction(EstimatedPose, TargetCableLength, PulleyPosition, CableAttachment, PulleyRadius, PulleyOrientation)
 
 %% Preparing the input variables
 % Number of cables

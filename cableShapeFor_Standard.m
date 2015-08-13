@@ -1,4 +1,4 @@
-function [L, varargout] = cableShapeFor_Simple(vEnd)
+function [L, varargout] = cableShapeFor_Standard(vEnd)
 
 nDiscretizationPoints = 10e3;
 
