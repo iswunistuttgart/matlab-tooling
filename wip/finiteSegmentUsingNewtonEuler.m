@@ -3,13 +3,13 @@ dGravitationConstant = 9.81; % [kg m/s^2]
 % Weight of the cable in total
 dCableWeight = 0.5; % [kg]
 % Number of nodes
-nNodes = 25; % []
+nNodes = 5; % []
 % Weight of each node
 dNodeWeight = dCableWeight./nNodes; % [kg]
 % Length of Cable
 nCableLength = 5;
 % Distance between each node
-dNodeDistance = nCableLength./nNodes; % [m]
+dNodeDistance = nCableLength./(nNodes+1); % [m]
 % Number of "lengths" we have
 nNodeLengths = nNodes + 1;
 % Array of forces on each node
