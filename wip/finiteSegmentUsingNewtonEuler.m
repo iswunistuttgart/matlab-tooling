@@ -1,24 +1,24 @@
 % Gravitational constant
 dGravitationConstant = 9.81; % [kg m/s^2]
+% Weight of the cable in total
+dCableWeight = 0.5; % [kg]
 % Number of nodes
 nNodes = 25; % []
-% Weight of the cable in total
-nCableWeight = 0.5; % [kg]
+% Weight of each node
+dNodeWeight = dCableWeight./nNodes; % [kg]
 % Length of Cable
 nCableLength = 5;
-% Weight of each node
-dNodeWeight = nCableWeight./nNodes; % [kg]
 % Distance between each node
 dNodeDistance = nCableLength./nNodes; % [m]
 % Number of "lengths" we have
 nNodeLengths = nNodes + 1;
 % Array of forces on each node
-aNodeForceDirections = zeros(2, nNodes+2);
-vNodeForceAmounts = zeros(1, nNodes+2);
-vNodeForceAngle = zeros(1, nNodes+2);
+aNodeForceDirections = zeros(2, nNodes+1);
+vNodeForceAmounts = zeros(1, nNodes+1);
+vNodeForceAngle = zeros(1, nNodes+1);
 
 % Force applied to bi
-dLoadForceAmount = 50; % [N]
+dLoadForceAmount = 5; % [N]
 % Angle of force with respect to global x-axis
 dLoadForceAngle = deg2rad(-25); % [deg]
 
@@ -30,33 +30,28 @@ vNodeForceAngle(end) = dLoadForceAngle;
 
 vNodeGravitationalForce = dNodeWeight.*dGravitationConstant.*[0; -1];
 
-for iNode = nNodes:-1:0
-    iNodeIndex = iNode+1;
+for iNode = nNodes:-1:1
+    iNodeIndex = iNode;
     vNodeForce = (aNodeForceDirections(:,iNodeIndex+1) + vNodeGravitationalForce);
     aNodeForceDirections(:,iNodeIndex) = vNodeForce;
     vNodeForceAmounts(iNodeIndex) = norm(aNodeForceDirections(:,iNodeIndex));
     vNodeForceAngle(iNodeIndex) = atan2(aNodeForceDirections(2,iNodeIndex), aNodeForceDirections(1,iNodeIndex));
 end
-
+% 
 % To keep the calculated node positions
 aNodePositions = zeros(2, nNodes+2);
 
 for iNode = 1:nNodes+1
-    iNodeIndex = iNode + 1;
-    aNodePositions(:,iNodeIndex) = aNodePositions(:,iNodeIndex-1) + dNodeDistance.*[cos(vNodeForceAngle(iNodeIndex)); sin(vNodeForceAngle(iNodeIndex))];
+    iNodeIndex = iNode;
+    aNodePositions(:,iNodeIndex+1) = aNodePositions(:,iNodeIndex) + dNodeDistance.*[cos(vNodeForceAngle(iNodeIndex)); sin(vNodeForceAngle(iNodeIndex))];
 end
 
-figure; plot(aNodePositions(1, :), aNodePositions(2, :), aNodePositions(1, [1, end]), aNodePositions(2, [1, end]), 'r');
+clear iNode* vNodeForce;
 
+figure; plot(aNodePositions(1, :), aNodePositions(2, :), '-*', aNodePositions(1, [1, end]), aNodePositions(2, [1, end]), 'r');
 
 
 return;
-
-
-
-
-
-
 
 
 
