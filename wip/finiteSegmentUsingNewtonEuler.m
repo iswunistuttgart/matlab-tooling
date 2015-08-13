@@ -37,8 +37,10 @@ for iNode = nNodes:-1:1
     vNodeForceAmounts(iNodeIndex) = norm(aNodeForceDirections(:,iNodeIndex));
     vNodeForceAngle(iNodeIndex) = atan2(aNodeForceDirections(2,iNodeIndex), aNodeForceDirections(1,iNodeIndex));
 end
-% 
-% To keep the calculated node positions
+
+% To keep the calculated node positions, note that this array is two larger than
+% the number of nodes which is because it will be keeping a_i and b_i in the
+% first and last column respectively
 aNodePositions = zeros(2, nNodes+2);
 
 for iNode = 1:nNodes+1
