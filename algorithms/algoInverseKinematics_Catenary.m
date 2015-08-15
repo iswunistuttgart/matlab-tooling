@@ -186,7 +186,7 @@ vLinearInequalityConstraints = zeros(6, 1);
 vInitialStateForOptimization(nIndexLength) = vInitialLength;
 
 % Initial guessing of the force distribution is necessary, too
-vInitForceDistribution = algoForceDistribution_AdvancedClosedForm(Wrench, getStructureMatrix('3R3T', aCableAttachments, aInitCableUnitVector, aPlatformRotation), min(CableForceLimits), max(CableForceLimits));
+vInitForceDistribution = algoForceDistribution_AdvancedClosedForm(Wrench, structureMatrix('3R3T', aCableAttachments, aInitCableUnitVector, aPlatformRotation), min(CableForceLimits), max(CableForceLimits));
 
 %%% Boundaries
 % Lower boundaries: Forces are not bound but the minimum cable length is set to

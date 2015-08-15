@@ -1,15 +1,15 @@
-function [StructureMatrix, varargout] = getStructureMatrix(MotionPattern, CableAttachments, CableVectors, varargin)
-% GETSTRUCTUREMATRIX(CableAttachments, CableVectors) gets the structure matrix
+function [StructureMatrix, varargout] = structureMatrix(MotionPattern, CableAttachments, CableVectors, varargin)
+% STRUCTUREMATRIX(CableAttachments, CableVectors) gets the structure matrix
 %   for the given cable attachment and vector combination
 %   
-%   STRUCTUREMATRIX = GETSTRUCTUREMATRIX(CABLEATTACHMENTS, CABLEVECTORS)
+%   STRUCTUREMATRIX = STRUCTUREMATRIX(CABLEATTACHMENTS, CABLEVECTORS)
 %   calculates the structure matrix for the given combination of cable
 %   attachment points and cable vectors (which can come from any 'inverse
 %   kinematics' algorithm. This performs calculation of the structure matrix
 %   according to a non-rotated platform. In case the platform is rotated, you
 %   need to provide its rotation as well (see below).
 %
-%   STRUCTUREMATRIX = GETSTRUCTUREMATRIX(CABLEATTACHMENTS, CABLEVECTORS, 
+%   STRUCTUREMATRIX = STRUCTUREMATRIX(CABLEATTACHMENTS, CABLEVECTORS, 
 %   ROTATION) also takes into account the rotation of the platform to determine
 %   the correct entries of the structure matrix.
 %
