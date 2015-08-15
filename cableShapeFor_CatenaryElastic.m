@@ -1,4 +1,4 @@
-function [L, varargout] = cableShapeFor_Catenary(vEnd, AttachedMass, CableProperties)
+function [L, varargout] = cableShapeFor_CatenaryElastic(vEnd, AttachedMass, CableProperties)
 
 nDiscretizationPoints = 10e3;
 
@@ -73,7 +73,7 @@ inOptimizationTargetFunction = @(x) norm(x(nIndexLength) - vInitialStateForOptim
     aLinearInequalityConstraints, vLinearInequalityConstraints, ...
     aLinearEqualityConstraints, vLinearEqualityConstraints, ...
     vLowerBoundaries, vUpperBoundaries, ...
-    @(vOptimizationVector) cableShapeFor_Catenary_nonlinearBoundaries(vOptimizationVector, vEnd, dCablePropYoungsModulus, dCablePropUnstrainedSection, dCablePropDensity, dGravityConstant, dCableForceMinimum, dCableForceMaximum, dInitForceDistribution));
+    @(vOptimizationVector) cableShapeFor_CatenaryElastic_nonlinearBoundaries(vOptimizationVector, vEnd, dCablePropYoungsModulus, dCablePropUnstrainedSection, dCablePropDensity, dGravityConstant, dCableForceMinimum, dCableForceMaximum, dInitForceDistribution));
 
 % exitflag
 % fval
@@ -114,7 +114,7 @@ end
 end
 
 
-function [c, ceq] = cableShapeFor_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedCableSection, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum, dInitForceDistribution)
+function [c, ceq] = cableShapeFor_CatenaryElastic_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedCableSection, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum, dInitForceDistribution)
 
 %% Quickhand variables
 % Number of wires
