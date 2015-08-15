@@ -67,7 +67,10 @@ function [length, varargout] = inverseKinematics(Pose, PulleyPositions, CableAtt
 %       'Standard'          Standard straight-line model
 %       'Pulley'            Pulley kinematics with pulley radius and rotation
 %                           included
-%       'Catenary'          TO COME Using a catenary approach the cable length
+%       'Catenary'          Uses non-elastic catenary lines between the
+%                           locations of the pulleys and the platforms's anchor
+%                           points
+%       'Catenary-Elastic'  TO COME Using a catenary approach the cable length
 %                           will be calculated assuming ideal cable entry points
 %                           (i.e., no rotation or radius of the pulleys.
 %       'Catenary+Pulley'   TO COME Most advanced algorithm to determine
@@ -114,8 +117,11 @@ function [length, varargout] = inverseKinematics(Pose, PulleyPositions, CableAtt
 % 
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-06-18
+% Date: 2015-08-15
 % Changelog:
+%   2015-08-15
+%       * Change option 'Catenary' to 'Catenary-Elastic'
+%       * Introduce new option 'Catenary' which returns non-elastic catenaries
 %   2015-06-18
 %       * Replace option 'UseAdvanced' with 'Algorithm' and implement logic for
 %       allowing to use 'catenary' and 'catenary+pulley' as algorithm
@@ -188,12 +194,15 @@ chReturnStruct = inCharToValidArgument(ip.Results.ReturnStruct);
 %% Do the magic
 %%% What algorithm to use?
 switch lower(chAlgorithm)
-    % Catenary kinematics
+    % Catenary kinematics with non-elastic cables
     case 'catenary'
-%         [vCableLength, mCableVector, mCableUnitVector, mCableLine] = algoInverseKinematics_Catenary(vPlatformPose, mPulleyPositions, mCableAttachments, mPulleyOrientations, ?.?.?);
+        [vCableLength, aCableVector, aCableUnitVector, aCableLine] = algoInverseKinematics_Catenary(vPlatformPose, aPulleyPositions, aCableAttachments, aPulleyOrientations, ?.?.?);
+    % Catenary kinematics with elastic cables
+    case 'catenary-elastic'
+%         [vCableLength, aCableVector, aCableUnitVector, aCableLine] = algoInverseKinematics_CatenaryElastic(vPlatformPose, aPulleyPositions, mCableAttachments, aPulleyOrientations, ?.?.?);
     % Catenary kinematics with pulley deflection
     case 'catenary+pulley'
-%         [vCableLength, mCableVector, mCableUnitVector, mCableLine] = algoInverseKinematics_CatenaryPulley(vPlatformPose, mPulleyPositions, mCableAttachments, mPulleyOrientations, ?.?.?);
+%         [vCableLength, aCableVector, aCableUnitVector, aCableLine] = algoInverseKinematics_CatenaryPulley(vPlatformPose, aPulleyPositions, aCableAttachments, aPulleyOrientations, ?.?.?);
     % Advanced kinematics algorithm (including pulley radius)
     case 'pulley'
         [vCableLength, aCableUnitVector, aCorrectedPulleyPositions, aPulleyAngles] = algoInverseKinematics_Pulley(vPlatformPose, aPulleyPositions, aCableAttachments, vPulleyRadius, aPulleyOrientations);
@@ -215,7 +224,7 @@ if strcmp(chReturnStruct, 'on')
     length.UnitVector = aCableUnitVector;
         
     switch chAlgorithm
-        case 'catenary'
+        case 'catenary-elastic'
             
         case 'catenary+pulley'
             

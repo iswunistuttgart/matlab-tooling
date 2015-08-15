@@ -1,5 +1,5 @@
-function [length, varargout] = algoInverseKinematics_Catenary(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions)
-% ALGOINVERSEKINEMATICS_CATENARY - Perform inverse kinematics for the given
+function [length, varargout] = algoInverseKinematics_CatenaryElastic(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions)
+% ALGOINVERSEKINEMATICS_CATENARYELASTIC - Perform inverse kinematics for the given
 %   pose of the virtual robot using catenary lines
 %   Inverse kinematics means to determine the values for the joint
 %   variables (in this case cable lengths) for a given endeffector pose.
@@ -13,29 +13,30 @@ function [length, varargout] = algoInverseKinematics_Catenary(Pose, PulleyPositi
 %   loop can be used as well as the advanced pulley kinematics (considering
 %   pulley radius and rotatability).
 % 
-%   LENGTH = ALGOINVERSEKINEMATICS_CATENARY(POSE, PULLEYPOSITIONS,
+%   LENGTH = ALGOINVERSEKINEMATICS_CATENARYELASTIC(POSE, PULLEYPOSITIONS,
 %   CABLEATTACHMENTS, WRENCH, CABLEFORCELIMITS, CABLEPROPERTIES,
 %   GRAVITYCONSTANT) performs catenary based inverse kinematics with the cables
 %   running from PULLEYPOSITIONS to CABLEATTACHMENTS for the given pose
 % 
-%   [LENGTH, CABLEUNITVECTORS] = ALGOINVERSEKINEMATICS_CATENARY(...) also
-%   provides the unit vectors for each cable which might come in handy at times
+%   [LENGTH, CABLEUNITVECTORS] = ALGOINVERSEKINEMATICS_CATENARYELASTIC(...)
+%   also provides the unit vectors for each cable which might come in handy at
+%   times
 %   
 %   [LENGTH, CABLEUNITVECTORS, PULLEYANGLES] =
-%   ALGOINVERSEKINEMATICS_CATENARY(...) furthermore returns the angle of
+%   ALGOINVERSEKINEMATICS_CATENARYELASTIC(...) furthermore returns the angle of
 %   rotation of the pulley about its z-axos so that it's pointing towards the
 %   platform
 %   
 %   [LENGTH, CABLEUNITVECTORS, PULLEYANGLES, CABLESHAPE] =
-%   ALGOINVERSEKINEMATICS_CATENARY(...) will return the cable shape for each
-%   cable. CABLESHAPE is a matrix of dimension 2x10e3xM where the first
+%   ALGOINVERSEKINEMATICS_CATENARYELASTIC(...) will return the cable shape for
+%   each cable. CABLESHAPE is a matrix of dimension 2x10e3xM where the first
 %   dimension is either the cable's local x- or z-axis, the second dimension the
 %   corresponding x- or z-coordinates, and the third dimension is the cable
 %   number
 %
-%   LENGTH = ALGOINVERSEKINEMATICS_CATENARY(..., SOLVEROPTIONS) allows to
-%   override some pre-adjusted solver options. See input argument SOLVEROPTIONS
-%   further down for specific details
+%   LENGTH = ALGOINVERSEKINEMATICS_CATENARYELASTIC(..., SOLVEROPTIONS) allows
+%   to override some pre-adjusted solver options. See input argument
+%   SOLVEROPTIONS further down for specific details
 %   
 %   Inputs:
 %   
@@ -261,7 +262,7 @@ end
     aLinearInequalityConstraints, vLinearInequalityConstraints, ... % Linear inequality constraints
     aLinearEqualityConstraints, vLinearEqualityConstraints, ... % Linear equality constraints
     vLowerBoundaries, vUpperBoundaries, ... % Lower and upper boundaries
-    @(vOptimizationVector) algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedSection, dCablePropDensity, dGravityConstant, min(CableForceLimits), max(CableForceLimits), nIndexForcesX, nIndexForcesZ, nIndexLength), ... % Nonlinear constraints function
+    @(vOptimizationVector) algoInverseKinematics_CatenaryElastic_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedSection, dCablePropDensity, dGravityConstant, min(CableForceLimits), max(CableForceLimits), nIndexForcesX, nIndexForcesZ, nIndexLength), ... % Nonlinear constraints function
     opSolverOptions ... % Solver options
 );
 
@@ -355,7 +356,7 @@ end
 end
 
 
-function [c, ceq] = algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedCableSection, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum, nIndexForcesX, nIndexForcesZ, nIndexLength)
+function [c, ceq] = algoInverseKinematics_CatenaryElastic_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedCableSection, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum, nIndexForcesX, nIndexForcesZ, nIndexLength)
 
 %% Quickhand variables
 % Number of wires
