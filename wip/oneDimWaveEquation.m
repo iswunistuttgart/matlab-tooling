@@ -5,7 +5,7 @@ C = 1;
 % Step size in space
 dx = 0.01;
 % Length of beam
-Length = 2;
+Length = 5;
 % Number of nodes in space
 nx = Length/dx+1;
 % Step size in time
@@ -20,7 +20,7 @@ x = 0:dx:Length;
 t = 0:dt:Time;
 
 % Keep the solution of the wave equation in this variable as (time, space)
-U = zeros(numel(t), numel(x));
+U_num = zeros(numel(t), numel(x));
 
 
 r = C*dt/dx;
@@ -42,8 +42,10 @@ U_startVel = @(x) x.*0; % cos(2*pi*x);
 % U_left = zeros(numel(t), 1);
 U_left = @(t) 0*t;
 
-% Right side: a sine wave for the first half, then fixed
+% Right side: fixed
 U_right = @(t) 0; % iif(t < Time/2, @() sin(2*pi*t), true, 0);
+% Right side: a sine wave for the first half, then fixed
+U_right = @(t) iif(t <= (2*pi*3)/Time, @() 1/2*sin(2*pi*t), true, 0);
 
 
 % Construct leapfrog matrix
@@ -53,15 +55,16 @@ B = diag(2*(1-r^2)*ones(nx,1),0) + diag(r^2*ones(nx-1,1),1) + diag(r^2*ones(nx-1
 b = @(t) r^2.*[U_left(t), zeros(1, nx-2), U_right(t)];
 % b = @(x) r^2.*[U_left(x), zeros(1, nx-4), U_right(x)];
 
-U(1,:) = U_startPos(x);
+U_num(1,:) = U_startPos(x);
 % Get the simulation started for t = t1
 % b0 = r^2.*[U_left(0), ...
 %             zeros(1,nx-2), ...
 %             U_right(0)];
-U(2,:) = 1/2.*transpose(B*transpose(U(1,:))) + dt*U_startVel(x) + 1/2.*b(0);
+U_num(2,:) = 1/2.*transpose(B*transpose(U_num(1,:))) + dt*U_startVel(x) + 1/2.*b(0);
 % U(2,1) = U_left(0+dt);
 % U(2,2:end-1) = 1/2.*transpose(B*transpose(U(1,2:end-1))) + dt*U_startVel(x) + 1/2.*b(0);
 % U(2,end) = U_left(0+dt);
+
 
 
 %% Run the approxmiation
@@ -69,16 +72,34 @@ for iTime = 2:numel(t)
 %     b = r^2.*[U_left(t(iTime)), ...
 %                 zeros(1,nx-2), ...
 %                 U_right(t(iTime))];
-    U(iTime+1,:) = transpose(B*transpose(U(iTime,:))) - U(iTime-1,:) + b(t(iTime));
+    U_num(iTime+1,:) = transpose(B*transpose(U_num(iTime,:))) - U_num(iTime-1,:) + b(t(iTime));
 %     U(iTime+1,1) = U_left(t(iTime));
 %     U(iTime+1,2:end-1) = transpose(B*transpose(U(iTime,2:end-1))) - U(iTime-1,2:end-1) + b(t(iTime));
 %     U(iTime+1,end) = U_right(t(iTime));
 end
 
+
+
+%% And with d'Alembert
+U_dal = zeros(numel(t), numel(x));
+% U_dal(1,:) = 1/2.*(U_startPos(x - C*t(1)) + U_startPos(x + C*t(1)));
+% for iTime = 2:numel(t)
+%     for iX = 1:numel(x)
+%         trapzEval = x(iX)-C*t(iTime):dt:x(iX)+C*t(iTime);
+%         U_dal(iTime,iX) = 1/2.*(U_startPos(x(iX) - C*t(iTime)) + U_startPos(x(iX) + C*t(iTime))) + 1/(2*C)*trapz(trapzEval, U_startVel(trapzEval));
+%     end
+% %     U_dal(iTime,:) = 1/2.*(U_startPos(x - C*t(iTime)) + U_startPos(x + C*t(iTime)));
+% %     U_dal(iTime,:) = 1/2.*(U_startPos(x - C*t(iTime)) + U_startPos(x + C*t(iTime)));
+% end
+
+
+
+%% Plot the results
 hFig = figure;
-hPlot = plot(NaN, NaN);
+hPlot = plot(NaN, NaN, NaN, NaN);
 hTitle = title('');
-ylim([min(min(U)), max(max(U))]);
+ylim([min(min(U_num)), max(max(U_num))]);
+hLegend = legend('numeric', 'd''Alembert');
 
 % for iX = 1:numel(x)
 %     set(hPlot, 'XData', t, 'YData', U(1:end-1,iX));
@@ -91,7 +112,8 @@ nFramesPerSecond = 24;
 dTimePlot = round(1/(nFramesPerSecond*dt));
 
 for iTime = 1:dTimePlot:numel(t)
-    set(hPlot, 'XData', x, 'YData', U(iTime,:));
+    set(hPlot(1), 'XData', x, 'YData', U_num(iTime,:));
+    set(hPlot(2), 'XData', x, 'YData', U_dal(iTime,:));
     set(hTitle, 'String', ['Time t = ' , num2str(t(iTime))]);
     drawnow
     pause(1/nFramesPerSecond);
