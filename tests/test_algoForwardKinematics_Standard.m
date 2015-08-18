@@ -34,7 +34,7 @@ stSolverOptions_JacOn.Jacobian = 'on';
 
 
 %% Test without Jacobian
-[PoseEstim_JacOf, Benchmark_JacOf] = algoForwardKinematics_Simple(L_Ref, IPAnema3.cfg_gears_a, IPAnema3.cfg_platform_b, stSolverOptions_JacOf);
+[PoseEstim_JacOf, Benchmark_JacOf] = algoForwardKinematics_Standard(L_Ref, IPAnema3.cfg_gears_a, IPAnema3.cfg_platform_b, stSolverOptions_JacOf);
 
 ErrorPosition_JacOf = Pose(1:3) - PoseEstim_JacOf(1:3)
 ErrorRotation_JacOf = [dRotX, dRotY, dRotZ] - PoseEstim_JacOf(4:6)
@@ -43,7 +43,7 @@ Jacobian_JacOf = Benchmark_JacOf.jacobian
 
 
 %% Test with Jacobian
-[PoseEstim_JacOn, Benchmark_JacOn] = algoForwardKinematics_Simple(L_Ref, IPAnema3.cfg_gears_a, IPAnema3.cfg_platform_b, stSolverOptions_JacOn);
+[PoseEstim_JacOn, Benchmark_JacOn] = algoForwardKinematics_Standard(L_Ref, IPAnema3.cfg_gears_a, IPAnema3.cfg_platform_b, stSolverOptions_JacOn);
 
 ErrorPosition_JacOn = Pose(1:3) - PoseEstim_JacOn(1:3)
 ErrorRotation_JacOn = [dRotX, dRotY, dRotZ] - PoseEstim_JacOn(4:6)
