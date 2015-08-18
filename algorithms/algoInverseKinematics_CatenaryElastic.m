@@ -319,8 +319,7 @@ if nargout >= 3
     varargout{2} = vPulleyAngles;
 end
 
-% Fourth output will be the revolving and wrapping angles of the
-% pulleys
+% Fourth output is the cable shape
 if nargout >= 4
     % Calculate the cable coordinates for the catenary line
     for iCable = 1:nNumberOfCables

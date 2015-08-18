@@ -217,12 +217,12 @@ if nargout >= 3
     varargout{2} = aPulleyPositionsCorrected;
 end
 
-% Fourth output will be the corrected pulley anchor points
+% Fourth output is the corrected pulley anchor points
 if nargout >= 4
     varargout{3} = aPulleyAngles;
 end
 
-% Fifth output will be the cable shapes
+% Fifth output is the cable shapes
 if nargout >= 5
     %%% Perform the calculation of the cable shape only when necessary
     for iUnit = 1:nNumberOfCables
