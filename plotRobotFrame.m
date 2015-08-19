@@ -136,7 +136,7 @@ addOptional(ip, 'WinchLabelSpec', {}, valFcn_WinchLabelSpec);
 
 % Also print the home position? Can be either a logical 'true' to print at
 % [0, 0, 0], or the explicit home position as a 1x3 column vector
-valFcn_HomePosition = @(x) validateattributes(x, {'numeric'}, {'column', 'nrows', 3}, mfilename, 'HomePosition');
+valFcn_HomePosition = @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 3}, mfilename, 'HomePosition');
 addOptional(ip, 'HomePosition', false, valFcn_HomePosition);
 
 % Some style spec for the home position to plot?
