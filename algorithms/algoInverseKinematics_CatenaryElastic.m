@@ -159,6 +159,8 @@ vPulleyAngles = zeros(1, nNumberOfCables);
 % need only F_x and F_z) to be used in the linear equality and ineqaulity
 % constraints
 aSelectForcesFromOptimVectorAndTransformTo3D = [-1,0,0; 0,0,0; 0,-1,0];
+% Keeps the stretched cable length and thus the result of this method
+vCableLength = zeros(nNumberOfCables, 1);
 
 
 
@@ -245,8 +247,10 @@ opSolverOptions = optimoptions('fmincon');
 % trust-region-reflective does not work (read the docs)
 % opSolverOptions.Algorithm = 'sqp';
 opSolverOptions.Display = 'off';
-opSolverOptions.TolX = 1e-12;
+opSolverOptions.TolCon = 1e-10;
 opSolverOptions.TolFun = 1e-10;
+opSolverOptions.TolX = 1e-12;
+opSolverOptions.Display = 'final';
 % And parse custom solver options
 if ~isempty(stSolverOptionsGiven)
     % Get the fields of the struct provided
@@ -275,17 +279,17 @@ vCableForcesX = xFinal(nIndexForcesX);
 % Forces Z
 vCableForcesZ = xFinal(nIndexForcesZ);
 % Cable length
-vCableLength = xFinal(nIndexLength);
+vCableLength0 = xFinal(nIndexLength);
 
 % First output is the length of the strained cable so we need to calculate the
 % strained cable length
-for iCable = 1:size(vCableLength)
-    vCableLength(iCable) = vCableLength(iCable) ...
+for iCable = 1:size(vCableLength0)
+    vCableLength(iCable) = vCableLength0(iCable) ...
         + 1./(2*dCablePropDensity*dGravityConstant*dCablePropYoungsModulus*dCablePropUnstrainedSection)*( 0 + ...
             + vCableForcesZ(iCable)*sqrt(vCableForcesX(iCable).^2 + vCableForcesZ(iCable).^2) + ...
             + vCableForcesX(iCable).^2*asinh(vCableForcesZ(iCable)./abs(vCableForcesX(iCable))) + ...
-            - (vCableForcesZ(iCable) - dCablePropDensity*dGravityConstant*vCableLength(iCable))*sqrt(vCableForcesX(iCable).^2 + (vCableForcesZ(iCable) - dCablePropDensity*dGravityConstant*vCableLength(iCable)).^2) + ...
-            - vCableForcesX(iCable).^2*asinh((vCableForcesZ(iCable) - dCablePropDensity*dGravityConstant*vCableLength(iCable))./abs(vCableForcesX(iCable)))...
+            - (vCableForcesZ(iCable) - dCablePropDensity*dGravityConstant*vCableLength0(iCable))*sqrt(vCableForcesX(iCable).^2 + (vCableForcesZ(iCable) - dCablePropDensity*dGravityConstant*vCableLength0(iCable)).^2) + ...
+            - vCableForcesX(iCable).^2*asinh((vCableForcesZ(iCable) - dCablePropDensity*dGravityConstant*vCableLength0(iCable))./abs(vCableForcesX(iCable)))...
         );
 end
 % And assign the output quantity
@@ -324,15 +328,15 @@ end
 if nargout >= 4
     % Calculate the cable coordinates for the catenary line
     for iCable = 1:nNumberOfCables
-        vLinspaceCableLength = linspace(0, vCableLength(iCable), nDiscretizationPoints);
+        vLinspaceCableLength = linspace(0, vCableLength0(iCable), nDiscretizationPoints);
         % X-Coordinate
         aCableShape(1,:,iCable) = vCableForcesX(iCable).*vLinspaceCableLength./(dCablePropYoungsModulus*dCablePropUnstrainedSection) ...
-            + abs(vCableForcesX(iCable))./(dCablePropDensity.*dGravityConstant).*(asinh((vCableForcesZ(iCable) + dCablePropDensity.*dGravityConstant.*(vLinspaceCableLength - vCableLength(iCable)))./vCableForcesX(iCable)) - asinh((vCableForcesZ(iCable) - dCablePropDensity.*dGravityConstant.*vCableLength(iCable))./vCableForcesX(iCable)));
+            + abs(vCableForcesX(iCable))./(dCablePropDensity.*dGravityConstant).*(asinh((vCableForcesZ(iCable) + dCablePropDensity.*dGravityConstant.*(vLinspaceCableLength - vCableLength0(iCable)))./vCableForcesX(iCable)) - asinh((vCableForcesZ(iCable) - dCablePropDensity.*dGravityConstant.*vCableLength0(iCable))./vCableForcesX(iCable)));
         
         % Z-Coordinate
         aCableShape(2,:,iCable) = vCableForcesZ(iCable)./(dCablePropYoungsModulus.*dCablePropUnstrainedSection).*vLinspaceCableLength ...
-            + dCablePropDensity.*dGravityConstant./(dCablePropYoungsModulus.*dCablePropUnstrainedSection).*(vLinspaceCableLength./2 - vCableLength(iCable)).*vLinspaceCableLength ...
-            + 1./(dCablePropDensity.*dGravityConstant)*(sqrt(vCableForcesX(iCable).^2 + (vCableForcesZ(iCable) + dCablePropDensity.*dGravityConstant.*(vLinspaceCableLength - vCableLength(iCable))).^2) - sqrt(vCableForcesX(iCable).^2 + (vCableForcesZ(iCable) - dCablePropDensity.*dGravityConstant.*vCableLength(iCable)).^2));
+            + dCablePropDensity.*dGravityConstant./(dCablePropYoungsModulus.*dCablePropUnstrainedSection).*(vLinspaceCableLength./2 - vCableLength0(iCable)).*vLinspaceCableLength ...
+            + 1./(dCablePropDensity.*dGravityConstant)*(sqrt(vCableForcesX(iCable).^2 + (vCableForcesZ(iCable) + dCablePropDensity.*dGravityConstant.*(vLinspaceCableLength - vCableLength0(iCable))).^2) - sqrt(vCableForcesX(iCable).^2 + (vCableForcesZ(iCable) - dCablePropDensity.*dGravityConstant.*vCableLength0(iCable)).^2));
     end
     
     CableShape = aCableShape;
