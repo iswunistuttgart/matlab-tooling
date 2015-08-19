@@ -1,7 +1,7 @@
-function StructureMatrix = algoStructureMatrix_1R3T(CableAttachments, CableVectors, Rotation)
+function StructureMatrix = algoStructureMatrix_1R2T(CableAttachments, CableVectors, Rotation)
 %#codegen
 % ALGOSTRUCTUREMATRIX - Calculate the structure matrix for the given cable
-%   attachment points and cable vectors of a 3R3T cable robot
+%   attachment points and cable vectors of a 1R2T cable robot
 % 
 %   STRUCTUREMATRIX = ALGOSTRUCTUREMATRIX(CABLEATTACHMENTS, CABLEVECTORS)
 %   determines the structure matrix for the given cable attachment points
@@ -28,8 +28,13 @@ function StructureMatrix = algoStructureMatrix_1R3T(CableAttachments, CableVecto
 %   given the cable vectors. Is of size 6xM
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-06-25
+% Date: 2015-08-19
 % Changelog:
+%   2015-08-19:
+%       * Fix wrong function name
+%       * Fix error with the cross product coming from two 2x1 vectors being put
+%       in
+%       * Change size of structure matrix to 3xM
 %   2015-06-25:
 %       * Initial release
 
@@ -39,7 +44,7 @@ function StructureMatrix = algoStructureMatrix_1R3T(CableAttachments, CableVecto
 % Get number of wires
 nNumberOfWires = size(CableAttachments, 2);
 % Create the structure matrix's matrix
-aStructureMatrix = zeros(6, nNumberOfWires);
+aStructureMatrix = zeros(3, nNumberOfWires);
 % Keeping variable names consistent
 aCableVectors = CableVectors;
 aCableAttachments = CableAttachments;
@@ -49,7 +54,7 @@ if nargin >= 3
     aRotation = Rotation;
 % Platform rotation defaults to the "zero"-rotation if not provided
 else
-    aRotation = eye(3);
+    aRotation = eye(2);
 end
 
 
@@ -66,7 +71,7 @@ for iUnit = 1:nNumberOfWires
     
     aStructureMatrix(1,iUnit) = aCableVectors(1,iUnit);
     aStructureMatrix(2,iUnit) = aCableVectors(2,iUnit);
-    vCrossProduct = cross(aRotation*aCableAttachments(:,iUnit), aCableVectors(:,iUnit));
+    vCrossProduct = cross([aRotation*aCableAttachments(:,iUnit); 0], [aCableVectors(:,iUnit); 0]);
     aStructureMatrix(3,iUnit) = vCrossProduct(3);
 end
 
