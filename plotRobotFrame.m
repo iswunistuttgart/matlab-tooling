@@ -149,19 +149,19 @@ addOptional(ip, 'Grid', 'off', valFcn_Grid);
 
 % Allow user to set the xlabel ...
 valFcn_XLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'XLabel');
-addOptional(ip, 'XLabel', false, valFcn_XLabel);
+addOptional(ip, 'XLabel', '', valFcn_XLabel);
 
 % Allow user to set the ylabel ...
 valFcn_YLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'YLabel');
-addOptional(ip, 'YLabel', false, valFcn_YLabel);
+addOptional(ip, 'YLabel', '', valFcn_YLabel);
 
 % And allow user to set the zlabel
 valFcn_ZLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'ZLabel');
-addOptional(ip, 'ZLabel', false, valFcn_ZLabel);
+addOptional(ip, 'ZLabel', '', valFcn_ZLabel);
 
 % Maybe a title is provided and shall be plotted, too?
 valFcn_Title = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Title');
-addOptional(ip, 'Title', false, valFcn_Title);
+addOptional(ip, 'Title', '', valFcn_Title);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -278,20 +278,20 @@ end
 % This is stuff we are only going to do if we're in our own plot
 if bOwnPlot
     % Set x-axis label, if provided
-    if ~isempty(strtim(chXLabel))
+    if ~isempty(strtrim(chXLabel))
         xlabel(hAxes, chXLabel);
     end
     % Set y-axis label, if provided
-    if ~isempty(strtim(chYLabel))
+    if ~isempty(strtrim(chYLabel))
         ylabel(hAxes, chYLabel);
     end
     % Set z-axis label, if provided
-    if ~isempty(strtim(chZLabel))
+    if ~isempty(strtrim(chZLabel))
         zlabel(hAxes, chZLabel);
     end
     
     % Set a figure title?
-    if ~isempty(strtim(chTitle))
+    if ~isempty(strtrim(chTitle))
         title(hAxes, chTitle);
     end
     
