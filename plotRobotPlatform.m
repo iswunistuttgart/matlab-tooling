@@ -19,20 +19,20 @@ function [varargout] = plotRobotPlatform(CableAttachments, varargin)
 %   [x, y, z], 2, 3. See documentation of view for more info. Only works in
 %   standalone mode.
 %
-%   PLOTROBOTFRAME(CABLEATTACHMENTS, 'WinchLabels', WinchLabels, ...) to set
+%   PLOTROBOTFRAME(CABLEATTACHMENTS, 'AnchorLabels', AnchorLabels, ...) to set
 %   specific labels for the corresponding winch. In case of a cell array, it
 %   must be a row cell array and have as many entries as CABLEATTACHMENTS has
 %   columns.
 %
-%   PLOTROBOTFRAME(CABLEATTACHMENTS, 'WinchLabelSpec', WinchLabelSpec, ...) to
+%   PLOTROBOTFRAME(CABLEATTACHMENTS, 'AnchorLabelSpec', AnchorLabelSpec, ...) to
 %   set further spec on the winch labels. Check the documentation for Text
 %   Properties on more info.
 %
-%   PLOTROBOTFRAME(CABLEATTACHMENTS, 'HomePosition', HomePosition, ...) will plot
+%   PLOTROBOTFRAME(CABLEATTACHMENTS, 'CogPosition', CogPosition, ...) will plot
 %   the home position as the specified position given as a [x; y; z] column
 %   vector. Home position will be a diamond 'd' marker colored in 'k'.
 %
-%   PLOTROBOTFRAME(CABLEATTACHMENTS, 'HomePositionSpec', HomePositionSpec, ...)
+%   PLOTROBOTFRAME(CABLEATTACHMENTS, 'CogPositionSpec', CogPositionSpec, ...)
 %   to set the spec of the home position as e.g., color, marker, marker size,
 %   etc.. See Chart Line Properties for available options.
 %
@@ -72,7 +72,7 @@ function [varargout] = plotRobotPlatform(CableAttachments, varargin)
 % Date: 2015-04-26
 % Changelog:
 %   2015-04-26: Introduce options 'XLabel', 'YLabel', 'ZLabel', 'Title'. Also
-%               fix the logic behind {'WinchLabels', true} so we won't have
+%               fix the logic behind {'AnchorLabels', true} so we won't have
 %               duplicate code for doing basically the same thing in a different
 %               way.
 %               Change all inputs to have column major i.e., one column is a
@@ -127,21 +127,21 @@ valFcn_Viewport = @(x) validateattributes(x, {'logical', 'numeric'}, {'2d'}, mfi
 addOptional(ip, 'Viewport', [-13, 10], valFcn_Viewport);
 
 % Maybe also display the winch labels? Or custom labels?
-valFcn_WinchLabels = @(x) validateattributes(x, {'numeric', 'cell'}, {'2d', 'ncols', size(CableAttachments, 2)}, mfilename, 'WinchLabels');
-addOptional(ip, 'WinchLabels', {}, valFcn_WinchLabels);
+valFcn_AnchorLabels = @(x) validateattributes(x, {'numeric', 'cell'}, {'2d', 'ncols', size(CableAttachments, 2)}, mfilename, 'AnchorLabels');
+addOptional(ip, 'AnchorLabels', {}, valFcn_AnchorLabels);
 
 % Some style spec to set on the winch labels?
-valFcn_WinchLabelSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'WinchLabelSpec');
-addOptional(ip, 'WinchLabelSpec', {}, valFcn_WinchLabelSpec);
+valFcn_AnchorLabelSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'AnchorLabelSpec');
+addOptional(ip, 'AnchorLabelSpec', {}, valFcn_AnchorLabelSpec);
 
 % Also print the home position? Can be either a logical 'true' to print at
 % [0, 0, 0], or the explicit home position as a 1x3 column vector
-valFcn_HomePosition = @(x) validateattributes(x, {'numeric'}, {'column', 'nrows', 3}, mfilename, 'HomePosition');
-addOptional(ip, 'HomePosition', false, valFcn_HomePosition);
+valFcn_CogPosition = @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 3}, mfilename, 'CogPosition');
+addOptional(ip, 'CogPosition', false, valFcn_CogPosition);
 
 % Some style spec for the home position to plot?
-valFcn_HomePositionSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'HomePositionSpec');
-addOptional(ip, 'HomePositionSpec', {}, valFcn_HomePositionSpec);
+valFcn_CogPositionSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'CogPositionSpec');
+addOptional(ip, 'CogPositionSpec', {}, valFcn_CogPositionSpec);
 
 % Allow user to choose grid style (either 'on', 'off', or 'minor')
 valFcn_Grid = @(x) any(validatestring(x, {'on', 'off', 'minor'}, mfilename, 'Grid'));
@@ -186,12 +186,12 @@ end
 
 mCableAttachments = ip.Results.CableAttachments;
 % Parse winch labels
-ceWinchLabels = ip.Results.WinchLabels;
-bWinchLabels = ~isempty(ceWinchLabels);
+ceAnchorLabels = ip.Results.AnchorLabels;
+bAnchorLabels = ~isempty(ceAnchorLabels);
 % If just set to anything like true, we will magically create the labels by the
 % number of winches we have
 % Spec for the winch labels can be set, too
-cWinchLabelSpec = ip.Results.WinchLabelSpec;
+cAnchorLabelSpec = ip.Results.AnchorLabelSpec;
 % Plot spec
 cPlotSpec = ip.Results.PlotSpec;
 % Bounding box?
@@ -201,10 +201,10 @@ cBoundingBoxSpec = ip.Results.BoundingBoxSpec;
 % Viewport settings
 mxdViewport = ip.Results.Viewport;
 % Home position to plot
-vHomePosition = ip.Results.HomePosition;
-bHomePosition = ~isequal(vHomePosition, 0);
+vCogPosition = ip.Results.CogPosition;
+bCogPosition = ~isequal(vCogPosition, 0);
 % Spec on the home position
-cHomePositionSpec = ip.Results.HomePositionSpec;
+cCogPositionSpec = ip.Results.CogPositionSpec;
 % Parse the option for the grid
 chGrid = ip.Results.Grid;
 % bGrid = ~isequal(chGrid, 0);
@@ -239,24 +239,24 @@ if ~isempty(cPlotSpec)
 end
 
 % Label the winches (either as given by the user or as pre-defined values)
-if bWinchLabels
-    for iUnit = 1:size(ceWinchLabels, 2)
+if bAnchorLabels
+    for iUnit = 1:size(ceAnchorLabels, 2)
         hText = text(mCableAttachments(1, iUnit), mCableAttachments(2, iUnit), mCableAttachments(3, iUnit), ...
-            num2str(ceWinchLabels{iUnit}), 'VerticalAlignment', 'bottom', 'FontSize', 10);
-        if ~isempty(cWinchLabelSpec)
-            set(hText, cWinchLabelSpec{:});
+            num2str(ceAnchorLabels{iUnit}), 'VerticalAlignment', 'bottom', 'FontSize', 10);
+        if ~isempty(cAnchorLabelSpec)
+            set(hText, cAnchorLabelSpec{:});
         end
     end
 end
 
 % Plot the home position?
-if bHomePosition
+if bCogPosition
     % Plot the home position as a black marker
-    hPlotHomePosition = plot3(vHomePosition(1), vHomePosition(2), vHomePosition(3), 'Color', 'k', 'Marker', 'd');
+    hPlotCogPosition = plot3(vCogPosition(1), vCogPosition(2), vCogPosition(3), 'Color', 'k', 'Marker', 'd');
     
     % Set spec on the home positon?
-    if ~isempty(cHomePositionSpec)
-        set(hPlotHomePosition, cHomePositionSpec{:});
+    if ~isempty(cCogPositionSpec)
+        set(hPlotCogPosition, cCogPositionSpec{:});
     end
 end
 
