@@ -72,13 +72,22 @@ function [Length, CableUnitVectors, PulleyAngles, CableShape] = algoInverseKinem
 %   along the length of L with K-many steps, M is the number of cables
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-06-24
+% Date: 2015-08-19
 % Changelog:
+%   2015-08-19
+%       * Add support for code generation
 %   2015-06-24
 %       * Add return value CABLESHAPE and remove CABLEVECTOR
 %       * Add return value PULLEYANGLES
 %   2015-04-22
 %       * Initial release
+
+
+
+%% Assertion for code generation
+assert(isa(Pose, 'double') && size(Pose, 1) == 1 && size(Pose, 2) == 12);
+assert(isa(PulleyPositions, 'double') && size(PulleyPositions, 1) <= 3 && size(PulleyPositions, 2) >= 1);
+assert(isa(CableAttachments, 'double') && size(CableAttachments, 1) <= 3 && size(CableAttachments, 2) >= 1);
 
 
 
