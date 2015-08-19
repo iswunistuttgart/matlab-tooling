@@ -28,8 +28,10 @@ function StructureMatrix = algoStructureMatrix_3R3T(CableAttachments, CableVecto
 %   given the cable vectors. Is of size 6xM
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-06-25
+% Date: 2015-08-19
 % Changelog:
+%   2015-08-19
+%       * Add support for code generation
 %   2015-06-25:
 %       * Make this function only return the structure matrix for a 3R3T cable
 %       robot
@@ -37,6 +39,13 @@ function StructureMatrix = algoStructureMatrix_3R3T(CableAttachments, CableVecto
 %       * Add optional argument for the current rotation to method
 %   2015-04-22:
 %       * Initial release
+
+
+
+%% Assertion for code generation
+assert(isa(CableAttachments, 'double') && size(CableAttachments, 1) == 3 && size(CableAttachments, 2) >= 1);
+assert(isa(CableVectors, 'double') && size(CableVectors, 1) == 3 && size(CableVectors, 2) >= 1);
+assert((nargin < 3) || isa(Rotation, 'double') && size(Rotation, 1) == 3 && size(Rotation, 2) == 3);
 
 
 
