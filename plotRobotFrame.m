@@ -181,7 +181,7 @@ if ~ishandle(hAxes)
 % Check we are looking at a 3D plot, if a plot is given
 else
     [az, el] = view(hAxes);
-    assert(isequaln([az, el], [0, 90]), 'Cannot plot a 3D plot into an existing 2D plot.');
+    assert(~isequaln([az, el], [0, 90]), 'Cannot plot a 3D plot into an existing 2D plot.');
 end
 
 mWinchPositions = ip.Results.WinchPositions;
