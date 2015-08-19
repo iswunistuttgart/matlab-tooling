@@ -1,4 +1,5 @@
 function [length, varargout] = algoInverseKinematics_Pulley(Pose, PulleyPositions, CableAttachments, PulleyRadius, PulleyOrientations)
+%#codegen
 % ALGOINVERSEKINEMATICS_PULLEY - Perform inverse kinematics for the given pose
 %   
 %   Inverse kinematics means to determine the values for the joint variables (in

@@ -1,4 +1,5 @@
 function [Pose, varargout] = algoForwardKinematics_Pulley(CableLength, PulleyPosition, CableAttachment, PulleyRadius, PulleyOrientation, SolverOptions)
+%#codegen
 % ALGOFORWARDKINEMATICS_PULLEY estimates the robot pose with advanced pulley
 %   kinematics
 % 

@@ -1,4 +1,5 @@
 function [Distribution, varargout] = algoForceDistribution_AdvancedClosedForm(Wrench, StructureMatrix, ForceMinimum, ForceMaximum)
+%#codegen
 % ALGOFORCEDISTRIBUTION_ADVANCEDCLOSEDFORM - Determine the force distribution
 %   for the given robot using the closed-form force distribution algorithm
 % 

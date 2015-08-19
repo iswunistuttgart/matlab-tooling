@@ -1,4 +1,5 @@
 function [Pose, varargout] = algoForwardKinematics_Standard(CableLength, PulleyPosition, CableAttachment, SolverOptions)
+%#codegen
 % ALGOFORWARDKINEMATICS_STANDARD estimates the robot pose with standard
 %   pulley kinematics
 % 

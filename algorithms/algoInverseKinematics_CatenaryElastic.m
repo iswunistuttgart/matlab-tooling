@@ -1,4 +1,5 @@
 function [length, varargout] = algoInverseKinematics_CatenaryElastic(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions)
+%#codegen
 % ALGOINVERSEKINEMATICS_CATENARYELASTIC - Perform inverse kinematics for the given
 %   pose of the virtual robot using catenary lines
 %   Inverse kinematics means to determine the values for the joint

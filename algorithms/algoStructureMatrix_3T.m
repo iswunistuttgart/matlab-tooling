@@ -1,4 +1,5 @@
 function StructureMatrix = algoStructureMatrix_3T(CableAttachments, CableVectors)
+%#codegen
 % ALGOSTRUCTUREMATRIX - Calculate the structure matrix for the given cable
 %   attachment points and cable vectors of a 3T cable robot
 % 

@@ -1,4 +1,5 @@
 function [length, varargout] = algoInverseKinematics_Standard(Pose, PulleyPositions, CableAttachments)
+%#codegen
 % ALGOINVERSEKINEMATICS_STANDARD - Perform inverse kinematics for the given
 %   pose of the virtual robot
 %   Inverse kinematics means to determine the values for the joint

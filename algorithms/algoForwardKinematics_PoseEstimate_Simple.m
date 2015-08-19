@@ -1,4 +1,5 @@
 function [PoseEstimate] = algoForwardKinematics_PoseEstimate_Simple(CableLength, PulleyPosition, CableAttachment)
+%#codegen
 % ALGOFORWARDKINEMATICS_POSEESTIMATE_SIMPLE estimates the initial pose for
 %   foward kinematics
 % 
