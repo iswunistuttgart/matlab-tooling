@@ -1,4 +1,4 @@
-function [length, varargout] = algoInverseKinematics_CatenaryElastic(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions)
+function [Length, CableUnitVectors, PulleyAngles, CableShape, Benchmark] = algoInverseKinematics_CatenaryElastic(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions)
 %#codegen
 % ALGOINVERSEKINEMATICS_CATENARYELASTIC - Perform inverse kinematics for the given
 %   pose of the virtual robot using catenary lines
@@ -289,7 +289,7 @@ for iCable = 1:size(vCableLength)
         );
 end
 % And assign the output quantity
-length = vCableLength;
+Length = vCableLength;
 
 %%% Further outputs as requested
 % Second output is the matrix of normalized cable vectors
@@ -311,13 +311,13 @@ if nargout >= 2
         aCableVectorUnit(:,iCable) = vForceVector_in_0./norm(vForceVector_in_0);
     end
     
-    varargout{1} = aCableVectorUnit;
+    CableUnitVectors = aCableVectorUnit;
 end
 
 % Third output is the angle of rotation of the cable local frame relative to the
 % world frame
 if nargout >= 3
-    varargout{2} = vPulleyAngles;
+    PulleyAngles = vPulleyAngles;
 end
 
 % Fourth output is the cable shape
@@ -335,7 +335,7 @@ if nargout >= 4
             + 1./(dCablePropDensity.*dGravityConstant)*(sqrt(vCableForcesX(iCable).^2 + (vCableForcesZ(iCable) + dCablePropDensity.*dGravityConstant.*(vLinspaceCableLength - vCableLength(iCable))).^2) - sqrt(vCableForcesX(iCable).^2 + (vCableForcesZ(iCable) - dCablePropDensity.*dGravityConstant.*vCableLength(iCable)).^2));
     end
     
-    varargout{3} = aCableShape;
+    CableShape = aCableShape;
 end
 
 % Very last output argument is information on the algorithm (basically, all the
@@ -350,7 +350,7 @@ if nargout >= 5
     stBenchmark.grad = grad;
     stBenchmark.hessian = hessian;
     
-    varargout{4} = orderfields(stBenchmark);
+    Benchmark = orderfields(stBenchmark);
 end
 
 

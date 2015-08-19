@@ -1,4 +1,4 @@
-function [length, varargout] = algoInverseKinematics_Pulley(Pose, PulleyPositions, CableAttachments, PulleyRadius, PulleyOrientations)
+function [Length, CableUnitVectors, PulleyAngles, CableShape, PulleyPositionCorrected] = algoInverseKinematics_Pulley(Pose, PulleyPositions, CableAttachments, PulleyRadius, PulleyOrientations)
 %#codegen
 % ALGOINVERSEKINEMATICS_PULLEY - Perform inverse kinematics for the given pose
 %   
@@ -205,26 +205,21 @@ end
 
 %% Output parsing
 % First output is the cable lengths
-length = vCableLength;
+Length = vCableLength;
 
 %%% Further outputs as requested
 % Second output is the matrix of normalized cable vectors
 if nargout >= 2
-    varargout{1} = aCableVectorUnit;
+    CableUnitVectors = aCableVectorUnit;
 end
 
-% Third output 
+% Third output is the corrected pulley anchor points
 if nargout >= 3
-    varargout{2} = aPulleyPositionsCorrected;
+    PulleyAngles = aPulleyAngles;
 end
 
-% Fourth output is the corrected pulley anchor points
+% Fourth output is the cable shapes
 if nargout >= 4
-    varargout{3} = aPulleyAngles;
-end
-
-% Fifth output is the cable shapes
-if nargout >= 5
     %%% Perform the calculation of the cable shape only when necessary
     for iUnit = 1:nNumberOfCables
         % First, what's the ratio of cable on the pulley vs cable between pulley
@@ -260,7 +255,12 @@ if nargout >= 5
         aCableShape(2, nDiscretizationPointsOnPulley:end, iUnit) = vPulleyRadius(iUnit).*(sind(aPulleyAngles(2,iUnit))) +  vAc2B_in_C_normed(3).*vLinspaceOfCableInWorkspace;
     end
     
-    varargout{4} = aCableShape;
+    CableShape = aCableShape;
+end
+
+% Fifth output is the corrected pulley angles
+if nargout >= 5
+    PulleyPositionCorrected = aPulleyPositionsCorrected;
 end
 
 

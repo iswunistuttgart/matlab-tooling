@@ -1,4 +1,4 @@
-function [length, varargout] = algoInverseKinematics_Standard(Pose, PulleyPositions, CableAttachments)
+function [Length, CableUnitVectors, PulleyAngles, CableShape] = algoInverseKinematics_Standard(Pose, PulleyPositions, CableAttachments)
 %#codegen
 % ALGOINVERSEKINEMATICS_STANDARD - Perform inverse kinematics for the given
 %   pose of the virtual robot
@@ -122,12 +122,12 @@ end
 
 %% Output parsing
 % First output is the cable lengths
-length = vCableLength;
+Length = vCableLength;
 
 % Further outputs as requested
 % Second output is the matrix of normalized cable vectors
 if nargout > 1
-    varargout{1} = aCableVectorUnit;
+    CableUnitVectors = aCableVectorUnit;
 end
 
 % Third output is the rotation angle of each cable plane
@@ -141,7 +141,7 @@ if nargout > 2
         aPulleyAngles(1,iCable) = dRotationAngleAbout_kCz_Degree;
     end
     
-    varargout{2} = aPulleyAngles;
+    PulleyAngles = aPulleyAngles;
 end
 
 % Fourth output is the cable shape
@@ -165,7 +165,7 @@ if nargout > 3
         aCableShape(2,:,iCable) = vCableUnitVector_in_C(3).*vLinspaceOfCableLength;
     end
     
-    varargout{3} = aCableShape;
+    CableShape = aCableShape;
 end
 
 
