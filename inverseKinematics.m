@@ -199,7 +199,7 @@ switch lower(chAlgorithm)
 %         [vCableLength, aCableVector, aCableUnitVector, aCableLine] = algoInverseKinematics_Catenary(vPlatformPose, aPulleyPositions, aCableAttachments, aPulleyOrientations, ?.?.?);
     % Catenary kinematics with elastic cables
     case 'catenary-elastic'
-        [vCableLength, aCableVector, aCableUnitVector, aCableLine] = algoInverseKinematics_CatenaryElastic(vPlatformPose, aPulleyPositions, mCableAttachments, aPulleyOrientations, ?.?.?);
+%         [vCableLength, aCableVector, aCableUnitVector, aCableLine] = algoInverseKinematics_CatenaryElastic(vPlatformPose, aPulleyPositions, mCableAttachments, aPulleyOrientations, ?.?.?);
     % Catenary kinematics with pulley deflection
     case 'catenary+pulley'
 %         [vCableLength, aCableVector, aCableUnitVector, aCableLine] = algoInverseKinematics_CatenaryPulley(vPlatformPose, aPulleyPositions, aCableAttachments, aPulleyOrientations, ?.?.?);
