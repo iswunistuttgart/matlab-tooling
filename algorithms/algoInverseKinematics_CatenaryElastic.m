@@ -178,11 +178,11 @@ vLinearEqualityConstraints = zeros(6, 1) - Wrench;
 
 %%% Linear inequality constraints Ax <= b
 % Linear inequality constraints matrix A
-aLinearInequalityConstraints = zeros(6, 3*nNumberOfCables);
-% aLinearInequalityConstraints = [];
+% aLinearInequalityConstraints = zeros(6, 3*nNumberOfCables);
+aLinearInequalityConstraints = [];
 % Linear inequality constraints vector b
-vLinearInequalityConstraints = zeros(6, 1);
-% vLinearInequalityConstraints = [];
+% vLinearInequalityConstraints = zeros(6, 1);
+vLinearInequalityConstraints = [];
 
 % To populate the initial cable lengths and forces, we will use the straight
 % line to get initial values
@@ -245,12 +245,11 @@ end
 % Set our default optimization options
 opSolverOptions = optimoptions('fmincon');
 % trust-region-reflective does not work (read the docs)
-% opSolverOptions.Algorithm = 'sqp';
 opSolverOptions.Display = 'off';
-opSolverOptions.TolCon = 1e-10;
+opSolverOptions.TolCon = 1e-12;
 opSolverOptions.TolFun = 1e-10;
 opSolverOptions.TolX = 1e-12;
-opSolverOptions.Display = 'final';
+
 % And parse custom solver options
 if ~isempty(stSolverOptionsGiven)
     % Get the fields of the struct provided
