@@ -1,4 +1,5 @@
 function Row = rotationMatrixToRow(Matrix)
+%#codegen
 % ROTATIONMATRIXTOROW converts a 3d rotation matrix to a row
 % 
 %   ROW = ROTATIONMATRIXTOROW(MATRIX) converts the 3x3 matrix into a 1x9

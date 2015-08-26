@@ -1,4 +1,5 @@
 function Matrix = rotationRowToMatrix(Row)
+%#codegen
 % ROTATIONROWTOMATRIX converts a 1d rotation matrix row vector to its matrix
 % 
 %   MATRIX = ROTATIONROWTOMATRIX(ROW) converts the 1x9 row vector into the
