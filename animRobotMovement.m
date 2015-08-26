@@ -108,7 +108,7 @@ addOptional(ip, 'ZLabel', false, valFcn_ZLabel);
 
 % Maybe a title is provided and shall be plotted, too?
 valFcn_Title = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Title');
-addOptional(ip, 'Title', 'Time passed: $%0.3f$ $\\left[ \\mathrm{m} \\right]$', valFcn_Title);
+addOptional(ip, 'Title', 'Time passed: $%0.3f$ $\\left[ \\mathrm{s} \\right]$', valFcn_Title);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
