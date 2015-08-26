@@ -1,4 +1,4 @@
-function [Length, CableUnitVectors, PulleyAngles, CableShape, Benchmark] = algoInverseKinematics_CatenaryElastic(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions)
+function [Length, CableUnitVectors, PulleyAngles, CableShape, Benchmark] = algoInverseKinematics_CatenaryElastic(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions, DiscretizationPoints)
 %#codegen
 % ALGOINVERSEKINEMATICS_CATENARYELASTIC - Perform inverse kinematics for the given
 %   pose of the virtual robot using catenary lines
@@ -99,6 +99,19 @@ function [Length, CableUnitVectors, PulleyAngles, CableShape, Benchmark] = algoI
 
 
 
+%% Create default arguments
+if nargin < 7 || isempty(GravityConstant)
+    GravityConstant = 9.81;
+end
+if nargin < 8 || ~isstruct(SolverOptions)
+    SolverOptions = struct();
+end
+if nargin < 9 || isempty(DiscretizationPoints)
+    DiscretizationPoints = 1e3;
+end
+
+
+
 %% Initialize variables
 % To unify variable names
 aCableAttachments = CableAttachments;
@@ -115,27 +128,19 @@ vCableLength = zeros(1, nNumberOfCables);
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
 aPlatformRotation = rotationRowToMatrix(Pose(4:12));
-% Gravity constant not set so set a default value
-dGravityConstant = 9.81;
+% Get the gravity constant (7th argument) to the given value
+dGravityConstant = GravityConstant;
 % Custom solver options may be given to override the defaults
-stSolverOptionsGiven = struct();
+stSolverOptionsGiven = SolverOptions;
 % Get the cable properties struct
 stCableProperties = CableProperties;
 % And extract its fields
 dCablePropYoungsModulus = stCableProperties.YoungsModulus;
 dCablePropUnstrainedSection = stCableProperties.UnstrainedSection;
 dCablePropDensity = stCableProperties.Density;
-% Get the gravity constant (7th argument) to the given value
-if nargin >= 7
-    dGravityConstant = GravityConstant;
-end
-% Custom solver options may be provided as the 8th argument
-if nargin >= 8
-    stSolverOptionsGiven = SolverOptions;
-end
 
 % Number of discretization points for cable shape determination
-nDiscretizationPoints = 10e3;
+nDiscretizationPoints = DiscretizationPoints;
 % And array holding these values
 aCableShape = zeros(2, nDiscretizationPoints, nNumberOfCables);
 
@@ -171,9 +176,9 @@ vInitialStateForOptimization = zeros(3*nNumberOfCables, 1);
 
 %%% Linear equality constraints Ax = b
 % Linear equality constraints matrix A
-aLinearEqualityConstraints = zeros(6, 3*nNumberOfCables);
+aLinearEqualityConstraints = zeros(numel(Wrench), 3*nNumberOfCables);
 % Linear equality constraints vector b
-vLinearEqualityConstraints = zeros(6, 1) - Wrench;
+vLinearEqualityConstraints = -Wrench;
 
 
 %%% Linear inequality constraints Ax <= b
@@ -202,7 +207,14 @@ vLowerBoundaries(nIndexLength) = 0;
 vUpperBoundaries = Inf(3*nNumberOfCables, 1);
 
 % Optimization target function
-inOptimizationTargetFunction = @(x) norm(reshape(x(nIndexLength), nNumberOfCables, 1) - vInitialLength(:)) + norm(vInitForceDistribution - sqrt(x(nIndexForcesX).^2 + x(nIndexForcesZ).^2));
+inOptimizationTargetFunction = @(x) norm(...
+                                    ( reshape(x(nIndexLength), nNumberOfCables, 1) - reshape(vInitialLength(:), nNumberOfCables, 1) ) ...
+                                        + ( reshape(vInitForceDistribution, nNumberOfCables, 1) - sqrt(reshape(x(nIndexForcesX), nNumberOfCables, 1).^2 + reshape(x(nIndexForcesZ), nNumberOfCables, 1).^2) ) ...
+                                );
+% inOptimizationTargetFunction = @(x) norm(x(nIndexLength));
+% inOptimizationTargetFunction = @(x) norm(reshape(abs(x(nIndexLength)), nNumberOfCables, 1) - vInitialLength(:)) + norm(norm(vInitForceDistribution) - abs(sqrt(x(nIndexForcesX).^2 + x(nIndexForcesZ).^2)));
+% inOptimizationTargetFunction = @(x) sum(sqrt(reshape(x(nIndexLength), nNumberOfCables, 1).^2 + vInitialLength(:).^2));
+% inOptimizationTargetFunction = @(x) norm(reshape(x(nIndexLength), nNumberOfCables, 1).^2 + vInitialLength(:).^2) + norm(vInitForceDistribution + norm(sqrt(x(nIndexForcesX).^2 + x(nIndexForcesZ).^2)));
 
 
 
