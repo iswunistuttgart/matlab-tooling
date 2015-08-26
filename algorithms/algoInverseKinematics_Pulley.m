@@ -1,4 +1,4 @@
-function [Length, CableUnitVectors, PulleyAngles, CableShape, PulleyPositionCorrected] = algoInverseKinematics_Pulley(Pose, PulleyPositions, CableAttachments, PulleyRadius, PulleyOrientations)
+function [Length, CableUnitVectors, PulleyAngles, CableShape, PulleyPositionCorrected] = algoInverseKinematics_Pulley(Pose, PulleyPositions, CableAttachments, PulleyRadius, PulleyOrientations, DiscretizationPoints)
 %#codegen
 % ALGOINVERSEKINEMATICS_PULLEY - Perform inverse kinematics for the given pose
 %   
@@ -90,6 +90,12 @@ function [Length, CableUnitVectors, PulleyAngles, CableShape, PulleyPositionCorr
 
 
 
+%% Set default arguments
+if nargin < 6
+    DiscretizationPoints = 1e3;
+end
+
+
 %% Assertion for code generation
 assert(isa(Pose, 'double') && size(Pose, 1) == 1 && size(Pose, 2) == 12);
 assert(isa(PulleyPositions, 'double') && size(PulleyPositions, 1) <= 3 && size(PulleyPositions, 2) >= 1);
@@ -112,7 +118,7 @@ aCableVector = zeros(3, nNumberOfCables);
 % Holds the normalized cable vector
 aCableVectorUnit = zeros(3, nNumberOfCables);
 % Holds the cable lengths
-vCableLength = zeros(1, nNumberOfCables);
+vCableLength = zeros(nNumberOfCables, 1);
 % Holds offset to the cable lengths
 vCableLengthOffset = zeros(1, nNumberOfCables);
 % Extract the position from the pose
@@ -122,7 +128,7 @@ aPlatformRotation = rotationRowToMatrix(Pose(4:12));
 % Holds the rotation angle gamma and the wrapping angle beta
 aPulleyAngles = zeros(2, nNumberOfCables);
 % This will hold the return value of the cable shape
-nDiscretizationPoints = 10e3;
+nDiscretizationPoints = DiscretizationPoints;
 aCableShape = zeros(2, nDiscretizationPoints, nNumberOfCables);
 
 
@@ -208,7 +214,7 @@ for iUnit = 1:nNumberOfCables
     vCableLength(iUnit) = norm(aCableVector(:,iUnit)) + vCableLengthOffset(iUnit);
     % Last but not least Calculate the direction of the unit vector of the
     % current cable
-    aCableVectorUnit(:,iUnit) = aCableVector(:,iUnit)./vCableLength(iUnit);
+    aCableVectorUnit(:,iUnit) = aCableVector(:,iUnit)./norm(aCableVector(:,iUnit));
 end
 
 

@@ -1,4 +1,4 @@
-function [Length, CableUnitVectors, PulleyAngles, CableShape] = algoInverseKinematics_Standard(Pose, PulleyPositions, CableAttachments)
+function [Length, CableUnitVectors, PulleyAngles, CableShape] = algoInverseKinematics_Standard(Pose, PulleyPositions, CableAttachments, DiscretizationPoints)
 %#codegen
 % ALGOINVERSEKINEMATICS_STANDARD - Perform inverse kinematics for the given
 %   pose of the virtual robot
@@ -84,10 +84,17 @@ function [Length, CableUnitVectors, PulleyAngles, CableShape] = algoInverseKinem
 
 
 
+%% Set default arguments
+if nargin < 4
+    DiscretizationPoints = 1e3;
+end
+
+
 %% Assertion for code generation
 assert(isa(Pose, 'double') && size(Pose, 1) == 1 && size(Pose, 2) == 12);
 assert(isa(PulleyPositions, 'double') && size(PulleyPositions, 1) <= 3 && size(PulleyPositions, 2) >= 1);
 assert(isa(CableAttachments, 'double') && size(CableAttachments, 1) <= 3 && size(CableAttachments, 2) >= 1);
+assert(isa(DiscretizationPoints, 'double') && DiscretizationPoints > 0 && DiscretizationPoints < Inf);
 
 
 
@@ -101,7 +108,7 @@ aCableVector = zeros(3, nNumberOfCables);
 % Holds the normalized cable vector
 aCableVectorUnit = zeros(3, nNumberOfCables);
 % Holds the cable lengths
-vCableLength = zeros(1, nNumberOfCables);
+vCableLength = zeros(nNumberOfCables, 1);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
@@ -109,7 +116,10 @@ aPlatformRotation = rotationRowToMatrix(Pose(4:12));
 % Hold the local rotation angles of each cable's local frame relative to K_0
 aPulleyAngles = zeros(1, nNumberOfCables);
 % This will hold the return value of the cable shape
-nDiscretizationPoints = 10e3;
+nDiscretizationPoints = DiscretizationPoints;
+% if isempty(nDiscretizationPoints)
+%     nDiscretizationPoints = 10e3;
+% end
 aCableShape = zeros(2, nDiscretizationPoints, nNumberOfCables);
 
 
