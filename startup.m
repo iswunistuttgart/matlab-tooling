@@ -9,6 +9,7 @@ end
 addpath(fullfile(pwd, 'algorithms'));
 addpath(fullfile(pwd, 'helpers'));
 addpath(fullfile(pwd, 'plot-tools'));
+addpath(fullfile(pwd, 'robots'));
 addpath(fullfile(pwd, 'tests'));
 addpath(fullfile(pwd, 'wip'));
 addpath(fullfile(pwd));
