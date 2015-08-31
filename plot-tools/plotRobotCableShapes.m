@@ -1,7 +1,8 @@
 function [varargout] = plotRobotCableShapes(PulleyPositions, PulleyAngles, CableShapes, varargin)
-% PLOTROBOTFRAME Plot the robot platform as given by the cable attachment points
+% PLOTROBOTCABLESHAPES Plot the shapes of the given cables
 % 
-%   PLOTROBOTFRAME(CABLEATTACHMENTS) plots the mobile platform in a new 3D plot
+%   PLOTROBOTCABLESHAPES(PULLEYPOSITIONS, PULLEYANGLES, CABLESHAPES) plots the
+%   cable shape for each cable starting at is respective pulley position
 % 
 %   PLOTROBOTFRAME(CABLEATTACHMENTS, 'PlotSpec', PlotSpec, ...) allows to adjust
 %   the plot spec for the cable attachment markers. By default, the 'o' markers
@@ -19,12 +20,12 @@ function [varargout] = plotRobotCableShapes(PulleyPositions, PulleyAngles, Cable
 %   [x, y, z], 2, 3. See documentation of view for more info. Only works in
 %   standalone mode.
 %
-%   PLOTROBOTFRAME(CABLEATTACHMENTS, 'AnchorLabels', AnchorLabels, ...) to set
+%   PLOTROBOTFRAME(CABLEATTACHMENTS, 'PulleyLabels', PulleyLabels, ...) to set
 %   specific labels for the corresponding winch. In case of a cell array, it
 %   must be a row cell array and have as many entries as CABLEATTACHMENTS has
 %   columns.
 %
-%   PLOTROBOTFRAME(CABLEATTACHMENTS, 'AnchorLabelSpec', AnchorLabelSpec, ...) to
+%   PLOTROBOTFRAME(CABLEATTACHMENTS, 'PulleyLabelSpec', PulleyLabelSpec, ...) to
 %   set further spec on the winch labels. Check the documentation for Text
 %   Properties on more info.
 %
@@ -61,18 +62,17 @@ function [varargout] = plotRobotCableShapes(PulleyPositions, PulleyAngles, Cable
 %   See also: VIEW, PLOT3, TEXT, PATCH, GRID, TITLE, XLABEL, YLABEL, ZLABEL
 %
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-04-26
+% Date: 2015-08-31
 % Changelog:
-%   2015-04-26: Introduce options 'XLabel', 'YLabel', 'ZLabel', 'Title'. Also
-%               fix the logic behind {'AnchorLabels', true} so we won't have
-%               duplicate code for doing basically the same thing in a different
-%               way.
-%               Change all inputs to have column major i.e., one column is a
-%               logical unit whereas between columns, the "thing" might change.
-%               That means, given the winches, if we look at one column, we see
-%               the data of one winch, whereas if we looked at the first row, we
-%               can read info on the x-values of all winches
-%   2015-04-24: Initial release
+%   2015-08-31:
+%       * Rename options 'AnchorLabel' and 'AnchorLabelSpec' to 'PulleyLabel'
+%       and 'PulleyLabelSpec', respectively
+%       * Update function to no longer do fancy things with transforming the
+%       cable shape in any magic way but not uses the output of algoCableShape_*
+%       as a direct argument to the plot command only shifting the shape to
+%       start at the cable's respective winch
+%   2015-08-24:
+%       * Initial release
 
 
 
@@ -103,7 +103,7 @@ valFcn_PulleyAngles = @(x) validateattributes(x, {'numeric'}, {'2d', 'ncols', si
 addRequired(ip, 'PulleyAngles', valFcn_PulleyAngles);
 
 % Allow the plot to have user-defined spec
-valFcn_CableShapes = @(x) validateattributes(x, {'numeric'}, {'3d', 'nrows', size(PulleyPositions, 2), 'ncols', 2}, mfilename, 'CableShapes');
+valFcn_CableShapes = @(x) validateattributes(x, {'numeric'}, {'3d', 'size', [3, NaN, size(PulleyPositions, 2)]}, mfilename, 'CableShapes');
 addRequired(ip, 'CableShapes', valFcn_CableShapes);
 
 % Allow the plot to have user-defined spec
@@ -127,12 +127,12 @@ valFcn_Viewport = @(x) validateattributes(x, {'logical', 'numeric'}, {'2d'}, mfi
 addOptional(ip, 'Viewport', [-13, 10], valFcn_Viewport);
 
 % Maybe also display the winch labels? Or custom labels?
-valFcn_AnchorLabels = @(x) validateattributes(x, {'numeric', 'cell'}, {'2d', 'ncols', size(CableAttachments, 2)}, mfilename, 'AnchorLabels');
-addOptional(ip, 'AnchorLabels', {}, valFcn_AnchorLabels);
+valFcn_PulleyLabels = @(x) validateattributes(x, {'numeric', 'cell'}, {'2d', 'ncols', size(PulleyPositions, 2)}, mfilename, 'PulleyLabels');
+addOptional(ip, 'PulleyLabels', {}, valFcn_PulleyLabels);
 
 % Some style spec to set on the winch labels?
-valFcn_AnchorLabelSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'AnchorLabelSpec');
-addOptional(ip, 'AnchorLabelSpec', {}, valFcn_AnchorLabelSpec);
+valFcn_PulleyLabelSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'PulleyLabelSpec');
+addOptional(ip, 'PulleyLabelSpec', {}, valFcn_PulleyLabelSpec);
 
 % Allow user to choose grid style (either 'on', 'off', or 'minor')
 valFcn_Grid = @(x) any(validatestring(x, {'on', 'off', 'minor'}, mfilename, 'Grid'));
@@ -178,18 +178,18 @@ end
 % Parse pulley positions
 aPulleyPositions = ip.Results.PulleyPositions;
 % Parse pulley rotations
-aPulleyAngles = ip.Results.PulleyAngles;
+% aPulleyAngles = ip.Results.PulleyAngles;
 % Parse cable shape
 aCableShapes = ip.Results.CableShapes;
 % Parse the pulley orientations
-aPulleyOrientation = ip.Results.PulleyOrientation;
-% Parse winch labels
-ceAnchorLabels = ip.Results.AnchorLabels;
-bAnchorLabels = ~isempty(ceAnchorLabels);
+% aPulleyOrientation = ip.Results.PulleyOrientation;
+% Parse pulley labels
+cePulleyLabels = ip.Results.PulleyLabels;
+bPulleyLabels = ~isempty(cePulleyLabels);
 % If just set to anything like true, we will magically create the labels by the
-% number of winches we have
+% number of pulley we have
 % Spec for the winch labels can be set, too
-cAnchorLabelSpec = ip.Results.AnchorLabelSpec;
+cPulleyLabelSpec = ip.Results.PulleyLabelSpec;
 % Plot spec
 cPlotSpec = ip.Results.PlotSpec;
 % Bounding box?
@@ -227,20 +227,21 @@ hold(hAxes, 'on');
 hPlotShapes = zeros(size(aPulleyPositions, 2), 1);
 
 % First, plot all the cable shapes
-for iUnit = 1:size(aPulleyPositions, 2)
-    aTheCableShape_Local = [squeeze(aCableShapes(iUnit,1,:)).'; ...
-        zeros(1, size(aCableShapes, 3)); ...
-        squeeze(aCableShapes(iUnit,2,:)).'];
-    aTheCableShape_PlaneRotation = rotz(aPulleyAngles(1,iUnit));
-    aTheCableShape_Offset = aPulleyPositions(:,iUnit);
-    aTheCableShape_TransformationC2P = [aTheCableShape_PlaneRotation, zeros(3, 1); ...
-                                        zeros(1, 3), 1];
-    aTheCableShape_TransformationP2W = [rotz(aPulleyOrientation(3,iUnit))*roty(aPulleyOrientation(2,iUnit))*rotx(aPulleyOrientation(1,iUnit)), aTheCableShape_Offset; ...
-                                        zeros(1, 3), 1];
-    aTheCableShape_Transformed = aTheCableShape_TransformationP2W*aTheCableShape_TransformationC2P*[aTheCableShape_Local; ...
-                                                                                                    ones(1, size(aTheCableShape_Local, 2))];
+for iCable = 1:size(aPulleyPositions, 2)
+    % Get the cable shape for the winch and squeeze it down to a 2d matrix since
+    % it is part of a 3d matrix
+    aCableShapeFromWinch = squeeze(aCableShapes(:,:,iCable));
     
-    hPlotShapes(iUnit) = plot3(aTheCableShape_Transformed(1,:), aTheCableShape_Transformed(2,:), aTheCableShape_Transformed(3,:));
+    % Affine translation matrix
+    aTranslationMatrix = [eye(3), aPulleyPositions(:,iCable); ...
+                        zeros(1,3), 1];
+    
+    % Translate the cable shape from [0,0,0] to the winch position
+    aCableShapeGlobal = aTranslationMatrix*[aCableShapeFromWinch; ...
+                                            ones(1, size(aCableShapeFromWinch, 2))];
+    
+    % And plot it.
+    hPlotShapes(iCable) = plot3(aCableShapeGlobal(1,:), aCableShapeGlobal(2,:), aCableShapeGlobal(3,:));
 end
 % If the plot spec were given, we need to set them on the plot
 if ~isempty(cPlotSpec)
@@ -248,12 +249,12 @@ if ~isempty(cPlotSpec)
 end
 
 % Label the winches (either as given by the user or as pre-defined values)
-if bAnchorLabels
-    for iUnit = 1:size(ceAnchorLabels, 2)
-        hText = text(aPulleyPositions(1, iUnit), aPulleyPositions(2, iUnit), aPulleyPositions(3, iUnit), ...
-            num2str(ceAnchorLabels{iUnit}), 'VerticalAlignment', 'bottom', 'FontSize', 10);
-        if ~isempty(cAnchorLabelSpec)
-            set(hText, cAnchorLabelSpec{:});
+if bPulleyLabels
+    for iCable = 1:size(cePulleyLabels, 2)
+        hText = text(aPulleyPositions(1, iCable), aPulleyPositions(2, iCable), aPulleyPositions(3, iCable), ...
+            num2str(cePulleyLabels{iCable}), 'VerticalAlignment', 'bottom', 'FontSize', 10);
+        if ~isempty(cPulleyLabelSpec)
+            set(hText, cPulleyLabelSpec{:});
         end
     end
 end
