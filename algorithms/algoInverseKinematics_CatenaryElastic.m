@@ -1,4 +1,4 @@
-function [Length, CableUnitVectors, PulleyAngles, CableShape, Benchmark] = algoInverseKinematics_CatenaryElastic(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions, DiscretizationPoints)
+function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinematics_CatenaryElastic(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions)
 %#codegen
 % ALGOINVERSEKINEMATICS_CATENARYELASTIC - Perform inverse kinematics for the given
 %   pose of the virtual robot using catenary lines
@@ -106,9 +106,6 @@ end
 if nargin < 8 || ~isstruct(SolverOptions)
     SolverOptions = struct();
 end
-if nargin < 9 || isempty(DiscretizationPoints)
-    DiscretizationPoints = 1e3;
-end
 
 
 
@@ -138,11 +135,6 @@ stCableProperties = CableProperties;
 dCablePropYoungsModulus = stCableProperties.YoungsModulus;
 dCablePropUnstrainedSection = stCableProperties.UnstrainedSection;
 dCablePropDensity = stCableProperties.Density;
-
-% Number of discretization points for cable shape determination
-nDiscretizationPoints = DiscretizationPoints;
-% And array holding these values
-aCableShape = zeros(2, nDiscretizationPoints, nNumberOfCables);
 
 
 
@@ -308,7 +300,7 @@ Length = vCableLength;
 
 %%% Further outputs as requested
 % Second output is the matrix of normalized cable vectors
-if nargout >= 2
+if nargout > 1
     % To get the cable force unit vectors we will have to take the forces of the
     % cables and transform them from the C frame to the 0 frame
     for iCable = 1:nNumberOfCables
@@ -331,31 +323,13 @@ end
 
 % Third output is the angle of rotation of the cable local frame relative to the
 % world frame
-if nargout >= 3
+if nargout > 2
     PulleyAngles = vPulleyAngles;
-end
-
-% Fourth output is the cable shape
-if nargout >= 4
-    % Calculate the cable coordinates for the catenary line
-    for iCable = 1:nNumberOfCables
-        vLinspaceCableLength = linspace(0, vCableLength0(iCable), nDiscretizationPoints);
-        % X-Coordinate
-        aCableShape(1,:,iCable) = vCableForcesX(iCable).*vLinspaceCableLength./(dCablePropYoungsModulus*dCablePropUnstrainedSection) ...
-            + abs(vCableForcesX(iCable))./(dCablePropDensity.*dGravityConstant).*(asinh((vCableForcesZ(iCable) + dCablePropDensity.*dGravityConstant.*(vLinspaceCableLength - vCableLength0(iCable)))./vCableForcesX(iCable)) - asinh((vCableForcesZ(iCable) - dCablePropDensity.*dGravityConstant.*vCableLength0(iCable))./vCableForcesX(iCable)));
-        
-        % Z-Coordinate
-        aCableShape(2,:,iCable) = vCableForcesZ(iCable)./(dCablePropYoungsModulus.*dCablePropUnstrainedSection).*vLinspaceCableLength ...
-            + dCablePropDensity.*dGravityConstant./(dCablePropYoungsModulus.*dCablePropUnstrainedSection).*(vLinspaceCableLength./2 - vCableLength0(iCable)).*vLinspaceCableLength ...
-            + 1./(dCablePropDensity.*dGravityConstant)*(sqrt(vCableForcesX(iCable).^2 + (vCableForcesZ(iCable) + dCablePropDensity.*dGravityConstant.*(vLinspaceCableLength - vCableLength0(iCable))).^2) - sqrt(vCableForcesX(iCable).^2 + (vCableForcesZ(iCable) - dCablePropDensity.*dGravityConstant.*vCableLength0(iCable)).^2));
-    end
-    
-    CableShape = aCableShape;
 end
 
 % Very last output argument is information on the algorithm (basically, all the
 % information acquirable by fmincon
-if nargout >= 5
+if nargout > 3
     stBenchmark = struct();
     stBenchmark.x = xFinal;
     stBenchmark.fval = fval;

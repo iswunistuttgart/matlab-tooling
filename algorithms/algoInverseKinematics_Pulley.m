@@ -1,4 +1,4 @@
-function [Length, CableUnitVectors, PulleyAngles, CableShape, PulleyPositionCorrected] = algoInverseKinematics_Pulley(Pose, PulleyPositions, CableAttachments, PulleyRadius, PulleyOrientations, DiscretizationPoints)
+function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = algoInverseKinematics_Pulley(Pose, PulleyPositions, CableAttachments, PulleyRadius, PulleyOrientations)
 %#codegen
 % ALGOINVERSEKINEMATICS_PULLEY - Perform inverse kinematics for the given pose
 %   
@@ -74,8 +74,11 @@ function [Length, CableUnitVectors, PulleyAngles, CableShape, PulleyPositionCorr
 %   along the length of L with K-many steps, M is the number of cables
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-08-19
+% Date: 2015-08-31
 % Changelog:
+%   2015-08-31
+%       * Remove code for shape generation and put into a separate function
+%       called algoCableShape_Pulley
 %   2015-08-19
 %       * Add support for code generation
 %   2015-06-24:
@@ -88,12 +91,6 @@ function [Length, CableUnitVectors, PulleyAngles, CableShape, PulleyPositionCorr
 %   2015-04-22:
 %       * Initial release
 
-
-
-%% Set default arguments
-if nargin < 6
-    DiscretizationPoints = 1e3;
-end
 
 
 %% Assertion for code generation
@@ -127,9 +124,6 @@ vPlatformPosition = reshape(Pose(1:3), 3, 1);
 aPlatformRotation = rotationRowToMatrix(Pose(4:12));
 % Holds the rotation angle gamma and the wrapping angle beta
 aPulleyAngles = zeros(2, nNumberOfCables);
-% This will hold the return value of the cable shape
-nDiscretizationPoints = DiscretizationPoints;
-aCableShape = zeros(2, nDiscretizationPoints, nNumberOfCables);
 
 
 
@@ -234,48 +228,8 @@ if nargout >= 3
     PulleyAngles = aPulleyAngles;
 end
 
-% Fourth output is the cable shapes
-if nargout >= 4
-    %%% Perform the calculation of the cable shape only when necessary
-    for iUnit = 1:nNumberOfCables
-        % First, what's the ratio of cable on the pulley vs cable between pulley
-        % and platform?
-        dCableOnPulley = vCableLengthOffset(iUnit);
-        dCableInWorkspace = norm(aCableVector(:,iUnit));
-        dRatioPulleyToTotal = dCableOnPulley/vCableLength(iUnit);
-        dRatioWorkspaceToTotal = dCableInWorkspace/vCableLength(iUnit);
-        nDiscretizationPointsOnPulley = round(dRatioPulleyToTotal*nDiscretizationPoints);
-        nDiscretizationPointsInWorkspace = round(dRatioWorkspaceToTotal*nDiscretizationPoints);
-
-        % Create the linear spaces for the cable part on the pulley
-        vLinspaceOfCableOnPulley = linspace(0, aPulleyAngles(2,iUnit)*pi/180, nDiscretizationPointsOnPulley);
-        % and the part in the workspace
-        vLinspaceOfCableInWorkspace = linspace(dCableOnPulley, dCableInWorkspace, nDiscretizationPointsInWorkspace + 1);
-
-        % We need the position direction of the cable from the corrected pulley
-        % point towards the 
-        aRotation_kC2kP = rotz(aPulleyAngles(1,iUnit));
-        aRotation_kP2kO = rotz(aPulleyOrientations(3,iUnit))*roty(aPulleyOrientations(2,iUnit))*rotx(aPulleyOrientations(1,iUnit));
-        vAc2B_in_C = transpose(aRotation_kC2kP)*(transpose(aRotation_kP2kO)*(-aCableVector(:,iUnit)));
-        vAc2B_in_C_normed = vAc2B_in_C./norm(vAc2B_in_C);
-
-        % The shape of the cable on the pulley can be easily inferred from a
-        % parametrization of a circle shifted along the x-axis by the radius of
-        % the pulley
-        aCableShape(:, 1:nDiscretizationPointsOnPulley, iUnit) = vPulleyRadius(iUnit).*[(1 - cos(vLinspaceOfCableOnPulley)); sin(vLinspaceOfCableOnPulley)];
-        
-        % The shape of the cable in the workspace is as easy as stretching the
-        % normalized vector from A_c,i to B_i but offsetting it with the final
-        % position on the pulley
-        aCableShape(1, nDiscretizationPointsOnPulley:end, iUnit) = vPulleyRadius(iUnit).*(1-cosd(aPulleyAngles(2,iUnit))) + vAc2B_in_C_normed(1).*vLinspaceOfCableInWorkspace;
-        aCableShape(2, nDiscretizationPointsOnPulley:end, iUnit) = vPulleyRadius(iUnit).*(sind(aPulleyAngles(2,iUnit))) +  vAc2B_in_C_normed(3).*vLinspaceOfCableInWorkspace;
-    end
-    
-    CableShape = aCableShape;
-end
-
 % Fifth output is the corrected pulley angles
-if nargout >= 5
+if nargout >= 4
     PulleyPositionCorrected = aPulleyPositionsCorrected;
 end
 

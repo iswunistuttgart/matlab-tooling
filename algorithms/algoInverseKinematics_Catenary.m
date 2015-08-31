@@ -1,4 +1,4 @@
-function [Length, CableUnitVectors, PulleyAngles, CableShape, Benchmark] = algoInverseKinematics_Catenary(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions, DiscretizationPoints)
+function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinematics_Catenary(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions)
 %#codegen
 % ALGOINVERSEKINEMATICS_CATENARY - Perform inverse kinematics for the given
 %   pose of the virtual robot using catenary lines
@@ -27,12 +27,9 @@ function [Length, CableUnitVectors, PulleyAngles, CableShape, Benchmark] = algoI
 %   rotation of the pulley about its z-axos so that it's pointing towards the
 %   platform
 %   
-%   [LENGTH, CABLEUNITVECTORS, PULLEYANGLES, CABLESHAPE] =
-%   ALGOINVERSEKINEMATICS_CATENARY(...) will return the cable shape for each
-%   cable. CABLESHAPE is a matrix of dimension 2x10e3xM where the first
-%   dimension is either the cable's local x- or z-axis, the second dimension the
-%   corresponding x- or z-coordinates, and the third dimension is the cable
-%   number
+%   [LENGTH, CABLEUNITVECTORS, PULLEYANGLES, BENCHMARK] =
+%   ALGOINVERSEKINEMATICS_CATENARY(...) will return information on the results
+%   of the fmincon optimization
 %
 %   LENGTH = ALGOINVERSEKINEMATICS_CATENARY(..., SOLVEROPTIONS) allows to
 %   override some pre-adjusted solver options. See input argument SOLVEROPTIONS
@@ -73,9 +70,6 @@ function [Length, CableUnitVectors, PulleyAngles, CableShape, Benchmark] = algoI
 % 
 %   LENGTH: Length is a vector of size 1xM with the cable lengths
 %   determined using either catenary kinematics
-%
-%   CABLEVECTOR: Vectors of each cable from attachment point to corrected
-%   pulley point given as 3xM matrix
 %   
 %   CABLEUNITVECTOR: Normalized vector for each cable from attachment point
 %   to its corrected pulley point as 3xM matrix
@@ -83,10 +77,16 @@ function [Length, CableUnitVectors, PulleyAngles, CableShape, Benchmark] = algoI
 %   CABLEWRAPANGLES: Matrix of gamma and beta angles of rotation and
 %   wrapping angle of pulley and cable on pulley respectively, given as 2xM
 %   matrix
+%
+%   BENCHMARK: A struct with fields x, fval, exitflag, output, lambda, grad,
+%   hessian as returned by the call to fmincon
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-08-05
+% Date: 2015-08-31
 % Changelog:
+%   2015-08-31
+%       * Remove code for shape generation and put into a separate function
+%       called algoCableShape_Catenary
 %   2015-08-05
 %       * Add optional input argument SOLVEROPTIONS
 %   2015-07-15
@@ -105,9 +105,6 @@ end
 if nargin < 8 || ~isstruct(SolverOptions)
     SolverOptions = struct();
 end
-if nargin < 9 || isempty(DiscretizationPoints)
-    DiscretizationPoints = 1e3;
-end
 
 
 
@@ -122,15 +119,11 @@ nNumberOfCables = size(aPulleyPositions, 2);
 % Holds the normalized cable vector
 aCableVectorUnit = zeros(3, nNumberOfCables);
 % Holds the cable lengths
-vCableLength = zeros(1, nNumberOfCables);
+% vCableLength = zeros(1, nNumberOfCables);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
 aPlatformRotation = rotationRowToMatrix(Pose(4:12));
-% Gravity constant not set so set a default value
-dGravityConstant = 9.81;
-% Custom solver options may be given to override the defaults
-stSolverOptionsGiven = struct();
 % Get the cable properties struct
 stCableProperties = CableProperties;
 % And extract its fields
@@ -141,11 +134,6 @@ dCablePropDensity = stCableProperties.Density;
 dGravityConstant = GravityConstant;
 % Custom solver options may be provided as the 8th argument
 stSolverOptionsGiven = SolverOptions;
-
-% Number of discretization points for cable shape determination
-nDiscretizationPoints = DiscretizationPoints;
-% And array holding these values
-aCableShape = zeros(2, nDiscretizationPoints, nNumberOfCables);
 
 
 
@@ -290,7 +278,7 @@ Length = vCableLength;
 
 %%% Further outputs as requested
 % Second output is the matrix of normalized cable vectors
-if nargout >= 2
+if nargout > 1
     % To get the cable force unit vectors we will have to take the forces of the
     % cables and transform them from the C frame to the 0 frame
     for iCable = 1:nNumberOfCables
@@ -313,32 +301,13 @@ end
 
 % Third output is the angle of rotation of the cable local frame relative to the
 % world frame
-if nargout >= 3
+if nargout > 2
     PulleyAngles = vPulleyAngles;
-end
-
-% Fourth output will be the revolving and wrapping angles of the
-% pulleys
-if nargout >= 4
-    % Calculate the cable coordinates for the catenary line
-    for iCable = 1:nNumberOfCables
-        vLinspaceCableLength = linspace(0, vCableLength(iCable), nDiscretizationPoints);
-        % X-Coordinate
-        aCableShape(1,:,iCable) = vCableForcesX(iCable).*vLinspaceCableLength./(dCablePropYoungsModulus*dCablePropUnstrainedSection) ...
-            + abs(vCableForcesX(iCable))./(dCablePropDensity.*dGravityConstant).*(asinh((vCableForcesZ(iCable) + dCablePropDensity.*dGravityConstant.*(vLinspaceCableLength - vCableLength(iCable)))./vCableForcesX(iCable)) - asinh((vCableForcesZ(iCable) - dCablePropDensity.*dGravityConstant.*vCableLength(iCable))./vCableForcesX(iCable)));
-        
-        % Z-Coordinate
-        aCableShape(2,:,iCable) = vCableForcesZ(iCable)./(dCablePropYoungsModulus.*dCablePropUnstrainedSection).*vLinspaceCableLength ...
-            + dCablePropDensity.*dGravityConstant./(dCablePropYoungsModulus.*dCablePropUnstrainedSection).*(vLinspaceCableLength./2 - vCableLength(iCable)).*vLinspaceCableLength ...
-            + 1./(dCablePropDensity.*dGravityConstant)*(sqrt(vCableForcesX(iCable).^2 + (vCableForcesZ(iCable) + dCablePropDensity.*dGravityConstant.*(vLinspaceCableLength - vCableLength(iCable))).^2) - sqrt(vCableForcesX(iCable).^2 + (vCableForcesZ(iCable) - dCablePropDensity.*dGravityConstant.*vCableLength(iCable)).^2));
-    end
-    
-    CableShape = aCableShape;
 end
 
 % Very last output argument is information on the algorithm (basically, all the
 % information acquirable by fmincon
-if nargout >= 5
+if nargout > 3
     stBenchmark = struct();
     stBenchmark.x = xFinal;
     stBenchmark.fval = fval;

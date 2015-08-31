@@ -1,4 +1,4 @@
-function [Length, CableUnitVectors, PulleyAngles, CableShape] = algoInverseKinematics_Standard(Pose, PulleyPositions, CableAttachments, DiscretizationPoints)
+function [Length, CableUnitVectors, PulleyAngles] = algoInverseKinematics_Standard(Pose, PulleyPositions, CableAttachments)
 %#codegen
 % ALGOINVERSEKINEMATICS_STANDARD - Perform inverse kinematics for the given
 %   pose of the virtual robot
@@ -72,8 +72,11 @@ function [Length, CableUnitVectors, PulleyAngles, CableShape] = algoInverseKinem
 %   along the length of L with K-many steps, M is the number of cables
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-08-19
+% Date: 2015-08-31
 % Changelog:
+%   2015-08-31
+%       * Remove code for shape generation and put into a separate function
+%       called algoCableShape_Standard
 %   2015-08-19
 %       * Add support for code generation
 %   2015-06-24
@@ -82,12 +85,6 @@ function [Length, CableUnitVectors, PulleyAngles, CableShape] = algoInverseKinem
 %   2015-04-22
 %       * Initial release
 
-
-
-%% Set default arguments
-if nargin < 4
-    DiscretizationPoints = 1e3;
-end
 
 
 %% Assertion for code generation
@@ -115,12 +112,6 @@ vPlatformPosition = reshape(Pose(1:3), 3, 1);
 aPlatformRotation = rotationRowToMatrix(Pose(4:12));
 % Hold the local rotation angles of each cable's local frame relative to K_0
 aPulleyAngles = zeros(1, nNumberOfCables);
-% This will hold the return value of the cable shape
-nDiscretizationPoints = DiscretizationPoints;
-% if isempty(nDiscretizationPoints)
-%     nDiscretizationPoints = 10e3;
-% end
-aCableShape = zeros(2, nDiscretizationPoints, nNumberOfCables);
 
 
 
@@ -135,6 +126,13 @@ for iCable = 1:nNumberOfCables
     
     % Calculate the direciton of the unit vector of the current cable
     aCableVectorUnit(:,iCable) = aCableVector(:,iCable)./vCableLength(iCable);
+    
+    % ... calculate the angle of rotation of the cable local frame K_c relative
+    % to K_0
+    dRotationAngleAbout_kCz_Degree = atan2d(-aCableVector(2,iCable), -aCableVector(1,iCable));
+    
+    % Assign it
+    aPulleyAngles(1,iCable) = dRotationAngleAbout_kCz_Degree;
 end
 
 
@@ -151,40 +149,7 @@ end
 
 % Third output is the rotation angle of each cable plane
 if nargout > 2
-    %%% Calculate the cable shape if requested
-    for iCable = 1:nNumberOfCables
-        % ... calculate the angle of rotation of the cable local frame K_c
-        % relative to K_0
-        dRotationAngleAbout_kCz_Degree = atan2d(-aCableVector(2,iCable), -aCableVector(1,iCable));
-        
-        aPulleyAngles(1,iCable) = dRotationAngleAbout_kCz_Degree;
-    end
-    
     PulleyAngles = aPulleyAngles;
-end
-
-% Fourth output is the cable shape
-if nargout > 3
-    %%% Calculate the cable shape if requested
-    for iCable = 1:nNumberOfCables
-        % Rotation matrix about K_C
-        aRotation_kC2kA = rotz(aPulleyAngles(1,iCable));
-
-        % Vector from A to B in K_C
-        vA2B_in_C = transpose(aRotation_kC2kA)*(-aCableVector(:,iCable));
-        % Normalize the vector from A^c to B^c
-        vCableUnitVector_in_C = vA2B_in_C./norm(vA2B_in_C);
-
-        % Calculate the z coordinate of the cable in its local frame
-        % parametrized as
-        % x = L_t*cos(dAngleOfCableWithXc) with 0 <= L_t <= L_i
-        % t = L_t*sin(dAngleOfCableWithXc) with 0 <= L_t <= L_i
-        vLinspaceOfCableLength = linspace(0, vCableLength(iCable), nDiscretizationPoints);
-        aCableShape(1,:,iCable) = vCableUnitVector_in_C(1).*vLinspaceOfCableLength;
-        aCableShape(2,:,iCable) = vCableUnitVector_in_C(3).*vLinspaceOfCableLength;
-    end
-    
-    CableShape = aCableShape;
 end
 
 
