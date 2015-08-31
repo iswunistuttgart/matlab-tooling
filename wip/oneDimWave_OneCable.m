@@ -130,8 +130,8 @@ U_inh(1,:) = U_startPos(x);
 % The second row of U contains the speed at this moment which we will
 % interpolate
 % U_hom(2,:) = 1/2.*transpose(B*transpose(U_hom(1,:))) + dt*U_startVel(x) + 1/2.*b(U_hom(1,:));
-U_hom(2,2:end-1) = 1/2.*transpose(B*transpose(U_hom(1,2:end-1))) + dt*U_startVel(x(2:end-1)) + 1/2.*b(U_hom(1,2:end-1));
-U_inh(2,2:end-1) = 1/2.*transpose(B*transpose(U_inh(1,2:end-1))) + dt*U_startVel(x(2:end-1)) + 1/2.*b(U_inh(1,2:end-1));
+U_hom(2,2:end-1) = 1/2.*transpose(B*transpose(U_hom(1,2:end-1))) + dt*U_startVel(x(2:end-1)) + 1/2.*b(0);
+U_inh(2,2:end-1) = 1/2.*transpose(B*transpose(U_inh(1,2:end-1))) + dt*U_startVel(x(2:end-1)) + 1/2.*b(0);
 
 % Run the approxmiation
 for iTime = 2:nt-1

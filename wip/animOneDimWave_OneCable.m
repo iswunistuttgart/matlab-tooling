@@ -1,4 +1,4 @@
-function animOneDimWave_OneCable(MovieFilename, varargin)
+function animOneDimWave_OneCable(MovieFilename, PlotInhomogeneous, varargin)
 
 %% Function initialization
 % This keeps our previously opened figure;
@@ -16,24 +16,29 @@ end
 
 %% Function defaults
 bSaveMovie = false;
+bPlotInhomogeneous = false;
 bMovieFileOpen = false;
 chMovieFilename = '';
 
 
 
 %% Assertion
-assert(nargin < 1 || ischar(MovieFilename) || isempty(MovieFilename));
+assert(nargin < 1 || isempty(MovieFilename) || ( ~isempty(MovieFilename) && ischar(MovieFilename) ));
+assert(nargin < 2 || ( ~isempty(PlotInhomogeneous) && islogical(PlotInhomogeneous)));
 
 % Assign the first argument
-if nargin >= 1 && ~isempty(MovieFilename)
+if nargin > 0 && ~isempty(MovieFilename)
     bSaveMovie = true;
     chMovieFilename = MovieFilename;
+end
+if nargin > 1
+    bPlotInhomogeneous = PlotInhomogeneous;
 end
 
 
 
 %% Simulate the wave equation
-[U, Axes] = oneDimWave_OneCable(varargin{:});
+[U, Axes, U_inh] = oneDimWave_OneCable(varargin{:});
 
 
 
@@ -63,26 +68,44 @@ end
 
 % Initialize the plot handle (two plots, first is the initial condition, second
 % the solution)
-hPlot = plot(NaN, NaN, NaN, NaN);
+if bPlotInhomogeneous
+    hPlot = plot(NaN, NaN, NaN, NaN, NaN, NaN);
+else
+    hPlot = plot(NaN, NaN, NaN, NaN);
+end
 % And set its x-values right away
-set(hPlot(1), 'XData', Axes.DimX, 'LineStyle', '--');
-set(hPlot(2), 'XData', Axes.DimX);
-% set(hPlot(3), 'XData', Axes.DimX, 'Marker', '*');
+vColors = distinguishableColors(3);
+set(hPlot(1), 'XData', Axes.DimX, 'LineStyle', '--', 'Color', vColors(1,:));
+set(hPlot(2), 'XData', Axes.DimX, 'Color', vColors(2,:));
+if bPlotInhomogeneous
+    set(hPlot(3), 'XData', Axes.DimX, 'Color', vColors(3,:));
+end
 % Set the labels
 hXLabel = xlabel('String coordinate $x_{\rm{nom}} \left[ \mathrm{m}/L \right]$');
 hYLabel = ylabel('Deflection $u \left[ \mathrm{m} \right]$');
 % Initialize the plot's title
 hTitle = title('');
 % Create a legend
-hLegend = legend('initial', 'solution', 'Location', 'NorthOutside', 'Orientation', 'Horizontal');
+if bPlotInhomogeneous
+    hLegend = legend('initial', 'homogeneous', 'inhomogeneous', 'Location', 'NorthOutside', 'Orientation', 'Horizontal');
+else
+    hLegend = legend('initial', 'solution', 'Location', 'NorthOutside', 'Orientation', 'Horizontal');
+end
 % Set the y-limits of the figure automagically to the min and max of U
-if min(U(:,2)) < max(U(:,2))
-    autosetlims('y', min(min(U)), max(max(U)));
+if bPlotInhomogeneous
+    if min(min(U)) < max(max(U)) && min(min(U_inh)) < max(max(U_inh))
+        autosetlims('y', min(min(min(U)), min(min(U_inh))), max(max(max(U)), max(max(U_inh))));
+    end
+else
+    if min(min(U)) < max(max(U))
+        autosetlims('y', min(min(U)), max(max(U)));
+    end
 end
 
 if bMovieFileOpen
     % Set the font size to 16 for all
     set(gca, 'FontSize', 16, 'LineWidth', 0.66);
+    set(hLastFigure, 'Color', 'w');
 end
 
 % Plot the initial condition
@@ -103,7 +126,9 @@ for iT = 1:numel(vFrames)
     % Update Y-data of our plot
     set(hPlot(2), 'YData', U(iEvalTime,:));
     % Plot the markers of the cable
-%     set(hPlot(3), 'YData', U(iEvalTime, 1:(numel(Axes.DimX)-1)/100:(numel(Axes.DimX)+1));
+    if bPlotInhomogeneous
+        set(hPlot(3), 'YData', U_inh(iEvalTime,:));
+    end
     % Update the title to display the time
     set(hTitle, 'String', sprintf('Time $t = %0.3f$', Axes.DimT(iEvalTime)));
     
