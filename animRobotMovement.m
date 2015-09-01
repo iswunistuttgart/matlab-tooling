@@ -50,6 +50,7 @@ if ~isempty(varargin) && allAxes(Time)
 end
 
 
+
 %% Parse the input
 % Define the input parser
 ip = inputParser;
@@ -59,28 +60,19 @@ ip = inputParser;
 valFcn_Time = @(x) validateattributes(x, {'numeric'}, {'vector', 'column', 'increasing'}, mfilename, 'Time');
 addRequired(ip, 'Time', valFcn_Time);
 
-% Require: Matrix of poses
+% Require: Matrix of positions
 % List of poses must be a matrix with as many columns as Time has rows
 valFcn_Poses = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', size(Time, 1), 'ncols', 3}, mfilename, 'Position');
 addRequired(ip, 'Position', valFcn_Poses);
 
 % Require: Matrix of rotation
-valFcn_Rotation = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', size(Time, 1), 'ncols', 3}, mfilename, 'Rotation');
+valFcn_Rotation = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', size(Time, 1)}, mfilename, 'Rotation');
 addRequired(ip, 'Rotation', valFcn_Rotation);
 
 % Require: Matrix of rotation
 valFcn_AttachmentPoints = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', 3, 'nonempty'}, mfilename, 'AttachmentPoints');
 addRequired(ip, 'AttachmentPoints', valFcn_AttachmentPoints);
 
-% % Let user decied on the plot style
-% % Plot style can be chosen anything from the list below
-% valFcn_PlotStyle = @(x) any(validatestring(x, {'2D', '2DXY', '2DYX', '2DYZ', '2DZY', '2DXZ', '2DZX', '3D'}, mfilename, 'PlotStyle'));
-% addOptional(ip, 'PlotStyle', '2D', valFcn_PlotStyle);
-% 
-% % Let user decied on the plot spec
-% valFcn_LineSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'LineSpec');
-% addOptional(ip, 'LineSpec', {}, valFcn_LineSpec);
-% 
 % The 3d view may be defined, too
 % Viewport may be 2, 3, [az, el], or [x, y, z]
 valFcn_Viewport = @(x) validateattributes(x, {'numeric'}, {'row'}, mfilename, 'Viewport') || validateattributes(x, {'numeric'}, {'ncols', '>=', 2, 'ncols', '<=', 3}, mfilename, 'Viewport');
@@ -93,6 +85,10 @@ addOptional(ip, 'Grid', 'off', valFcn_Grid);
 % Allow user to enable/disable plotting a trace of the trajectory
 valFcn_TraceTrajectory = @(x) any(validatestring(x, {'on', 'off', 'yes'}, mfilename, 'TraceTrajectory'));
 addOptional(ip, 'TraceTrajectory', 'off', valFcn_TraceTrajectory);
+
+% Require: Matrix of rotation
+valFcn_SaveAs = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'SaveAs');
+addOptional(ip, 'SaveAs', '', valFcn_SaveAs);
 
 % Allow user to set the xlabel ...
 valFcn_XLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'XLabel');
@@ -135,8 +131,6 @@ if ~ishandle(hAxes)
 end
 % New axes handle
 hAxes = gca;
-% General plot style
-% chPlotStyle = upper(ip.Results.PlotStyle);
 % Ensure we have the right given axes for the given plot style i.e., no 2D plot
 % into a 3D axes, nor a 3D plot into a 2D axis
 [az, el] = view(hAxes);
@@ -144,8 +138,6 @@ hAxes = gca;
 %     error('PHILIPPTEMPEL:plotRobotPoses:invalidAxesType', 'Given plot styles does not match provided axes type. Cannot plot a 2D image into a 3D plot.');
 % end
 
-% Plotting spec
-% cLineSpec = ip.Results.LineSpec;
 % 3D viewport (only used for 3d plot style)
 mxdViewport = ip.Results.Viewport;
 % Grid options
@@ -157,10 +149,17 @@ chXLabel = ip.Results.XLabel;
 chYLabel = ip.Results.YLabel;
 chZLabel = ip.Results.ZLabel;
 % Trajectory tracing
-chTraceTrajectory = ip.Results.TraceTrajectory;
+chTraceTrajectory = inCharToValidArgument(ip.Results.TraceTrajectory);
+% Save as
+chMovieFilename = ip.Results.SaveAs;
+bSaveMovie = ~isempty(chMovieFilename);
+bMovieFileOpen = false;
 
 % Is this our own plot?
 bOwnPlot = isempty(get(hAxes, 'Children'));
+
+% Maybe later on we will make this a public property
+nFramesPerSecond = 25;
 
 
 
@@ -215,6 +214,36 @@ hold on;
 
 
 
+%% Open the video file if requested
+% Save a movie?
+if bSaveMovie
+    % Cleanup function to properly close the movie object
+    hCleanup = @(x) iif(bMovieFileOpen, close(writerObj), true, true);
+    
+    % Create a new video writer
+    writerObj = VideoWriter(sprintf('%s.mp4', chMovieFilename), 'MPEG-4');
+    % Set the framerate to 25fps
+    writerObj.FrameRate = 25;
+    % Try opening the file, if it fails we will not save the video but display
+    % an message
+    try
+        open(writerObj);
+        bMovieFileOpen = true;
+    catch me
+        display(me.message);
+        bMovieFileOpen = false;
+    end
+end
+
+% Set some properties so that the can be recorded nicely
+if bMovieFileOpen
+    % Set the font size to 16 for all
+    set(gca, 'FontSize', 16, 'LineWidth', 0.66);
+    set(hFig, 'Color', 'w');
+end
+
+
+
 %% Draw the actual movement
 %%% Initialize the target plots
 % Transformation group for the platform bounding box
@@ -231,48 +260,74 @@ hTitle = title(hAxes, 'Initializing...');
 set(hTitle, 'Interpreter', 'latex');
 
 % Time counter to pace the drawing
-dTimeStart = tic;
+% dTimeStart = tic;
 dMaxAnimationTime = vTime(end);
 
+% Get the vector of frames we need to extract
+vFramesTime = 0:1/nFramesPerSecond:dMaxAnimationTime;
+vFrames = zeros(numel(vFramesTime), 1);
+
+for iFrameTime = 1:numel(vFramesTime)
+    vDiff = abs(vTime - vFramesTime(iFrameTime));
+    vFrames(iFrameTime) = find(vDiff == min(vDiff), 1, 'first');
+end
+
 % Step over the simulation time
-for iTime = 1:1:size(vTime)
+for iFrame = 1:1:size(vFrames)
+    nFrame = vFrames(iFrame);
     % Adjust the title to display the current time
     if bOwnPlot
-        set(hTitle, 'String', sprintf(chTitle, vTime(iTime)));
+        set(hTitle, 'String', sprintf(chTitle, vTime(nFrame)));
     end
     % Extract the current pose and rotation
-    vCurrentPose = aPoses(iTime, :)';
-    aCurrentRotation = aRotations(iTime, :);
+    vCurrentPose = aPoses(nFrame,:)';
+    aCurrentRotation = aRotations(nFrame,:);
     
-    % Make a transformation matrix given the current pose (i.e., shift) and
-    % rotation to be used with the hgtransform group
-%     aTransformationPlatform = makehgtform('translate', vCurrentPose)*...
-%         makehgtform('zrotate', aCurrentRotation(3))*...
-%         makehgtform('yrotate', aCurrentRotation(2))*...
-%         makehgtform('xrotate', aCurrentRotation(1));
-%     
-%     % Apply the calculated transformation to the platform
-%     set(hTargetGroupPlatform, 'Matrix', aTransformationPlatform);
+    % Convert the rotation of the platform given from the rotation data we
+    % extracted from aRotations
+    switch numel(aCurrentRotation)
+        case 3
+            aCurrentRotation = rotz(rad2deg(aCurrentRotation(3)))*roty(rad2deg(aCurrentRotation(2)))*rotx(rad2deg(aCurrentRotation(1)));
+        case 4
+            aCurrentRotation = eye(3) + 2*aCurrentRotation(1)*vec2skew(aCurrentRotation(2:4)) + 2*transpose(vec2skew(aCurrentRotation(2:4)))*vec2skew(aCurrentRotation(2:4));
+        case 9
+            aCurrentRotation = rotationRowToMatrix(aCurrentRotation);
+        otherwise
+            aCurrentRotation = eye(3);
+    end
     
-    % Calculate the position of each cable attachment's actual position
-    aCurrentRotation = rotz(rad2deg(aCurrentRotation(3)))*roty(rad2deg(aCurrentRotation(2)))*rotx(rad2deg(aCurrentRotation(1)));
+    % Adjust the bounding box of the attachment points given the current
+    % rotation
     aCurrentAttachmentPointsBoundingBox = transpose(repmat(vCurrentPose, 1, size(aAttachmentPoints, 2)) + aCurrentRotation*transpose(aInitialAttachmentPointsBoundingBox));
+    
     % And update the platform patch to a new position
     set(hTargetPlotPlatform, ...
         'Vertices', aCurrentAttachmentPointsBoundingBox);
     
     % Plot the path of the trajectory that has passed so far (if requested)
-    if any(strcmp(chTraceTrajectory, {'on', 'yes'}))
-        set(hTargetPlotTrajectory, 'XData', aPoses(1:iTime, 1), 'YData', aPoses(1:iTime, 2), 'ZData', aPoses(1:iTime, 3));
+    if strcmp(chTraceTrajectory, 'on')
+        set(hTargetPlotTrajectory, 'XData', aPoses(1:nFrame, 1), 'YData', aPoses(1:nFrame, 2), 'ZData', aPoses(1:nFrame, 3));
     end
     
     % Pacer to draw only at a rate of about 30 frames per second
-    if toc(dTimeStart) > 1/30
+%     if toc(dTimeStart) > 1/nFramesPerSecond
 %         drawnow update;
         drawnow;
         
-        dTimeStart = tic;
-    end
+        % If the video file was successfully opened, we can save the current frame
+        % to the video
+        if bMovieFileOpen
+            frame = getframe(hFig);
+            writeVideo(writerObj, frame);
+        end
+        
+%         dTimeStart = tic;
+%     end
+end
+
+% Movie done, so we can close the video object
+if bMovieFileOpen
+    close(writerObj);
 end
 
 
@@ -286,6 +341,20 @@ function result = allAxes(h)
 
 result = all(all(ishghandle(h))) && ...
          length(findobj(h,'type','axes','-depth',0)) == length(h);
+
+end
+
+
+function out = inCharToValidArgument(in)
+
+switch lower(in)
+    case {'on', 'yes', 'please'}
+        out = 'on';
+    case {'off', 'no', 'never'}
+        out = 'off';
+    otherwise
+        out = 'off';
+end
 
 end
 
