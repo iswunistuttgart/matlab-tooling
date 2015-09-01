@@ -105,11 +105,6 @@ ip = inputParser;
 valFcn_WinchPositions = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', 3}, mfilename, 'WinchPositions');
 addRequired(ip, 'WinchPositions', valFcn_WinchPositions);
 
-% We need the axes handle which is allowed to be the first optional
-% argument which must not be used with a parameter name
-% valFcn_Axes = @(x) validateattributes(x, {'handle', 'matlab.graphics.axis.Axes'}, {}, mfilename, 'Axes');
-% addOptional(ip, 'Axes', false, valFcn_Axes);
-
 % Allow the plot to have user-defined spec
 valFcn_PlotSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'PlotSpec');
 addOptional(ip, 'PlotSpec', {}, valFcn_PlotSpec);
@@ -356,7 +351,6 @@ switch lower(in)
     otherwise
         out = 'off';
 end
-% end ```switch lower(in)```
 
 end
 
