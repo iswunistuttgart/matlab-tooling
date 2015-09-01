@@ -233,6 +233,13 @@ if bSaveMovie
         display(me.message);
         bMovieFileOpen = false;
     end
+    
+    % Set the figure ration to 16:9 for videos
+    setfigureratio('16:9');
+% Not going to save a movie
+else
+    % Set figure ration to 4:3
+    setfigureratio('4:3');
 end
 
 % Set some properties so that the can be recorded nicely
