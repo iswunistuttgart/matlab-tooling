@@ -119,7 +119,7 @@ addRequired(ip, 'Poses', valFcn_Poses);
 % valFcn_Axes = @(x) validateattributes(x, {'handle', 'matlab.graphics.axis.Axes'}, {}, mfilename, 'Axes');
 % addOptional(ip, 'Axes', false, valFcn_Axes);
 
-% Let user decied on the plot style
+% Let user decide on the plot style
 % Plot style can be chosen anything from the list below
 valFcn_PlotStyle = @(x) any(validatestring(x, {'2D', '2DXY', '2DYX', '2DYZ', '2DZY', '2DXZ', '2DZX', '3D'}, mfilename, 'PlotStyle'));
 addOptional(ip, 'PlotStyle', '2D', valFcn_PlotStyle);

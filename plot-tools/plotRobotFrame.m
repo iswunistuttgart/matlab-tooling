@@ -184,27 +184,27 @@ else
     assert(~isequaln([az, el], [0, 90]), 'Cannot plot a 3D plot into an existing 2D plot.');
 end
 
-mWinchPositions = ip.Results.WinchPositions;
+aWinchPositions = ip.Results.WinchPositions;
 % Parse winch labels
 ceWinchLabels = ip.Results.WinchLabels;
 bWinchLabels = ~isempty(ceWinchLabels);
 % If just set to anything like true, we will magically create the labels by the
 % number of winches we have
 % Spec for the winch labels can be set, too
-cWinchLabelSpec = ip.Results.WinchLabelSpec;
+ceWinchLabelSpec = ip.Results.WinchLabelSpec;
 % Plot spec
-cPlotSpec = ip.Results.PlotSpec;
+cePlotSpec = ip.Results.PlotSpec;
 % Bounding box?
 chBoundingBox = inCharToValidArgument(ip.Results.BoundingBox);
 % Spec on the bounding box
-cBoundingBoxSpec = ip.Results.BoundingBoxSpec;
+ceBoundingBoxSpec = ip.Results.BoundingBoxSpec;
 % Viewport settings
 mxdViewport = ip.Results.Viewport;
 % Home position to plot
 vHomePosition = ip.Results.HomePosition;
 bHomePosition = ~isequal(vHomePosition, 0);
 % Spec on the home position
-cHomePositionSpec = ip.Results.HomePositionSpec;
+ceHomePositionSpec = ip.Results.HomePositionSpec;
 % Parse the option for the grid
 chGrid = ip.Results.Grid;
 % bGrid = ~isequal(chGrid, 0);
@@ -232,19 +232,19 @@ axes(hAxes);
 hold(hAxes, 'on');
 
 % First, plot the winch positions as circles
-hPlotWinchPositions = plot3(mWinchPositions(1, :), mWinchPositions(2, :), mWinchPositions(3, :), 'o');
+hPlotWinchPositions = plot3(aWinchPositions(1, :), aWinchPositions(2, :), aWinchPositions(3, :), 'o');
 % If the plot spec were given, we need to set them on the plot
-if ~isempty(cPlotSpec)
-    set(hPlotWinchPositions, cPlotSpec{:});
+if ~isempty(cePlotSpec)
+    set(hPlotWinchPositions, cePlotSpec{:});
 end
 
 % Label the winches (either as given by the user or as pre-defined values)
 if bWinchLabels
     for iUnit = 1:size(ceWinchLabels, 2)
-        hText = text(mWinchPositions(1, iUnit), mWinchPositions(2, iUnit), mWinchPositions(3, iUnit), ...
+        hText = text(aWinchPositions(1, iUnit), aWinchPositions(2, iUnit), aWinchPositions(3, iUnit), ...
             num2str(ceWinchLabels{iUnit}), 'VerticalAlignment', 'bottom', 'FontSize', 10);
-        if ~isempty(cWinchLabelSpec)
-            set(hText, cWinchLabelSpec{:});
+        if ~isempty(ceWinchLabelSpec)
+            set(hText, ceWinchLabelSpec{:});
         end
     end
 end
@@ -255,8 +255,8 @@ if bHomePosition
     hPlotHomePosition = plot3(vHomePosition(1), vHomePosition(2), vHomePosition(3), 'Color', 'k', 'Marker', 'd');
     
     % Set spec on the home positon?
-    if ~isempty(cHomePositionSpec)
-        set(hPlotHomePosition, cHomePositionSpec{:});
+    if ~isempty(ceHomePositionSpec)
+        set(hPlotHomePosition, ceHomePositionSpec{:});
     end
 end
 
@@ -264,14 +264,14 @@ end
 % Plot the bounding box?
 if strcmp(chBoundingBox, 'on')
     % Get the bounding box for the winch positions
-    [mWinchPositionsBoundingBox, mWinchPositionsBoundingBoxFaces] = boundingbox3(mWinchPositions(1, :), mWinchPositions(2, :), mWinchPositions(3, :));
+    [mWinchPositionsBoundingBox, mWinchPositionsBoundingBoxFaces] = boundingbox3(aWinchPositions(1, :), aWinchPositions(2, :), aWinchPositions(3, :));
     
     % And create a hollow patch from the bounding box
     hPatch = patch('Vertices', mWinchPositionsBoundingBox, 'Faces', mWinchPositionsBoundingBoxFaces, 'FaceColor', 'none');
     
     % Spec to set on the bounding box? No problemo!
-    if ~isempty(cBoundingBoxSpec)
-        set(hPatch, cBoundingBoxSpec{:});
+    if ~isempty(ceBoundingBoxSpec)
+        set(hPatch, ceBoundingBoxSpec{:});
     end
 end
 
