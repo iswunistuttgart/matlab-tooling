@@ -119,16 +119,13 @@ nNumberOfCables = size(aPulleyPositions, 2);
 % Holds the normalized cable vector
 aCableVectorUnit = zeros(3, nNumberOfCables);
 % Holds the cable lengths
-% vCableLength = zeros(1, nNumberOfCables);
+% vCableLength = zeros(nNumberOfCables, 1);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
 aPlatformRotation = rotationRowToMatrix(Pose(4:12));
 % Get the cable properties struct
 stCableProperties = CableProperties;
-% And extract its fields
-dCablePropYoungsModulus = stCableProperties.YoungsModulus;
-dCablePropUnstrainedSection = stCableProperties.UnstrainedSection;
 dCablePropDensity = stCableProperties.Density;
 % Get the gravity constant (7th argument) to the given value
 dGravityConstant = GravityConstant;
@@ -259,9 +256,12 @@ end
     aLinearInequalityConstraints, vLinearInequalityConstraints, ... % Linear inequality constraints
     aLinearEqualityConstraints, vLinearEqualityConstraints, ... % Linear equality constraints
     vLowerBoundaries, vUpperBoundaries, ... % Lower and upper boundaries
-    @(vOptimizationVector) algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedSection, dCablePropDensity, dGravityConstant, min(CableForceLimits), max(CableForceLimits), nIndexForcesX, nIndexForcesZ, nIndexLength), ... % Nonlinear constraints function
+    @(vOptimizationVector) algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropDensity, dGravityConstant, min(CableForceLimits), max(CableForceLimits), nIndexForcesX, nIndexForcesZ, nIndexLength), ... % Nonlinear constraints function
     opSolverOptions ... % Solver options
 );
+
+% Make it a column vector
+xFinal = xFinal(:);
 
 
 %% Output parsing
@@ -280,7 +280,7 @@ Length = vCableLength;
 % Second output is the matrix of normalized cable vectors
 if nargout > 1
     % To get the cable force unit vectors we will have to take the forces of the
-    % cables and transform them from the C frame to the 0 frame
+    % cables at b_i and transform them from frame C to frame 0
     for iCable = 1:nNumberOfCables
         % Get the rotation matrix from C to 0
         aRotation_kC2k0 = rotz(vPulleyAngles(1, iCable));
@@ -324,7 +324,7 @@ end
 end
 
 
-function [c, ceq] = algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedCableSection, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum, nIndexForcesX, nIndexForcesZ, nIndexLength)
+function [c, ceq] = algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum, nIndexForcesX, nIndexForcesZ, nIndexLength)
 
 %% Quickhand variables
 % Number of wires

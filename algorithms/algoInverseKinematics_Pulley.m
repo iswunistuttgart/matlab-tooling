@@ -101,6 +101,7 @@ assert(isa(PulleyRadius, 'double') && size(PulleyRadius, 1) == 1 && size(PulleyR
 assert(isa(PulleyOrientations, 'double') && size(PulleyOrientations, 1) == 3 && size(PulleyOrientations, 2) >= 1);
 
 
+
 %% Initialize variables
 % To unify variable names
 aCableAttachments = CableAttachments;
