@@ -1,6 +1,6 @@
-if exist(fullfile(pwd, '..', '..', 'Matlab', 'helper', 'startup.m'), 'file')
+if exist(fullfile(pwd, '..', '..', 'Matlab', 'Helper', 'startup.m'), 'file')
     try
-        run(fullfile(pwd, '..', '..', 'Matlab', 'helper', 'startup.m'));
+        run(fullfile(pwd, '..', '..', 'Matlab', 'Helper', 'startup.m'));
     catch exc
         warning('PHILIPPTEMPEL:startup:runStartupFailed', 'Could not run startup script of the helpers because %s', strrep(exc.message, '\', '\\'));
     end
