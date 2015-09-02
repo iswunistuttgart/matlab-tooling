@@ -12,26 +12,35 @@ function [varargout] = animRobotMovement(Time, Position, Rotation, AttachmentPoi
 %   POSITION: Matrix of position in tuple of [x, y, z] per time step in TIME of
 %   the platform center of gravity
 %   
-%   ROTATION: Matrix of Mx3 or Mx3x3 values which represent the alpha, beta, and
-%   gamma angles or the rotation matrix respectively over the M time steps of
+%   ROTATION: Matrix of Tx3 or Tx3x3 values which represent the alpha, beta, and
+%   gamma angles or the rotation matrix respectively over the T time steps of
 %   TIME. If given as [alpha, beta, gamma], a rotation of ZYX is applied to the
 %   platform's cable attachment points
 %
-%   See also: VIEW, PLOT, PLOT3, LINESPEC, GRID, TITLE, XLABEL, YLABEL, ZLABEL
+%   ANCHORPOINTS: Matrix of 3xM points that represent the platforms cable
+%   attachment points given per column
+%
+%   See also: VIEW, PLOT, PLOT3, LINESPEC, GRID, TITLE, XLABEL, YLABEL, ZLABEL,
+%   AXIS
 %
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-04-26
+% Date: 2015-09-02
 % Changelog:
-%   2015-04-26: Introduce options 'XLabel', 'YLabel', 'ZLabel', 'Title'. Also
-%               fix the logic behind {'WinchLabels', true} so we won't have
-%               duplicate code for doing basically the same thing in a different
-%               way.
-%               Change all inputs to have column major i.e., one column is a
-%               logical unit whereas between columns, the "thing" might change.
-%               That means, given the winches, if we look at one column, we see
-%               the data of one winch, whereas if we looked at the first row, we
-%               can read info on the x-values of all winches
-%   2015-04-24: Initial release
+%   2015-09-02:
+%       * Add option 'Axis' to allow setting the axis to either 'tight',
+%       'equal', or anything else supported by >> axis
+%       * Code cleanup
+%   2015-04-26:
+%       * Introduce options 'XLabel', 'YLabel', 'ZLabel', 'Title'. Also fix the
+%       logic behind {'WinchLabels', true} so we won't have duplicate code for
+%       doing basically the same thing just in a different way.
+%       * Change all to have column major i.e., one column is a logical unit
+%       whereas between columns, the "thing" might change. That means, given the
+%       winches, if we look at one column, we see the data of one winch, whereas
+%       if we looked at the first row, we can read info on the x-values of all
+%       winches
+%   2015-04-24:
+%       * Initial release
 
 
 
@@ -75,7 +84,7 @@ addRequired(ip, 'AttachmentPoints', valFcn_AttachmentPoints);
 
 % The 3d view may be defined, too
 % Viewport may be 2, 3, [az, el], or [x, y, z]
-valFcn_Viewport = @(x) validateattributes(x, {'numeric'}, {'row'}, mfilename, 'Viewport') || validateattributes(x, {'numeric'}, {'ncols', '>=', 2, 'ncols', '<=', 3}, mfilename, 'Viewport');
+valFcn_Viewport = @(x) validateattributes(x, {'logical', 'numeric'}, {'2d'}, mfilename, 'Viewport');
 addOptional(ip, 'Viewport', [-13, 10], valFcn_Viewport);
 
 % Allow user to choose grid style (either 'on', 'off', or 'minor')
@@ -92,15 +101,19 @@ addOptional(ip, 'SaveAs', '', valFcn_SaveAs);
 
 % Allow user to set the xlabel ...
 valFcn_XLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'XLabel');
-addOptional(ip, 'XLabel', false, valFcn_XLabel);
+addOptional(ip, 'XLabel', '', valFcn_XLabel);
 
 % Allow user to set the ylabel ...
 valFcn_YLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'YLabel');
-addOptional(ip, 'YLabel', false, valFcn_YLabel);
+addOptional(ip, 'YLabel', '', valFcn_YLabel);
 
 % And allow user to set the zlabel
 valFcn_ZLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'ZLabel');
-addOptional(ip, 'ZLabel', false, valFcn_ZLabel);
+addOptional(ip, 'ZLabel', '', valFcn_ZLabel);
+
+% And allow user to set the axis
+valFcn_Axis = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Axis');
+addOptional(ip, 'Axis', '', valFcn_Axis);
 
 % Maybe a title is provided and shall be plotted, too?
 valFcn_Title = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Title');
@@ -119,7 +132,7 @@ parse(ip, Time, Position, Rotation, AttachmentPoints, varargin{:});
 % Vector of time
 vTime = ip.Results.Time;
 % Vector of poses
-aPoses = ip.Results.Position;
+aPositions = ip.Results.Position;
 % Matrix of Rotations
 aRotations = ip.Results.Rotation;
 % Get the cable attachment points
@@ -150,6 +163,8 @@ chYLabel = ip.Results.YLabel;
 chZLabel = ip.Results.ZLabel;
 % Trajectory tracing
 chTraceTrajectory = inCharToValidArgument(ip.Results.TraceTrajectory);
+% Axis configuration
+chAxis = ip.Results.Axis;
 % Save as
 chMovieFilename = ip.Results.SaveAs;
 bSaveMovie = ~isempty(chMovieFilename);
@@ -169,13 +184,18 @@ if bOwnPlot
     % Set viewport
     view(hAxes, mxdViewport)
     
+    % Set the axis
+    if ~isempty(strtrim(chAxis))
+        axis(chAxis)
+    end
+    
     % Calculate the axes limits
-    dMinX = 1.1*(min(aPoses(:, 1)) - abs(max(max(aAttachmentPoints))));
-    dMaxX = 1.1*(max(aPoses(:, 1)) + abs(max(max(aAttachmentPoints))));
-    dMinY = 1.1*(min(aPoses(:, 2)) - abs(max(max(aAttachmentPoints))));
-    dMaxY = 1.1*(max(aPoses(:, 2)) + abs(max(max(aAttachmentPoints))));
-    dMinZ = 1.1*(min(aPoses(:, 3)) - abs(max(max(aAttachmentPoints))));
-    dMaxZ = 1.1*(max(aPoses(:, 3)) + abs(max(max(aAttachmentPoints))));
+    dMinX = 1.1*(min(aPositions(:, 1)) - abs(max(max(aAttachmentPoints))));
+    dMaxX = 1.1*(max(aPositions(:, 1)) + abs(max(max(aAttachmentPoints))));
+    dMinY = 1.1*(min(aPositions(:, 2)) - abs(max(max(aAttachmentPoints))));
+    dMaxY = 1.1*(max(aPositions(:, 2)) + abs(max(max(aAttachmentPoints))));
+    dMinZ = 1.1*(min(aPositions(:, 3)) - abs(max(max(aAttachmentPoints))));
+    dMaxZ = 1.1*(max(aPositions(:, 3)) + abs(max(max(aAttachmentPoints))));
     
     % Set the axes limits
     set(hAxes, 'XLimMode', 'manual');
@@ -195,16 +215,15 @@ if bOwnPlot
         grid(hAxes, chGrid);
     end
     
-    % Set x-axis label, if provided
-    if chXLabel
+    if ~isempty(strtrim(chXLabel))
         xlabel(hAxes, chXLabel);
     end
     % Set y-axis label, if provided
-    if chYLabel
+    if ~isempty(strtrim(chYLabel))
         ylabel(hAxes, chYLabel);
     end
     % Set z-axis label, if provided
-    if chZLabel
+    if ~isempty(strtrim(chZLabel))
         zlabel(hAxes, chZLabel);
     end
 end
@@ -253,15 +272,12 @@ end
 
 %% Draw the actual movement
 %%% Initialize the target plots
-% Transformation group for the platform bounding box
-hTargetGroupPlatform = hgtransform('Parent', hAxes);
 % Plot for the trajectory trace
 hTargetPlotTrajectory = plot3(NaN, NaN, NaN);
 % Calculate the platform bounding box
 [aInitialAttachmentPointsBoundingBox, aInitialAttachmentPointsBoundingBoxFaces] = boundingbox3(aAttachmentPoints(1, :), aAttachmentPoints(2, :), aAttachmentPoints(3, :));
 % Patch of the platform
 hTargetPlotPlatform = patch('Faces', aInitialAttachmentPointsBoundingBoxFaces, 'Vertices', aInitialAttachmentPointsBoundingBox, 'FaceColor', 'none');
-set(hTargetPlotPlatform, 'Parent', hTargetGroupPlatform);
 % Create the title handle
 hTitle = title(hAxes, 'Initializing...');
 set(hTitle, 'Interpreter', 'latex');
@@ -286,26 +302,18 @@ for iFrame = 1:1:size(vFrames)
     if bOwnPlot
         set(hTitle, 'String', sprintf(chTitle, vTime(nFrame)));
     end
-    % Extract the current pose and rotation
-    vCurrentPose = aPoses(nFrame,:)';
+    
+    % Extract the current position and rotation
+    vCurrentPosition = aPositions(nFrame,:)';
     aCurrentRotation = aRotations(nFrame,:);
     
     % Convert the rotation of the platform given from the rotation data we
     % extracted from aRotations
-    switch numel(aCurrentRotation)
-        case 3
-            aCurrentRotation = rotz(rad2deg(aCurrentRotation(3)))*roty(rad2deg(aCurrentRotation(2)))*rotx(rad2deg(aCurrentRotation(1)));
-        case 4
-            aCurrentRotation = eye(3) + 2*aCurrentRotation(1)*vec2skew(aCurrentRotation(2:4)) + 2*transpose(vec2skew(aCurrentRotation(2:4)))*vec2skew(aCurrentRotation(2:4));
-        case 9
-            aCurrentRotation = rotationRowToMatrix(aCurrentRotation);
-        otherwise
-            aCurrentRotation = eye(3);
-    end
+    aCurrentRotation = inferCurrentRotation(aCurrentRotation);
     
     % Adjust the bounding box of the attachment points given the current
     % rotation
-    aCurrentAttachmentPointsBoundingBox = transpose(repmat(vCurrentPose, 1, size(aAttachmentPoints, 2)) + aCurrentRotation*transpose(aInitialAttachmentPointsBoundingBox));
+    aCurrentAttachmentPointsBoundingBox = transpose(repmat(vCurrentPosition, 1, size(aAttachmentPoints, 2)) + aCurrentRotation*transpose(aInitialAttachmentPointsBoundingBox));
     
     % And update the platform patch to a new position
     set(hTargetPlotPlatform, ...
@@ -313,23 +321,25 @@ for iFrame = 1:1:size(vFrames)
     
     % Plot the path of the trajectory that has passed so far (if requested)
     if strcmp(chTraceTrajectory, 'on')
-        set(hTargetPlotTrajectory, 'XData', aPoses(1:nFrame, 1), 'YData', aPoses(1:nFrame, 2), 'ZData', aPoses(1:nFrame, 3));
+        nFirstFrame = 1;
+        nLastFrame = nFrame;
+        % We only want to plot the last 4 seconds of the trajectory, so adjust
+        % the first frame counter accordingly
+        if iFrame > 4*25
+            nFirstFrame = vFrames(iFrame - 4*25);
+        end
+        set(hTargetPlotTrajectory, 'XData', aPositions(nFirstFrame:nLastFrame,1), 'YData', aPositions(nFirstFrame:nLastFrame,2), 'ZData', aPositions(nFirstFrame:nLastFrame,3));
     end
     
-    % Pacer to draw only at a rate of about 30 frames per second
-%     if toc(dTimeStart) > 1/nFramesPerSecond
-%         drawnow update;
-        drawnow;
-        
-        % If the video file was successfully opened, we can save the current frame
-        % to the video
-        if bMovieFileOpen
-            frame = getframe(hFig);
-            writeVideo(writerObj, frame);
-        end
-        
-%         dTimeStart = tic;
-%     end
+    % Draw the figure handle now
+    drawnow;
+
+    % If the video file was successfully opened, we can save the current frame
+    % to the video
+    if bMovieFileOpen
+        frame = getframe(hFig);
+        writeVideo(writerObj, frame);
+    end
 end
 
 % Movie done, so we can close the video object
@@ -363,6 +373,22 @@ switch lower(in)
         out = 'off';
 end
 
+end
+
+
+function CurrentRotation = inferCurrentRotation(CurrentRotation)
+
+switch numel(CurrentRotation)
+    case 3
+        CurrentRotation = rotz(rad2deg(CurrentRotation(3)))*roty(rad2deg(CurrentRotation(2)))*rotx(rad2deg(CurrentRotation(1)));
+    case 4
+        CurrentRotation = eye(3) + 2*CurrentRotation(1)*vec2skew(CurrentRotation(2:4)) + 2*transpose(vec2skew(CurrentRotation(2:4)))*vec2skew(CurrentRotation(2:4));
+    case 9
+        CurrentRotation = rotationRowToMatrix(CurrentRotation);
+    otherwise
+        CurrentRotation = eye(3);
+end
+    
 end
 
 %------------- END OF CODE --------------
