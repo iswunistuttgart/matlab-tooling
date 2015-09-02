@@ -95,7 +95,7 @@ end
 chQualifiedFile = fullfile(chFilePath, [chFileName, chFileExt]);
 
 % Import the data using MATLAB's default importdata function
-[xData, chDelimiterOut, nHeaderlinesOut] = importdata(chQualifiedFile);
+[xData, ~, ~] = importdata(chQualifiedFile);
 
 % Now process the data, depending on if it was imported as a struct
 if isstruct(xData)
@@ -179,59 +179,5 @@ switch chReturnAs
         PoseList = timeseries(aPoses, vTime, 'Name', 'PoseList');
 end
 
-
-
-return;
-
-%% Do the magic
-% Check for valid filetype ('.csv' or '.txt');
-[chFilePath, chFileName, chFileExt] = fileparts(chFilename);
-if isempty(chFilePath)
-    chFilePath = pwd;
-end
-
-% This script allows for importing '.csv' and '.txt' files, so we will
-% check for either one. But first, determine whether there's a file
-% extension to filename
-if isempty(chFileExt)
-    for iExt = 1:numel(ceSupportedExtensions)
-        if exist(fullfile([fileNameOrPath, ceSupportedExtensions{iExt}]), 'file')
-            chFileExt = ceSupportedExtensions{iExt};
-            
-            break;
-        end
-    end
-
-end
-
-chQualifiedFile = fullfile(chFilePath, [chFileName, chFileExt]);
-
-% Load the file
-[xLoaded, chDelimiterOut, nHeaderlinesOut] = importdata(chQualifiedFile);
-
-% Loaded something with a header line
-if isstruct(xLoaded)
-    
-    for iExtractVariable = 1:numel(ceExtractVariables)
-        
-    end
-% Loaded anything but a csv file
-else
-    
-end
-
-assert(issize(xLoaded, [], 12) && exist('vTime', 'var'), 'PHILIPPTEMPEL:loadPoseList:noTimeInformationFound', 'Could not find any information about the time steps of the loaded pose list');
-
-if ~issize(xLoaded, [], 12)
-    
-end
-
-% Check we have enough data (12 columns + vTime OR 13 columns and no vTime)
-
-% Process the input
-
-
-%% Assign output quantities
-poselist = zeros(1, 13);
 
 end
