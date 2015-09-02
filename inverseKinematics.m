@@ -95,6 +95,10 @@ function [length, varargout] = inverseKinematics(Pose, PulleyPositions, CableAtt
 %   of all the available variables as per the algorithm. Can be set to any valid
 %   string of 'off', 'no', 'on', 'yes', 'please'. Only 'on', 'yes', and 'please'
 %   will actually return a struct then
+%   
+%   'LengthOffset': If you need to add a length offset to the calculated length,
+%   provide it with this parameter. Must be a vector (column or row) of M
+%   elements equal the number of winches
 % 
 %   Outputs:
 % 
@@ -117,8 +121,10 @@ function [length, varargout] = inverseKinematics(Pose, PulleyPositions, CableAtt
 % 
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-08-15
+% Date: 2015-09-02
 % Changelog:
+%   2015-09-02
+%       * Add key/value pair 'LengthOffset'
 %   2015-08-15
 %       * Change option 'Catenary' to 'Catenary-Elastic'
 %       * Introduce new option 'Catenary' which returns non-elastic catenaries
@@ -163,6 +169,11 @@ addParameter(ip, 'PulleyOrientations', zeros(3, size(PulleyPositions, 2)), valFc
 valFcn_PulleyRadius = @(x) validateattributes(x, {'numeric'}, {'vector', 'ncols', size(PulleyPositions, 2)}, mfilename, 'PulleyRadius');
 addParameter(ip, 'PulleyRadius', zeros(1, size(PulleyPositions, 2)), valFcn_PulleyRadius);
 
+% Not always are the winches attached at the last pulley, so we will provide the
+% option to pass an additonal cable length offset here
+valFcn_LengthOffset = @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', size(PulleyPositions, 2)}, mfilename, 'LengthOffset');
+addParameter(ip, 'LengthOffset', zeros(size(PulleyPositions, 2), 1), valFcn_LengthOffset);
+
 % Use needs some more output? Of course, just use 'Verbose', 'yes' or 'on'
 valFcn_Verbose = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no', 'please'}, mfilename, 'Verbose'));
 addParameter(ip, 'Verbose', 'off', valFcn_Verbose);
@@ -188,6 +199,7 @@ aPulleyOrientations = ip.Results.PulleyOrientations;
 vPulleyRadius = ip.Results.PulleyRadius;
 aCableAttachments = ip.Results.CableAttachments;
 chReturnStruct = inCharToValidArgument(ip.Results.ReturnStruct);
+aLengthOffset = ip.Results.LengthOffset;
 
 
 
@@ -213,6 +225,11 @@ switch lower(chAlgorithm)
         [vCableLength, aCableUnitVector] = algoInverseKinematics_Standard(vPlatformPose, aPulleyPositions, aCableAttachments);
 end
 % end ```switch lower(chAlgorithm)```
+
+
+% Adjust the cable length with the provided offset
+vCableLength = vCableLength(:) + aLengthOffset(:);
+
 
 
 %% Assign output quantities
@@ -242,12 +259,13 @@ else
 
     %%% Assign all the other, optional output quantities
     % Second output argument is the matrix of normalized cable direction vectors
-    if nargout >= 2
+    if nargout > 1
         varargout{1} = aCableUnitVector;
     end
+    % end if nargout > 1
 
     % Third output 
-    if nargout >= 3
+    if nargout > 2
         % For the advanced algorithms we are returning the wrapping angles
         switch chAlgorithm
             case 'pulley'
@@ -255,9 +273,9 @@ else
             otherwise
         end
     end
-    % end if nargout >= 3
+    % end if nargout > 2
 end
-% end if strcmp(chReturnStruct, 'on')
+% end else ( if strcmp(chReturnStruct, 'on') )
 
 
 end
