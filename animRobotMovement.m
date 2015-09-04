@@ -144,6 +144,8 @@ if ~ishandle(hAxes)
 end
 % New axes handle
 hAxes = gca;
+% Is this our own plot?
+bOwnPlot = isempty(get(hAxes, 'Children'));
 % Ensure we have the right given axes for the given plot style i.e., no 2D plot
 % into a 3D axes, nor a 3D plot into a 2D axis
 [az, el] = view(hAxes);
@@ -169,9 +171,6 @@ chAxis = ip.Results.Axis;
 chMovieFilename = ip.Results.SaveAs;
 bSaveMovie = ~isempty(chMovieFilename);
 bMovieFileOpen = false;
-
-% Is this our own plot?
-bOwnPlot = isempty(get(hAxes, 'Children'));
 
 % Maybe later on we will make this a public property
 nFramesPerSecond = 25;
@@ -236,11 +235,12 @@ hold on;
 %% Open the video file if requested
 % Save a movie?
 if bSaveMovie
+    % Create a new video writer
+    writerObj = VideoWriter(sprintf('%s.mp4', chMovieFilename), 'MPEG-4');
+    
     % Cleanup function to properly close the movie object
     hCleanup = @(x) iif(bMovieFileOpen, close(writerObj), true, true);
     
-    % Create a new video writer
-    writerObj = VideoWriter(sprintf('%s.mp4', chMovieFilename), 'MPEG-4');
     % Set the framerate to 25fps
     writerObj.FrameRate = 25;
     % Try opening the file, if it fails we will not save the video but display
@@ -344,7 +344,10 @@ end
 
 % Movie done, so we can close the video object
 if bMovieFileOpen
+    % Close the writer object
     close(writerObj);
+    % And ensure the local variable is aware of the file having been closed
+    bMovieFileOpen = false;
 end
 
 
