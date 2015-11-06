@@ -1,4 +1,4 @@
-function autosetlims(Axis, Min, Max, varargin)
+function autosetlims(Axis, varargin)
 
 %% Preprocess inputs (allows to have the axis defined as first argument)
 % By default we don't have any axes handle
@@ -7,9 +7,7 @@ hAxes = false;
 % other arguments by one
 if ~isempty(varargin) && allAxes(Axis)
     hAxes = Axis;
-    Axis = Min;
-    Min = Max;
-    Max = varargin{1};
+    Axis = varargin{1};
     varargin = varargin(2:end);
 end
 
@@ -28,13 +26,16 @@ valFcn_Min = @(x) validateattributes(x, {'numeric'}, {'scalar', 'finite'}, mfile
 addOptional(ip, 'Min', -Inf, valFcn_Min);
 valFcn_Max = @(x) validateattributes(x, {'numeric'}, {'scalar', 'finite'}, mfilename, 'Max');
 addOptional(ip, 'Max', Inf, valFcn_Max);
+% The extend margin may be provided, too
+valFcn_Extend = @(x) validateattributes(x, {'numeric'}, {'scalar', 'finite', 'positive'}, mfilename, 'Exctend');
+addOptional(ip, 'Extend', 0.05, valFcn_Extend);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
-parse(ip, Axis, Min, Max, varargin{:});
+parse(ip, Axis, varargin{:});
 
 
 
@@ -54,6 +55,8 @@ if ~ishandle(hAxes)
 %     hFig = figure;
     hAxes = gca;
 end
+
+dExtend = ip.Results.Extend;
 
 
 % Keeps our target limits
@@ -80,35 +83,40 @@ else
     vLims(4) = dMax;
     vLims(6) = dMax;
 end
+% Get the span of the limits
+dXSpan = vLims(2) - vLims(1);
+dYSpan = vLims(4) - vLims(3);
+dZSpan = vLims(6) - vLims(5);
+
 
 
 %% Do the magic
 switch chAxis
     case 'x'
-        xlim(hAxes, [vLims(1), vLims(2)].*1.1);
+        xlim(hAxes, [vLims(1), vLims(2)] + dExtend.*[-dXSpan, dXSpan]);
     case 'y'
-        ylim(hAxes, [vLims(3), vLims(4)].*1.1);
+        ylim(hAxes, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
     case 'z'
-        zlim(hAxes, [vLims(5), vLims(6)].*1.1);
+        zlim(hAxes, [vLims(5), vLims(6)] + dExtend.*[-dZSpan, dzSpan]);
     case 'xy'
-        xlim(hAxes, [vLims(1), vLims(2)].*1.1);
-        ylim(hAxes, [vLims(3), vLims(4)].*1.1);
+        xlim(hAxes, [vLims(1), vLims(2)] + dExtend.*[-dXSpan, dXSpan]);
+        ylim(hAxes, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
     case 'yz'
-        ylim(hAxes, [vLims(3), vLims(4)].*1.1);
-        zlim(hAxes, [vLims(5), vLims(6)].*1.1);
+        ylim(hAxes, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
+        zlim(hAxes, [vLims(5), vLims(6)] + dExtend.*[-dZSpan, dZSpan]);
     case 'xz'
-        xlim(hAxes, [vLims(1), vLims(2)].*1.1);
-        zlim(hAxes, [vLims(5), vLims(6)].*1.1);
+        xlim(hAxes, [vLims(1), vLims(2)] + dExtend.*[-dXSpan, dXSpan]);
+        zlim(hAxes, [vLims(5), vLims(6)] + dExtend.*[-dZSpan, dZSpan]);
     case 'xyz'
-        xlim(hAxes, [vLims(1), vLims(2)].*1.1);
-        ylim(hAxes, [vLims(3), vLims(4)].*1.1);
-        zlim(hAxes, [vLims(5), vLims(6)].*1.1);
+        xlim(hAxes, [vLims(1), vLims(2)] + dExtend.*[-dXSpan, dXSpan]);
+        ylim(hAxes, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
+        zlim(hAxes, [vLims(5), vLims(6)] + dExtend.*[-dZSpan, dZSpan]);
     case 'all'
-        xlim(hAxes, [vLims(1), vLims(2)].*1.1);
-        ylim(hAxes, [vLims(3), vLims(4)].*1.1);
-        zlim(hAxes, [vLims(5), vLims(6)].*1.1);
+        xlim(hAxes, [vLims(1), vLims(2)] + dExtend.*[-dXSpan, dXSpan]);
+        ylim(hAxes, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
+        zlim(hAxes, [vLims(5), vLims(6)] + dExtend.*[-dZSpan, dZSpan]);
     otherwise;
-        ylim(hAxes, ylim().*1.1);
+        ylim(hAxes, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
 end
 
 
