@@ -141,17 +141,33 @@ addOptional(ip, 'Grid', 'off', valFcn_Grid);
 valFcn_XLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'XLabel');
 addOptional(ip, 'XLabel', '', valFcn_XLabel);
 
+% Allow user to set properties of the xlabel ...
+valFcn_XLabelSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'XLabelSpec');
+addOptional(ip, 'XLabelSpec', {}, valFcn_XLabelSpec);
+
 % Allow user to set the ylabel ...
 valFcn_YLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'YLabel');
 addOptional(ip, 'YLabel', '', valFcn_YLabel);
+
+% Allow user to set properties of the ylabel ...
+valFcn_YLabelSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'YLabelSpec');
+addOptional(ip, 'YLabelSpec', {}, valFcn_YLabelSpec);
 
 % And allow user to set the zlabel
 valFcn_ZLabel = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'ZLabel');
 addOptional(ip, 'ZLabel', '', valFcn_ZLabel);
 
+% Allow user to set properties of the zlabel ...
+valFcn_ZLabelSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'ZLabelSpec');
+addOptional(ip, 'ZLabelSpec', {}, valFcn_ZLabelSpec);
+
 % Maybe a title is provided and shall be plotted, too?
 valFcn_Title = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Title');
 addOptional(ip, 'Title', '', valFcn_Title);
+
+% Allow user to set properties of the title ...
+valFcn_TitleSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'TitleSpec');
+addOptional(ip, 'TitleSpec', {}, valFcn_TitleSpec);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -182,17 +198,26 @@ if ~ ( isempty(regexp(chPlotStyle, '^2.*$', 'once')) || isequaln([az, el], [0, 9
 end
 
 % Plotting spec
-cLineSpec = ip.Results.LineSpec;
+ceLineSpec = ip.Results.LineSpec;
 % 3D viewport (only used for 3d plot style)
 vViewport = ip.Results.Viewport;
 % Grid options
 chGrid = inCharToValidArgument(ip.Results.Grid);
 % Get the desired figure title (works only in standalone mode)
 chTitle = ip.Results.Title;
-% Get provided axes labels
+ceTitleSpec = ip.Results.TitleSpec;
+% Get provided x-axis label
 chXLabel = ip.Results.XLabel;
+% and the specs for the x-axis label
+ceXLabelSpec = ip.Results.XLabelSpec;
+% Get provided y-axis label
 chYLabel = ip.Results.YLabel;
+% and the specs for the y-axis label
+ceYLabelSpec = ip.Results.YLabelSpec;
+% Get provided z-axis label
 chZLabel = ip.Results.ZLabel;
+% and the specs for the z-axis label
+ceZLabelSpec = ip.Results.ZLabelSpec;
 
 % Is this our own plot?
 bOwnPlot = isempty(get(hAxes, 'Children'));
@@ -213,8 +238,8 @@ switch chPlotStyle
         hPlot3d = plot3(mPoses(:, 1), mPoses(:, 2), mPoses(:, 3));
         
         % Set specific line specs on the plot?
-        if ~isempty(cLineSpec)
-            set(hPlot3d, cLineSpec{:});
+        if ~isempty(ceLineSpec)
+            set(hPlot3d, ceLineSpec{:});
         end
         
         % In our own plot? Then we're free to add stuff as we want
@@ -227,20 +252,36 @@ switch chPlotStyle
             
             % Set x-axis label, if provided
             if ~isempty(strtrim(chXLabel))
-                xlabel(hAxes, chXLabel);
+                hXLabel = xlabel(hAxes, chXLabel);
+                
+                if ~isempty(ceXLabelSpec)
+                    set(hXLabel, ceXLabelSpec{:});
+                end
             end
             % Set y-axis label, if provided
             if ~isempty(strtrim(chYLabel))
-                ylabel(hAxes, chYLabel);
+                hYLabel = ylabel(hAxes, chYLabel);
+                
+                if ~isempty(ceYLabelSpec)
+                    set(hYLabel, ceYLabelSpec{:});
+                end
             end
             % Set z-axis label, if provided
             if ~isempty(strtrim(chZLabel))
-                zlabel(hAxes, chZLabel);
+                hZLabel = zlabel(hAxes, chZLabel);
+                
+                if ~isempty(ceZLabelSpec)
+                    set(hZLabel, ceZLabelSpec{:});
+                end
             end
             
             % Set a figure title?
             if ~isempty(strtrim(chTitle))
-                title(hAxes, chTitle);
+                hTitle = title(hAxes, chTitle);
+                
+                if ~isempty(ceTitleSpecs)
+                    set(hTitle, ceTitleSpec{:});
+                end
             end
             
             % Adjust the view port
@@ -275,8 +316,8 @@ switch chPlotStyle
         hPlot2d = plot(mPoses(:, vIndex(1)), mPoses(:, vIndex(2)));
         
         % Set specific line specs on the plot?
-        if ~isempty(cLineSpec)
-            set(hPlot2d, cLineSpec);
+        if ~isempty(ceLineSpec)
+            set(hPlot2d, ceLineSpec);
         end
         
         % In our own plot? Then we're free to add stuff as we want
@@ -287,16 +328,36 @@ switch chPlotStyle
             
             % Set x-axis label, if provided
             if ~isempty(strtrim(chXLabel))
-                xlabel(hAxes, chXLabel);
+                hXLabel = xlabel(hAxes, chXLabel);
+                
+                if ~isempty(ceXLabelSpec)
+                    set(hXLabel, ceXLabelSpec{:});
+                end
             end
             % Set y-axis label, if provided
             if ~isempty(strtrim(chYLabel))
-                ylabel(hAxes, chYLabel);
+                hYLabel = ylabel(hAxes, chYLabel);
+                
+                if ~isempty(ceYLabelSpec)
+                    set(hYLabel, ceYLabelSpec{:});
+                end
+            end
+            % Set z-axis label, if provided
+            if ~isempty(strtrim(chZLabel))
+                hZLabel = zlabel(hAxes, chZLabel);
+                
+                if ~isempty(ceZLabelSpec)
+                    set(hZLabel, ceZLabelSpec{:});
+                end
             end
             
             % Set a figure title?
             if ~isempty(strtrim(chTitle))
-                title(hAxes, chTitle);
+                hTitle = title(hAxes, chTitle);
+                
+                if ~isempty(ceTitleSpecs)
+                    set(hTitle, ceTitleSpec{:});
+                end
             end
             
             % Set a grid?
@@ -312,8 +373,8 @@ switch chPlotStyle
     case '2D'
         hPlot2d = plot(vTime, mPoses);
         
-        if ~isempty(cLineSpec)
-            set(hPlot2d, cLineSpec);
+        if ~isempty(ceLineSpec)
+            set(hPlot2d, ceLineSpec);
         end
         
         % In our own plot? Then we're free to add stuff as we want
@@ -324,16 +385,36 @@ switch chPlotStyle
             
             % Set x-axis label, if provided
             if ~isempty(strtrim(chXLabel))
-                xlabel(hAxes, chXLabel);
+                hXLabel = xlabel(hAxes, chXLabel);
+                
+                if ~isempty(ceXLabelSpec)
+                    set(hXLabel, ceXLabelSpec{:});
+                end
             end
             % Set y-axis label, if provided
             if ~isempty(strtrim(chYLabel))
-                ylabel(hAxes, chYLabel);
+                hYLabel = ylabel(hAxes, chYLabel);
+                
+                if ~isempty(ceYLabelSpec)
+                    set(hYLabel, ceYLabelSpec{:});
+                end
+            end
+            % Set z-axis label, if provided
+            if ~isempty(strtrim(chZLabel))
+                hZLabel = zlabel(hAxes, chZLabel);
+                
+                if ~isempty(ceZLabelSpec)
+                    set(hZLabel, ceZLabelSpec{:});
+                end
             end
             
             % Set a figure title?
             if ~isempty(strtrim(chTitle))
-                title(hAxes, chTitle);
+                hTitle = title(hAxes, chTitle);
+                
+                if ~isempty(ceTitleSpecs)
+                    set(hTitle, ceTitleSpec{:});
+                end
             end
             
             % Set a grid?
