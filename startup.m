@@ -6,10 +6,10 @@ if exist(fullfile(pwd, '..', '..', 'Matlab', 'Helper', 'startup.m'), 'file')
     end
 end
 
+addpath(fullfile(pwd, 'Implementation'));
 addpath(fullfile(pwd, 'Implementation', 'algorithms'));
 addpath(fullfile(pwd, 'Implementation', 'helpers'));
 addpath(fullfile(pwd, 'Implementation', 'plot-tools'));
 addpath(fullfile(pwd, 'Implementation', 'robots'));
 addpath(fullfile(pwd, 'Implementation', 'tests'));
 addpath(fullfile(pwd, 'Implementation', 'wip'));
-addpath(fullfile(pwd));
