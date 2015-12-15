@@ -81,15 +81,15 @@ function [length, varargout] = inverseKinematics(Pose, PulleyPositions, CableAtt
 %   'PulleyOrientations': Matrix of orientations for each pulley w.r.t. the
 %   global coordinate system. Every pulley's orientation is stored in a
 %   column where the first row is the orientation about x-axis, the second
-%   about y-axis, and the third about z-axis. This means, WINCHORIENTATIONS
+%   about y-axis, and the third about z-axis. This means, PULLEYORIENTATIONS
 %   must be a matrix of 3xM values. The number of orientations, i.e., M,
 %   must match the number of pulleyes in PULLEYPOSITIONS (i.e., its column
-%   count) and the order must match the order pulleyes in PULLEYPOSITIONS
+%   count) and the order must match the order pulleyes in PULLEYPOSITIONS. Give
+%   the rotations as Tait-Bryan angles (i.e., R = rotz(c)*roty(b)*rotx(a)).
 % 
 %   'PulleyRadius': Vector of pulley radius per pulley given in meter
-%   i.e., WINCHPULLEYRADIUS is a vector of 1xM values where M must match
-%   the number of pulleyes in PULLEYPOSITIONS and the order must be the same,
-%   too.
+%   i.e., PULLEYRADIUS is a vector of 1xM values where M must match the number
+%   of pulleyes in PULLEYPOSITIONS and the order must be the same, too.
 %   
 %   'ReturnStruct': Allows to have just one return value which then is a struct
 %   of all the available variables as per the algorithm. Can be set to any valid
@@ -121,8 +121,13 @@ function [length, varargout] = inverseKinematics(Pose, PulleyPositions, CableAtt
 % 
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-09-02
+% Date: 2015-12-15
 % Changelog:
+%   2015-12-15
+%       * Fix some old info in help section
+%       * Move optional argument 'PulleyRadius' before 'PulleyOrientations'
+%       * Comment out not yet supported algorithm types "catenary",
+%       "catenary-elastic", and "catenary+pulley"
 %   2015-09-02
 %       * Add key/value pair 'LengthOffset'
 %   2015-08-15
@@ -160,14 +165,14 @@ addRequired(ip, 'CableAttachments', valFcn_CableAttachmens);
 valFcn_Algorithm = @(x) any(validatestring(lower(x), {'standard', 'pulley', 'catenary', 'catenary+pulley'}, mfilename, 'Algorithm'));
 addOptional(ip, 'Algorithm', 'standard', valFcn_Algorithm);
 
-% We might want to use the pulley orientations
-valFcn_PulleyOrientations = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', 3, 'ncols', size(PulleyPositions, 2)}, mfilename, 'PulleyOrientations');
-addParameter(ip, 'PulleyOrientations', zeros(3, size(PulleyPositions, 2)), valFcn_PulleyOrientations);
-
 % We might want the pulley radius to be defined if using advanced
 % kinematics
 valFcn_PulleyRadius = @(x) validateattributes(x, {'numeric'}, {'vector', 'ncols', size(PulleyPositions, 2)}, mfilename, 'PulleyRadius');
 addParameter(ip, 'PulleyRadius', zeros(1, size(PulleyPositions, 2)), valFcn_PulleyRadius);
+
+% We might want to use the pulley orientations
+valFcn_PulleyOrientations = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', 3, 'ncols', size(PulleyPositions, 2)}, mfilename, 'PulleyOrientations');
+addParameter(ip, 'PulleyOrientations', zeros(3, size(PulleyPositions, 2)), valFcn_PulleyOrientations);
 
 % Not always are the winches attached at the last pulley, so we will provide the
 % option to pass an additonal cable length offset here
@@ -207,13 +212,13 @@ aLengthOffset = ip.Results.LengthOffset;
 %%% What algorithm to use?
 switch lower(chAlgorithm)
     % Catenary kinematics with non-elastic cables
-    case 'catenary'
+%     case 'catenary'
 %         [vCableLength, aCableVector, aCableUnitVector, aCableLine] = algoInverseKinematics_Catenary(vPlatformPose, aPulleyPositions, aCableAttachments, aPulleyOrientations, ?.?.?);
     % Catenary kinematics with elastic cables
-    case 'catenary-elastic'
+%     case 'catenary-elastic'
 %         [vCableLength, aCableVector, aCableUnitVector, aCableLine] = algoInverseKinematics_CatenaryElastic(vPlatformPose, aPulleyPositions, mCableAttachments, aPulleyOrientations, ?.?.?);
     % Catenary kinematics with pulley deflection
-    case 'catenary+pulley'
+%     case 'catenary+pulley'
 %         [vCableLength, aCableVector, aCableUnitVector, aCableLine] = algoInverseKinematics_CatenaryPulley(vPlatformPose, aPulleyPositions, aCableAttachments, aPulleyOrientations, ?.?.?);
     % Advanced kinematics algorithm (including pulley radius)
     case 'pulley'
