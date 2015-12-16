@@ -21,4 +21,4 @@ slprj/
 *.m~
 slprj*
 *.lcl.mat
-
+*codegen*
