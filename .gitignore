@@ -22,3 +22,6 @@ slprj/
 slprj*
 *.lcl.mat
 *codegen*
+wip/figures
+wip/videos
+
