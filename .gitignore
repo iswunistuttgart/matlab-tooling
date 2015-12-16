@@ -22,6 +22,19 @@ slprj/
 slprj*
 *.lcl.mat
 *codegen*
-wip/figures
-wip/videos
+
+!Implementation/wip/videos/.gitkeep
+Implementation/wip/videos/*
+!Implementation/experiments/.gitkeep
+Implementation/experiments/*
+!Implementation/wip/figures/.gitkeep
+Implementation/wip/figures/*
+!Implementation/wip/videos/.gitkeep
+Implementation/wip/videos/*
+!Implementation/videos/.gitkeep
+Implementation/videos/*
+!Implementation/stash/.gitkeep
+Implementation/stash/*
+!Implementation/results/.gitkeep
+Implementation/results/*
 
