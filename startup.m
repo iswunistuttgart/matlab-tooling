@@ -9,6 +9,7 @@ end
 addpath(fullfile(pwd, 'Implementation'));
 addpath(fullfile(pwd, 'Implementation', 'algorithms'));
 addpath(fullfile(pwd, 'Implementation', 'helpers'));
+addpath(fullfile(pwd, 'Implementation', 'mat'));
 addpath(fullfile(pwd, 'Implementation', 'plot-tools'));
 addpath(fullfile(pwd, 'Implementation', 'robots'));
 addpath(fullfile(pwd, 'Implementation', 'tests'));
