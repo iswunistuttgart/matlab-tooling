@@ -1,4 +1,4 @@
-function TwinCatScope = importTwincatCsv(Filename, varargin)
+function TwinCatScope = importTwinCatCsv(Filename, varargin)
 
 
 
