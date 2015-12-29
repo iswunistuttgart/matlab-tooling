@@ -1,4 +1,4 @@
-function [RectangularValue, varargout] = inputGenerator_Rectangular(CurrentTime, Amplitude, Period, Offset)
+function [RectangularValue, varargout] = signalGenerator_Rectangular(CurrentTime, Amplitude, Period, Offset)
 
 if nargin < 2
     Amplitude = 1;
