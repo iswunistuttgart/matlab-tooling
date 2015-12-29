@@ -113,7 +113,7 @@ while ~feof(hFile)
                 maScaleFactors = zeros(nVariablesCount, 1);
                 
                 for iVariable = 1:nVariablesCount
-                    ceVariablesTheName = lineData{2*iVariable};
+                    ceVariablesTheName = strrep(lineData{2*iVariable}, '.', '__');
                     ceVariablesNames{iVariable} = strrep(strrep(ceVariablesTheName, '[', ''), ']', '');
                 end
             % Sampling Rates
