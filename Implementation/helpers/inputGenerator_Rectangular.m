@@ -14,10 +14,8 @@ end
 
 dEvalTime = rem(CurrentTime, Period);
 
-RectangularValue = Offset;
+RectangularValue = Offset.*ones(1, numel(CurrentTime));
 
-if dEvalTime > 1/2*Period
-    RectangularValue = RectangularValue + Amplitude;
-end
+RectangularValue(dEvalTime >= 1/2*Period) = Amplitude + Offset;
 
 end
