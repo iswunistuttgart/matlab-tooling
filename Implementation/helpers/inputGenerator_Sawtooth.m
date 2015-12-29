@@ -20,7 +20,7 @@ dTimeEval = CurrentTime*pi/Period;
 
 switch lower(Algorithm)
     case 'atan'
-        SawtoothValue = Offset - 2*Amplitude/pi*atan(cot(dTimeEval));
+        SawtoothValue = Offset + Amplitude*(0.5 - 1/pi*atan(cot(dTimeEval)));
     otherwise
         SawtoothValue = Offset + Amplitude*(dTimeEval/pi - floor(dTimeEval/pi));
 end
