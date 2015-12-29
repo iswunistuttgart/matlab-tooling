@@ -120,7 +120,7 @@ while ~feof(hFile)
             case 10
                 for iVariable = 1:nVariablesCount
                     chVariablesTheSampling = lineData{2*iVariable};
-                    maSamplingTimes(iVariable) = str2double(chVariablesTheSampling);
+                    maSamplingTimes(iVariable) = str2double(chVariablesTheSampling)*1e-3;
                 end
             % Scale factors
             case 19
@@ -135,6 +135,11 @@ while ~feof(hFile)
     else
         % Read the sampled time and 
         lineData = textscan(line, '%f%f', 'Delimiter', '\t');
+        
+        % Break if the line we have read contains empty cells
+        if numel(lineData{1}) ~= numel(ceVariablesNames)
+            break;
+        end
         
         % Get the sample time and convert it from [ms] to [s]
         maTheSampledTime = lineData{1}.*1e-3;
@@ -153,9 +158,17 @@ end
 
 
 %% Post processing i.e., build up the content of stScopeData.Data
+% Check for NaN in any of the Times or Data
+[nFirstNaN, ~] = find(isnan(maSampledTime), 1, 'first');
+if ~isempty(nFirstNaN)
+    nEndIndex = nFirstNaN - 1;
+else
+    nEndIndex = size(maSampledTime, 1);
+end
+% Loop over each variable and extract the allowed time and data range
 for iVariable = 1:nVariablesCount
     % Create a time series object
-    tsTheTimeseries = timeseries(maSampledData(:,iVariable), maSampledTime(:,iVariable), 'Name', ceVariablesNames{iVariable});
+    tsTheTimeseries = timeseries(maSampledData(1:nEndIndex,iVariable), maSampledTime(1:nEndIndex,iVariable), 'Name', ceVariablesNames{iVariable});
     
     % Create a struct of user data and assign the sample time to it
     stUserData = struct();
