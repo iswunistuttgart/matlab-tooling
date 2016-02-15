@@ -1,16 +1,17 @@
-if exist(fullfile(pwd, '..', '..', 'Matlab', 'Helper', 'startup.m'), 'file')
-    try
-        run(fullfile(pwd, '..', '..', 'Matlab', 'Helper', 'startup.m'));
-    catch exc
-        warning('PHILIPPTEMPEL:startup:runStartupFailed', 'Could not run startup script of the helpers because %s', strrep(exc.message, '\', '\\'));
-    end
-end
+function startup
 
-addpath(fullfile(pwd, 'Implementation'));
-addpath(fullfile(pwd, 'Implementation', 'algorithms'));
-addpath(genpath(fullfile(pwd, 'Implementation', 'helpers')));
-addpath(genpath(fullfile(pwd, 'Implementation', 'mat')));
-addpath(genpath(fullfile(pwd, 'Implementation', 'plot-tools')));
-addpath(genpath(fullfile(pwd, 'Implementation', 'robots')));
-addpath(genpath(fullfile(pwd, 'Implementation', 'tests')));
-addpath(genpath(fullfile(pwd, 'Implementation', 'wip')));
+chPath = fileparts(mfilename('fullpath'));
+
+cePaths = {
+    fullfile(chPath, '..', '..', 'Matlab', 'Helper');
+    fullfile(chPath, 'Implementation');
+    fullfile(chPath, 'Implementation', 'algorithms');
+    fullfile(chPath, 'Implementation', 'helpers');
+    fullfile(chPath, 'Implementation', 'mat');
+    fullfile(chPath, 'Implementation', 'plot-tools');
+    fullfile(chPath, 'Implementation', 'robots');
+};
+
+registerPaths(cePaths{:});
+
+end
