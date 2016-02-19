@@ -37,4 +37,4 @@ Implementation/videos/*
 Implementation/stash/*
 !Implementation/results/.gitkeep
 Implementation/results/*
-
+Implementation/guide/*_export*
