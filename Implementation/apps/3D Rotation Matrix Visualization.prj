@@ -1,0 +1,92 @@
+<deployment-project plugin="plugin.apptool" plugin-version="1.0">
+  <configuration build-checksum="1940355851" file="D:\Projects\2014_SimTech_Seilmodellierung\Workspace\MatlabTooling\Implementation\apps\3D Rotation Matrix Visualization.prj" location="D:\Projects\2014_SimTech_Seilmodellierung\Workspace\MatlabTooling\Implementation\apps" name="3D Rotation Matrix Visualization" target="target.mlapps" target-name="Package App">
+    <param.appname>3D Rotation Matrix Visualization</param.appname>
+    <param.authnamewatermark>Philipp Tempel</param.authnamewatermark>
+    <param.email>philipp.tempel@isw.uni-stuttgart.de</param.email>
+    <param.company>ISW, University of Stuttgart</param.company>
+    <param.icon />
+    <param.icons />
+    <param.summary />
+    <param.description />
+    <param.screenshot />
+    <param.version>1.0</param.version>
+    <param.products.name />
+    <param.products.id />
+    <param.products.version />
+    <param.platforms />
+    <param.output>D:\Projects\2014_SimTech_Seilmodellierung\Workspace\MatlabTooling\Implementation\apps</param.output>
+    <param.guid>7e322364-cd23-4bdf-853d-a690e447d750</param.guid>
+    <unset>
+      <param.authnamewatermark />
+      <param.email />
+      <param.company />
+      <param.icon />
+      <param.icons />
+      <param.summary />
+      <param.description />
+      <param.screenshot />
+      <param.version />
+      <param.products.name />
+      <param.products.id />
+      <param.products.version />
+      <param.platforms />
+      <param.output />
+    </unset>
+    <fileset.main>
+      <file>D:\Projects\2014_SimTech_Seilmodellierung\Workspace\MatlabTooling\Implementation\guide\threedimrotvis_export.m</file>
+    </fileset.main>
+    <fileset.depfun />
+    <fileset.resources>
+      <file>D:\Projects\2014_SimTech_Seilmodellierung\Workspace\MatlabTooling\Implementation\guide\threedimrotvis_export.mat</file>
+    </fileset.resources>
+    <fileset.package />
+    <build-deliverables>
+      <file location="D:\Projects\2014_SimTech_Seilmodellierung\Workspace\MatlabTooling\Implementation" name="apps" optional="false">D:\Projects\2014_SimTech_Seilmodellierung\Workspace\MatlabTooling\Implementation\apps</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>C:\Program Files\MATLAB\R2015b</root>
+      <toolboxes>
+        <toolbox name="matlabhdlcoder" />
+        <toolbox name="fixedpoint" />
+        <toolbox name="embeddedcoder" />
+        <toolbox name="matlabcoder" />
+      </toolboxes>
+      <toolbox>
+        <matlabhdlcoder>
+          <enabled>true</enabled>
+        </matlabhdlcoder>
+      </toolbox>
+      <toolbox>
+        <fixedpoint>
+          <enabled>true</enabled>
+        </fixedpoint>
+      </toolbox>
+      <toolbox>
+        <embeddedcoder>
+          <enabled>true</enabled>
+        </embeddedcoder>
+      </toolbox>
+      <toolbox>
+        <matlabcoder>
+          <enabled>true</enabled>
+        </matlabcoder>
+      </toolbox>
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>6.1</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>
