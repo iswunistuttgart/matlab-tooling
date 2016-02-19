@@ -82,8 +82,11 @@ function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinema
 %   hessian as returned by the call to fmincon
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-08-31
+% Date: 2016-02-19
 % Changelog:
+%   2016-02-19
+%       * Move the optimization cost functional into an inline function to
+%       prepare for it being an optional input parameter
 %   2015-08-31
 %       * Remove code for shape generation and put into a separate function
 %       called algoCableShape_Catenary
@@ -193,7 +196,8 @@ vLowerBoundaries(nIndexLength) = 0;
 vUpperBoundaries = Inf(3*nNumberOfCables, 1);
 
 % Optimization target function
-inOptimizationTargetFunction = @(x) norm(reshape(x(nIndexLength), nNumberOfCables, 1) - vInitialLength(:)) + norm(vInitForceDistribution - sqrt(x(nIndexForcesX).^2 + x(nIndexForcesZ).^2));
+% inOptimizationTargetFunction = @(x) norm(reshape(x(nIndexLength), nNumberOfCables, 1) - vInitialLength(:)) + norm(vInitForceDistribution - sqrt(x(nIndexForcesX).^2 + x(nIndexForcesZ).^2));
+inOptimizationTargetFunction = @in_aIK_C_optimizationCostFunctional;
 
 
 
@@ -256,7 +260,7 @@ end
     aLinearInequalityConstraints, vLinearInequalityConstraints, ... % Linear inequality constraints
     aLinearEqualityConstraints, vLinearEqualityConstraints, ... % Linear equality constraints
     vLowerBoundaries, vUpperBoundaries, ... % Lower and upper boundaries
-    @(vOptimizationVector) algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropDensity, dGravityConstant, min(CableForceLimits), max(CableForceLimits), nIndexForcesX, nIndexForcesZ, nIndexLength), ... % Nonlinear constraints function
+    @(vOptimizationVector) aIK_C_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropDensity, dGravityConstant, min(CableForceLimits), max(CableForceLimits), nIndexForcesX, nIndexForcesZ, nIndexLength), ... % Nonlinear constraints function
     opSolverOptions ... % Solver options
 );
 
@@ -324,7 +328,16 @@ end
 end
 
 
-function [c, ceq] = algoInverseKinematics_Catenary_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum, nIndexForcesX, nIndexForcesZ, nIndexLength)
+
+function value = in_aIK_C_optimizationCostFunctional(vOptimizationVector)
+% Value of the evaluated cost functional is the norm of the vector
+value = norm(vOptimizationVector);
+
+end
+
+
+
+function [c, ceq] = aIK_C_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum, nIndexForcesX, nIndexForcesZ, nIndexLength)
 
 %% Quickhand variables
 % Number of wires

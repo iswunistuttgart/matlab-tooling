@@ -86,8 +86,11 @@ function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinema
 %   matrix
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-08-05
+% Date: 2016-02-19
 % Changelog:
+%   2016-02-19
+%       * Move the optimization cost functional into an inline function to
+%       prepare for it being an optional input parameter
 %   2015-08-05
 %       * Add optional input argument SOLVEROPTIONS
 %   2015-07-15
@@ -196,17 +199,12 @@ vLowerBoundaries(nIndexLength) = 0;
 % Upper boundaries: Totally unlimited
 vUpperBoundaries = Inf(3*nNumberOfCables, 1);
 
-% Optimization target function
-inOptimizationTargetFunction = @(x) norm(...
-                                    ( reshape(x(nIndexLength), nNumberOfCables, 1) - reshape(vInitialLength(:), nNumberOfCables, 1) ) ...
-                                        + ( reshape(vInitForceDistribution, nNumberOfCables, 1) - sqrt(reshape(x(nIndexForcesX), nNumberOfCables, 1).^2 + reshape(x(nIndexForcesZ), nNumberOfCables, 1).^2) ) ...
-                                );
-% inOptimizationTargetFunction = @(x) norm(x(nIndexLength));
-% inOptimizationTargetFunction = @(x) norm(reshape(abs(x(nIndexLength)), nNumberOfCables, 1) - vInitialLength(:)) + norm(norm(vInitForceDistribution) - abs(sqrt(x(nIndexForcesX).^2 + x(nIndexForcesZ).^2)));
-% inOptimizationTargetFunction = @(x) sum(sqrt(reshape(x(nIndexLength), nNumberOfCables, 1).^2 + vInitialLength(:).^2));
-% inOptimizationTargetFunction = @(x) norm(reshape(x(nIndexLength), nNumberOfCables, 1).^2 + vInitialLength(:).^2) + norm(vInitForceDistribution + norm(sqrt(x(nIndexForcesX).^2 + x(nIndexForcesZ).^2)));
-
-
+% Optimization target function (inline)
+inOptimizationTargetFunction = @in_aIK_CE_optimizationCostFunctional;
+% inOptimizationTargetFunction = @(x) norm(...
+%                                     ( reshape(x(nIndexLength), nNumberOfCables, 1) - reshape(vInitialLength(:), nNumberOfCables, 1) ) ...
+%                                         + ( reshape(vInitForceDistribution, nNumberOfCables, 1) - sqrt(reshape(x(nIndexForcesX), nNumberOfCables, 1).^2 + reshape(x(nIndexForcesZ), nNumberOfCables, 1).^2) ) ...
+%                                 );
 
 %% Do the magic
 % Loop over every pulley and calculate the corrected pulley position i.e.,
@@ -268,7 +266,7 @@ end
     aLinearInequalityConstraints, vLinearInequalityConstraints, ... % Linear inequality constraints
     aLinearEqualityConstraints, vLinearEqualityConstraints, ... % Linear equality constraints
     vLowerBoundaries, vUpperBoundaries, ... % Lower and upper boundaries
-    @(vOptimizationVector) algoInverseKinematics_CatenaryElastic_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedSection, dCablePropDensity, dGravityConstant, min(CableForceLimits), max(CableForceLimits), nIndexForcesX, nIndexForcesZ, nIndexLength), ... % Nonlinear constraints function
+    @(vOptimizationVector) in_aIK_CE_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedSection, dCablePropDensity, dGravityConstant, min(CableForceLimits), max(CableForceLimits), nIndexForcesX, nIndexForcesZ, nIndexLength), ... % Nonlinear constraints function
     opSolverOptions ... % Solver options
 );
 
@@ -344,7 +342,16 @@ end
 end
 
 
-function [c, ceq] = algoInverseKinematics_CatenaryElastic_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedCableSection, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum, nIndexForcesX, nIndexForcesZ, nIndexLength)
+
+function value = in_aIK_CE_optimizationCostFunctional(vOptimizationVector)
+% Value of the evaluated cost functional is the norm of the vector
+value = norm(vOptimizationVector);
+
+end
+
+
+
+function [c, ceq] = in_aIK_CE_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropYoungsModulus, dCablePropUnstrainedCableSection, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum, nIndexForcesX, nIndexForcesZ, nIndexLength)
 
 %% Quickhand variables
 % Number of wires
