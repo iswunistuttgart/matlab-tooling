@@ -82,8 +82,12 @@ function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinema
 %   hessian as returned by the call to fmincon
 % 
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-02-19
+% Date: 2016-03-04
 % Changelog:
+%   2016-03-04:
+%       * Fix wrong transformation matrix from optimization vector to local
+%       cable vector
+%       * Remove call to 'getStructureMatrix' and replace with 'structureMatrix'
 %   2016-02-19
 %       * Move the optimization cost functional into an inline function to
 %       prepare for it being an optional input parameter
@@ -154,7 +158,7 @@ vPulleyAngles = zeros(1, nNumberOfCables);
 % Transformation to get the proper values from the optimization variable x (we
 % need only F_x and F_z) to be used in the linear equality and ineqaulity
 % constraints
-aSelectForcesFromOptimVectorAndTransformTo3D = [-1,0,0; 0,0,0; 0,-1,0];
+aSelectForcesFromOptimVectorAndTransformTo3D = [-1,0,0; 0,-1,0; 0,0,0];
 
 
 
@@ -184,7 +188,7 @@ vLinearInequalityConstraints = [];
 vInitialStateForOptimization(nIndexLength) = vInitialLength;
 
 % Initial guessing of the force distribution is necessary, too
-vInitForceDistribution = algoForceDistribution_AdvancedClosedForm(Wrench, getStructureMatrix('3R3T', aCableAttachments, aInitCableUnitVector, aPlatformRotation), min(CableForceLimits), max(CableForceLimits));
+vInitForceDistribution = algoForceDistribution_AdvancedClosedForm(Wrench, structureMatrix('3R3T', aCableAttachments, aInitCableUnitVector, aPlatformRotation), min(CableForceLimits), max(CableForceLimits));
 
 %%% Boundaries
 % Lower boundaries: Forces are not bound but the minimum cable length is set to
