@@ -86,9 +86,6 @@ else
     % supportedExtensions it means we are having us an unsupported file
     % extension
     assert(any(find(ismember(ceSupportedExtensions, chFileExt))), 'Unsupported file extension ''%s'' found. Please consider exporting as any of the following formats: %s', chFileExt, strjoin(ceSupportedExtensions, ', '));
-%     if isempty(find(ismember(ceSupportedExtensions, chFileExt), 1))
-%         throw(MException('PHILIPPTEMPEL:loadPoseList:invalidFileExtension', ));
-%     end
 end
 
 % Build the qualified file name as we have inferred above
@@ -115,6 +112,12 @@ if isstruct(xData)
         end
     end
     
+    % If we found a time column but don't have to sample time, we will extract
+    % the sample time from the time column (second less first time step)
+%     if ixTime ~= 0 && dSampletime == 0
+%         dSampletime = xData.data(2, ixTime) - xData.data(1, ixTime);
+%     end
+    
     % Assert we have 
     assert(ixTime ~= 0 || dSampletime > 0, 'No time information found in given file and no sample time given to the script. Please call the function again with the ''Sampletime'' option');
     
@@ -122,7 +125,6 @@ if isstruct(xData)
     ixPose = zeros(1,12);
     iCol = 1;
     for iExtractPoseVar = 1:numel(ceExtractVariablePose)
-        ceExtractVariablePose{iExtractPoseVar};
         idx = find(strcmp(xData.colheaders, ceExtractVariablePose{iExtractPoseVar}));
         if ~isempty(idx)
             ixPose(iCol) = idx;
@@ -130,12 +132,15 @@ if isstruct(xData)
         end
     end
     
-    % User may override the sample time,  so let's make this preced over
+    % User may override the sample time, so let's make this preceed over extract
     % extracting the time data from xData.data
     if dSampletime > 0
         vTime = 0:dSampletime:((size(xData.data, 1)-1)*dSampletime);
         vTime = reshape(vTime, numel(vTime), 1);
     else
+        % Extract the sampling time form the time data we have
+        dSampletime = xData.data(2, ixTime) - xData.data(1 ,ixTime);
+        % Get the time data
         vTime = xData.data(:,ixTime);
         % Adjust the sample time for now as it is not being created correctly by
         % WireCenter
@@ -150,14 +155,19 @@ elseif ismatrix(xData)
     assert(size(xData, 2) <= 13, 'Too much information to import');
     % If we have columns than we need, we assume the time information is missing
     assert(size(xData,2) == 13 || ( ( size(xData, 2) < 13 ) && ( dSampletime > 0 )), 'No time information found in given file and no sample time given to the script. Please call the function again with the ''Sampletime'' option');
+    
     % Got 13 columns
     if size(xData, 2) == 13
+        % Extract the sampling time from the data
+        dSampletime = xData(2,1) - xData(1,1);
+        % Extract time and pose form the data
         vTime = xData(:,1);
         aPoses = xData(:,2:13);
     % Got less than 13 columns, i.e., 12
     else
         % Interpolate the time information
         vTime = 0:dSampletime:((size(xData, 1)-1)*dSampletime);
+        
         vTime = reshape(vTime, numel(vTime), 1);
         % Poses are given in the data
         aPoses = xData;
@@ -165,9 +175,10 @@ elseif ismatrix(xData)
 end
 
 
+
 %% Output assignment
-% Finally create the return value of this method depending on the requested
-% return as type
+% Finally create the return value of this method depending on the type requested
+% by the 'ReturnAs' argument
 switch chReturnAs
     case 'array'
         PoseList = horzcat(vTime, aPoses);
