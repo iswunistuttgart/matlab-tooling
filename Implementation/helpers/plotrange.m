@@ -34,6 +34,11 @@ parse(ip, RangeSelector, varargin{:});
 
 
 %% Parse local variables
+% Check we have an axes handle
+if ~ishandle(haAxes)
+    haAxes = gca;
+end
+
 % Range selector can be -1, 0, or 1
 dRangeSelector = ip.Results.RangeSelector;
 
@@ -41,21 +46,21 @@ dRangeSelector = ip.Results.RangeSelector;
 ceYData = get(findobj(haAxes, 'Type', 'Line'), 'YData');
 ceZData = get(findobj(haAxes, 'Type', 'Line'), 'ZData');
 
-% Convert axes with multiple lines inside to matrices removing all empty plots
-% or those with NaN inside
+% Convert axes with only single lines to cell matrices because otherwise our
+% algorithms won't function well in the end
 % For the y-data
-if iscell(ceYData)
-    ceYData = cell2mat(ceYData(cellfun(@(x) all(~isempty(x) & ~isnan(x)), ceYData)));
+if ~iscell(ceYData)
+    ceYData = mat2cell(ceYData, 1);
 end
 
 % And for the z-data
-if iscell(ceZData)
-    ceZData = cell2mat(ceZData(cellfun(@(x) all(~isempty(x) & ~isnan(x)), ceZData)));
-%     ceZData = cell2mat(cellfun(@(x) ~isempty(x), ceZData));
+if ~iscell(ceZData)
+    ceZData = mat2cell(ceZData, 1);
 end
 
-% Check if we are dealing with a 3D-plot
-bIsThreeDimPlot = ~isempty(ceZData);
+% Remove all empty or NaN cells from the Y and Z data
+ceYData = ceYData(cellfun(@(x) ~all(isempty(x) | isnan(x)), ceYData));
+ceZData = ceZData(cellfun(@(x) ~all(isempty(x) | isnan(x)), ceZData));
 
 % Return value
 mxdRange = [];
@@ -63,26 +68,24 @@ mxdRange = [];
 
 
 %% Off with the magic
+dMinY = min(cellfun(@(x) min(x), ceYData));
+dMaxY = max(cellfun(@(x) max(x), ceYData));
+dMinZ = min(cellfun(@(x) min(x), ceZData));
+dMaxZ = max(cellfun(@(x) max(x), ceZData));
+
 % If 3-D plot
-if bIsThreeDimPlot
-    vValueRange = [min(min(ceYData)), max(max(ceYData)); ...
-        min(min(ceZData)), max(max(ceZData))];
-% just a simple 2-D plot
-else
-    vValueRange = [min(min(ceYData)), max(max(ceYData))];
-end
+vValueRange = [dMinY, dMaxY; ...
+            dMinZ, dMaxZ];
 
-
-%% Off with the magic
-% Depending on the value of the range selector we will
+% Depending on the value of the range selector we will ...
 switch dRangeSelector
-    % Get only the minimum
+    % ... get only the minimum
     case 'min'
         mxdRange = vValueRange(:,1).';
-    % Get both the minimum and maximum
+    % ... get both the minimum and maximum
     case 'min+max'
         mxdRange = vValueRange;
-    % Get only the maximum
+    % ... get only the maximum
     case 'max'
         mxdRange = vValueRange(:,2).';
 end
