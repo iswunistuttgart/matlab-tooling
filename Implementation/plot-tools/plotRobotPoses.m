@@ -98,6 +98,18 @@ if ~isempty(varargin) && allAxes(Time)
     varargin = varargin(2:end);
 end
 
+% Check if Time is of type timeseries, then we will extract information from
+% there
+if isa(Time, 'timeseries')
+    Poses = Time.Data(:,1:3);
+    Time = Time.Time;
+% Check if time might be a struct, then we will get the information from there
+elseif isa(Time, 'struct')
+    assert(isfield(Time, 'Time') && isfield(Time, 'Pose'), 'Struct provided does not contain required fields ''Time'' and ''Pose''');
+    Pose = Time.Pose(:,1:3);
+    Time = Time.Time;
+end
+
 
 
 %% Define the input parser
