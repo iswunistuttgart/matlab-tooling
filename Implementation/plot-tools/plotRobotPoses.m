@@ -91,7 +91,7 @@ function varargout = plotRobotPoses(Time, Poses, varargin)
 hAxes = false;
 % Check if the first argument is an axes handle, then we just have to shift all
 % other arguments by one
-if ~isempty(varargin) && allAxes(Time)
+if ~isempty(varargin) && isallaxes(Time)
     hAxes = Time;
     Time = Poses;
     Poses = varargin{1};
@@ -460,13 +460,6 @@ if nargout >= 1
 end
 
 
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function result = allAxes(h)
-
-result = all(all(ishghandle(h))) && ...
-         length(findobj(h,'type','axes','-depth',0)) == length(h);
 end
 
 

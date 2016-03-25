@@ -48,7 +48,7 @@ function varargout = plotrange(RangeSelector, varargin)
 haAxes = false;
 % Check if the first argument is an axes handle, then we just have to shift all
 % other arguments by one
-if ~isempty(varargin) && allAxes(RangeSelector)
+if ~isempty(varargin) && isallaxes(RangeSelector)
     narginchk(2, Inf)
     haAxes = RangeSelector;
     RangeSelector = varargin{1};
@@ -166,13 +166,6 @@ switch nargout
         varargout{1} = mxdRange;
 end
 
-
-end
-
-function result = allAxes(h)
-
-result = all(all(ishghandle(h))) && ...
-         length(findobj(h,'type','axes','-depth',0)) == length(h);
 
 end
 

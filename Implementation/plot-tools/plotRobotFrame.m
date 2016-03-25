@@ -89,7 +89,7 @@ function [varargout] = plotRobotFrame(winchPositions, varargin)
 hAxes = false;
 % Check if the first argument is an axes handle, then we just have to shift all
 % other arguments by one
-if ~isempty(varargin) && allAxes(winchPositions)
+if ~isempty(varargin) && isallaxes(winchPositions)
     hAxes = winchPositions;
     winchPositions = varargin{1};
     varargin = varargin(2:end);
@@ -332,14 +332,6 @@ end
 
 
 end
-
-function result = allAxes(h)
-
-result = all(all(ishghandle(h))) && ...
-         length(findobj(h,'type','axes','-depth',0)) == length(h);
-
-end
-
 
 function out = inCharToValidArgument(in)
 

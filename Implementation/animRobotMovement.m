@@ -49,7 +49,7 @@ function [varargout] = animRobotMovement(Time, Position, Rotation, AttachmentPoi
 hAxes = false;
 % Check if the first argument is an axes handle, then we just have to shift all
 % other arguments by one
-if ~isempty(varargin) && allAxes(Time)
+if ~isempty(varargin) && isallaxes(Time)
     hAxes = Time;
     Time = Position;
     Position = Rotation;
@@ -354,13 +354,6 @@ end
 
 %% Assign output quantities
 
-
-end
-
-function result = allAxes(h)
-
-result = all(all(ishghandle(h))) && ...
-         length(findobj(h,'type','axes','-depth',0)) == length(h);
 
 end
 

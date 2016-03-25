@@ -89,7 +89,7 @@ function [varargout] = plotRobotPlatform(CableAttachments, varargin)
 hAxes = false;
 % Check if the first argument is an axes handle, then we just have to shift all
 % other arguments by one
-if ~isempty(varargin) && allAxes(CableAttachments)
+if ~isempty(varargin) && isallaxes(CableAttachments)
     hAxes = CableAttachments;
     CableAttachments = varargin{1};
     varargin = varargin(2:end);
@@ -335,13 +335,6 @@ if nargout >= 1
     varargout{1} = hAxes;
 end
 
-
-end
-
-function result = allAxes(h)
-
-result = all(all(ishghandle(h))) && ...
-         length(findobj(h,'type','axes','-depth',0)) == length(h);
 
 end
 

@@ -6,7 +6,7 @@ function varargout = plotPoseList(PoseList, varargin)
 hAxes = false;
 % Check if the first argument is an axes handle, then we just have to shift all
 % other arguments by one
-if ~isempty(varargin) && allAxes(PoseList)
+if ~isempty(varargin) && isallaxes(PoseList)
     hAxes = PoseList;
     PoseList = varargin{1};
     varargin = varargin(2:end);
@@ -365,13 +365,6 @@ hold(hAxes, 'off');
 if nargout > 0
     varargout{1} = hFig;
 end
-
-end
-
-function result = allAxes(h)
-
-result = all(all(ishghandle(h))) && ...
-         length(findobj(h,'type','axes','-depth',0)) == length(h);
 
 end
 

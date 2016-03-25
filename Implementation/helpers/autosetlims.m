@@ -5,7 +5,7 @@ function autosetlims(Axis, varargin)
 hAxes = false;
 % Check if the first argument is an axes handle, then we just have to shift all
 % other arguments by one
-if ~isempty(varargin) && allAxes(Axis)
+if ~isempty(varargin) && isallaxes(Axis)
     hAxes = Axis;
     Axis = varargin{1};
     varargin = varargin(2:end);
@@ -119,13 +119,6 @@ switch chAxis
         ylim(hAxes, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
 end
 
-
-end
-
-function result = allAxes(h)
-
-result = all(all(ishghandle(h))) && ...
-         length(findobj(h,'type','axes','-depth',0)) == length(h);
 
 end
 
