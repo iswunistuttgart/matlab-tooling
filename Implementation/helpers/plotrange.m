@@ -1,4 +1,47 @@
-function Range = plotrange(RangeSelector, varargin)
+function varargout = plotrange(RangeSelector, varargin)
+% PLOTRANGE Determine the range of plotted data from min to max
+% 
+%   RANGE = PLOTRANGE() gets the 'min+max' range of plotted data for the current
+%   axis.
+% 
+%   RANGE = PLOTRANGE(RANGESLECTOR) gets the desired range ('min', 'max', or
+%   'min+max' [default]) for the current axis.
+%   
+%   RANGE = PLOTRANGE(AXIS) gets the 'min+max' range of plotted data for the
+%   given axis.
+%   
+%   RANGE = PLOTRANGE(AXIS, RANGESELECTOR) gets the desire range ('min', 'max',
+%   or 'min+max' [default]) for the given axis.
+%
+%   [MIN, MAX] = PLOTRANGE(...) returns the minimum and maximum plotranges
+%   separately
+%   
+%   Inputs:
+%   
+%   RANGESELECTOR: A string which must be any of the following set {'min',
+%   'max', 'min+max'}. If none is given, 'min+max' is assumed
+%
+%   AXIS: A valid axis handle to get the range for.
+%
+%   Outputs:
+%   
+%   RANGE: Array of [minX, maxX; minY, maxY] plot ranges for 2D plots or an
+%   array of [minX, maxX; minY, maxY; minZ, maxZ] plot ranges for 3D plots.
+%   
+%   MIN: Vector of [minX, minY] or [minX, minY, minZ] plot ranges for 2D plots
+%   or 3D plots, respectively.
+%   
+%   MAX: Vector of [maxX, maxY] or [maxX, maxY, maxZ] plot ranges for 2D plots
+%   or 3D plots, respectively.
+%
+% Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
+% Date: 2016-03-25
+% Changelog:
+%   2016-03-25: Add possibility to remove two return values [min, max] if
+%               requested
+%   2016-03-23: Initial release
+
+
 
 %% Preprocess inputs (allows to have the axis defined as first argument)
 % By default we don't have any axes handle
@@ -39,60 +82,89 @@ if ~ishandle(haAxes)
     haAxes = gca;
 end
 
-% Range selector can be -1, 0, or 1
+% Range selector can be 'min', 'max', 'min+max'
 dRangeSelector = ip.Results.RangeSelector;
 
-% Get YData and ZData of the current axis
+% Make sure the right number of outputs is requested depending on the desired
+% range selector
+switch dRangeSelector
+    % For 'min', it can only be [min] = plotrange('min')
+    case 'min'
+        nargoutchk(0, 1);
+    % For 'max', it can only be [max] = plotrange('max')
+    case 'max'
+        nargoutchk(0, 1);
+    % For 'min+max', it can be [range] = plotrange('min+max') or [min, max] =
+    % plotrange('min+max')
+    case 'min+max'
+        nargoutchk(0, 2);
+end
+
+% Get XData, YData and ZData of the current axis
+ceXData = get(findobj(haAxes, 'Type', 'Line'), 'XData');
 ceYData = get(findobj(haAxes, 'Type', 'Line'), 'YData');
 ceZData = get(findobj(haAxes, 'Type', 'Line'), 'ZData');
 
 % Convert axes with only single lines to cell matrices because otherwise our
 % algorithms won't function well in the end
+% For x-data
+if ~iscell(ceXData)
+    ceXData = mat2cell(ceXData, 1);
+end
 % For the y-data
 if ~iscell(ceYData)
     ceYData = mat2cell(ceYData, 1);
 end
-
 % And for the z-data
 if ~iscell(ceZData)
     ceZData = mat2cell(ceZData, 1);
 end
 
 % Remove all empty or NaN cells from the Y and Z data
-ceYData = ceYData(cellfun(@(x) ~all(isempty(x) | isnan(x)), ceYData));
-ceZData = ceZData(cellfun(@(x) ~all(isempty(x) | isnan(x)), ceZData));
-
-% Return value
-mxdRange = [];
+ceXData = ceXData(cellfun(@(x) ~all(isempty(x) | isnan(x)), ceXData));
+ceYData = ceYData(cellfun(@(y) ~all(isempty(y) | isnan(y)), ceYData));
+ceZData = ceZData(cellfun(@(z) ~all(isempty(z) | isnan(z)), ceZData));
 
 
 
 %% Off with the magic
-dMinY = min(cellfun(@(x) min(x), ceYData));
-dMaxY = max(cellfun(@(x) max(x), ceYData));
-dMinZ = min(cellfun(@(x) min(x), ceZData));
-dMaxZ = max(cellfun(@(x) max(x), ceZData));
+% Determine min and max of plot data for each axis
+dMinX = min(cellfun(@(x) min(x), ceXData));
+dMaxX = max(cellfun(@(x) max(x), ceXData));
+dMinY = min(cellfun(@(y) min(y), ceYData));
+dMaxY = max(cellfun(@(y) max(y), ceYData));
+dMinZ = min(cellfun(@(z) min(z), ceZData));
+dMaxZ = max(cellfun(@(z) max(z), ceZData));
 
-% If 3-D plot
-vValueRange = [dMinY, dMaxY; ...
+% Collect all thes e ranges in an array for easier access later on
+vValueRange = [dMinX, dMaxX; ...
+            dMinY, dMaxY; ...
             dMinZ, dMaxZ];
 
 % Depending on the value of the range selector we will ...
 switch dRangeSelector
-    % ... get only the minimum
+    % ... get only the minimum (first column)
     case 'min'
         mxdRange = vValueRange(:,1).';
     % ... get both the minimum and maximum
     case 'min+max'
         mxdRange = vValueRange;
-    % ... get only the maximum
+    % ... get only the maximum (last column)
     case 'max'
         mxdRange = vValueRange(:,2).';
 end
 
 
 %% Process return values
-Range = mxdRange;
+switch nargout
+    % Two return values requested: [min, max]
+    case 2
+        varargout{1} = vValueRange(:,1).';
+        varargout{2} = vValueRange(:,2).';
+    % Otherwise we will return the range in the first return value
+    otherwise
+        varargout{1} = mxdRange;
+end
 
 
 end
