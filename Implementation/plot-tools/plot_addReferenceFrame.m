@@ -25,23 +25,23 @@ function plot_addReferenceFrame(varargin)
 %
 %   PLOT_ADDREFERENCEFRAME(CENTER, LENGTH, 'LineSpec', LineSpec) plots the
 %   reference frame at CENTER with lengths LENGTH and applies the styles given
-%   in cell LineSpec to all drawn lines. Must be a cell array. See QUIVER3 for
-%   available series specs.
+%   in cell LineSpec to all drawn lines. Must be a cell array. See QUIVER or
+%   QUIVER3 for available series properties.
 %
 %   PLOT_ADDREFERENCEFRAME(CENTER, LENGTH, 'LineSpecX', LineSpecX) plots the
 %   reference frame at CENTER with lengths LENGTH and applies the styles given
-%   in cell LineSpecX to the drawn x-axis. See QUIVER3 for available series
-%   properties.
+%   in cell LineSpecX to the drawn x-axis. See QUIVER or QUIVER3 for available
+%   series properties.
 %
 %   PLOT_ADDREFERENCEFRAME(CENTER, LENGTH, 'LineSpecY', LineSpecY) plots the
 %   reference frame at CENTER with lengths LENGTH and applies the styles given
-%   in cell LineSpecX to the drawn y-axis. See QUIVER3 for available series
-%   properties.
+%   in cell LineSpecX to the drawn y-axis. See QUIVER or QUIVER3 for available
+%   series properties.
 %
 %   PLOT_ADDREFERENCEFRAME(CENTER, LENGTH, 'LineSpecZ', LineSpecZ) plots the
 %   reference frame at CENTER with lengths LENGTH and applies the styles given
-%   in cell LineSpecX to the drawn z-axis. See QUIVER3 for available series
-%   properties.
+%   in cell LineSpecX to the drawn z-axis. See QUIVER or QUIVER3 for available
+%   series properties.
 %   
 %   Inputs:
 %   
@@ -53,21 +53,17 @@ function plot_addReferenceFrame(varargin)
 %   LENGTH: Length of each axis (if given a scalar) or of each axis indiviually
 %   if given as a vector of equal length as CENTER.
 %
-%   See also: QUIVER3
+%   See also: QUIVER, QUIVER3
 %
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
 % Date: 2015-04-26
 % Changelog:
-%   2015-04-26: Introduce options 'XLabel', 'YLabel', 'ZLabel', 'Title'. Also
-%               fix the logic behind {'WinchLabels', true} so we won't have
-%               duplicate code for doing basically the same thing in a different
-%               way.
-%               Change all inputs to have column major i.e., one column is a
-%               logical unit whereas between columns, the "thing" might change.
-%               That means, given the winches, if we look at one column, we see
-%               the data of one winch, whereas if we looked at the first row, we
-%               can read info on the x-values of all winches
-%   2015-04-24: Initial release
+%   2016-03-29
+%       * Fix length of axes arrows to be the specified length: last argument
+%       to quiver/quiver3 before the line specs is the scaling factor. Setting
+%       this to zero causes the arrow to be drawn at the desired length.
+%   2016-03-24
+%       * Initial release
 
 
 
@@ -203,11 +199,6 @@ axes(haAxes);
 % content
 hold(haAxes, 'on');
 
-% This is our array of axes we will be plotting
-vAxes = [vCenter(1), vCenter(1) + vAxisLength(1); ...
-    vCenter(2), vCenter(2) + vAxisLength(2); ...
-    vCenter(3), vCenter(3) + vAxisLength(3)];
-
 % Holds our quiver handles
 if bThreeDimPlot
     hQuiver = zeros(3, 1);
@@ -218,17 +209,17 @@ end
 % Plot differently for a 3D plot
 if bThreeDimPlot
     % Plot X-axis
-    hQuiver(1) = quiver3(vCenter(1), vCenter(2), vCenter(3), vAxisLength(1), 0, 0, 'r-');
+    hQuiver(1) = quiver3(vCenter(1), vCenter(2), vCenter(3), vAxisLength(1), 0, 0, 0, 'r-');
     % Plot Y-Axis
-    hQuiver(2) = quiver3(vCenter(1), vCenter(2), vCenter(3), 0, vAxisLength(2), 0, 'g-');
+    hQuiver(2) = quiver3(vCenter(1), vCenter(2), vCenter(3), 0, vAxisLength(2), 0, 0, 'g-');
     % Plot Z-Axis
-    hQuiver(3) = quiver3(vCenter(1), vCenter(2), vCenter(3), 0, 0, vAxisLength(3), 'b-');
+    hQuiver(3) = quiver3(vCenter(1), vCenter(2), vCenter(3), 0, 0, vAxisLength(3), 0, 'b-');
 % 2D plots are differently than 3D plots
 else
     % Plot X-Axis
-    quiver(vCenter(1), vCenter(2), vAxisLength(1), 0, 'r-');
+    quiver(vCenter(1), vCenter(2), vAxisLength(1), 0, 0, 'r-');
     % Plot Y-Axis
-    quiver(vCenter(1), vCenter(2), 0, vAxisLength(2), 'g-');
+    quiver(vCenter(1), vCenter(2), 0, vAxisLength(2), 0, 'g-');
 end
 
 % Apply styles to all axes
