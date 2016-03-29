@@ -23,14 +23,20 @@ function [varargout] = animRobotMovement(Time, Position, Rotation, AttachmentPoi
 %   See also: VIEW, PLOT, PLOT3, LINESPEC, GRID, TITLE, XLABEL, YLABEL, ZLABEL,
 %   AXIS
 %
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-09-02
+% Date: 2016-03-29
 % Changelog:
-%   2015-09-02:
+%   2016-03-29
+%       * Code cleanup
+%   2015-09-02
 %       * Add option 'Axis' to allow setting the axis to either 'tight',
 %       'equal', or anything else supported by >> axis
 %       * Code cleanup
-%   2015-04-26:
+%   2015-04-26
 %       * Introduce options 'XLabel', 'YLabel', 'ZLabel', 'Title'. Also fix the
 %       logic behind {'WinchLabels', true} so we won't have duplicate code for
 %       doing basically the same thing just in a different way.
@@ -39,18 +45,18 @@ function [varargout] = animRobotMovement(Time, Position, Rotation, AttachmentPoi
 %       winches, if we look at one column, we see the data of one winch, whereas
 %       if we looked at the first row, we can read info on the x-values of all
 %       winches
-%   2015-04-24:
+%   2015-04-24
 %       * Initial release
 
 
 
 %% Preprocess inputs (allows to have the axis defined as first argument)
 % By default we don't have any axes handle
-hAxes = false;
+haAxes = false;
 % Check if the first argument is an axes handle, then we just have to shift all
 % other arguments by one
 if ~isempty(varargin) && isallaxes(Time)
-    hAxes = Time;
+    haAxes = Time;
     Time = Position;
     Position = Rotation;
     Rotation = AttachmentPoints;
@@ -119,6 +125,10 @@ addOptional(ip, 'Axis', '', valFcn_Axis);
 valFcn_Title = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Title');
 addOptional(ip, 'Title', 'Time passed: $%0.3f$ $\\left[ \\mathrm{s} \\right]$', valFcn_Title);
 
+% Allow user to choose the FPS by liking
+valFcn_Fps = @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonempty', 'positive', 'finite'}, mfilename, 'Fps');
+adddOptional(ip, 'Fps', 25, valFcn_Fps);
+
 % Configuration of input parser
 ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
@@ -138,17 +148,17 @@ aRotations = ip.Results.Rotation;
 % Get the cable attachment points
 aAttachmentPoints = ip.Results.AttachmentPoints;
 % New figure handle
-if ~ishandle(hAxes)
+if ~ishandle(haAxes)
     hFig = figure;
-    hAxes = gca;
+    haAxes = gca;
 end
 % New axes handle
-hAxes = gca;
+haAxes = gca;
 % Is this our own plot?
-bOwnPlot = isempty(get(hAxes, 'Children'));
+bOwnPlot = isempty(get(haAxes, 'Children'));
 % Ensure we have the right given axes for the given plot style i.e., no 2D plot
 % into a 3D axes, nor a 3D plot into a 2D axis
-[az, el] = view(hAxes);
+% [az, el] = view(haAxes);
 % if ~ ( isempty(regexp(chPlotStyle, '^2.*$', 'once')) || isequaln([az, el], [0, 90]) )
 %     error('PHILIPPTEMPEL:plotRobotPoses:invalidAxesType', 'Given plot styles does not match provided axes type. Cannot plot a 2D image into a 3D plot.');
 % end
@@ -171,9 +181,11 @@ chAxis = ip.Results.Axis;
 chMovieFilename = ip.Results.SaveAs;
 bSaveMovie = ~isempty(chMovieFilename);
 bMovieFileOpen = false;
+% Get the frames per second from the parsed input
+nFramesPerSecond = ip.Results.Fps;
 
-% Maybe later on we will make this a public property
-nFramesPerSecond = 25;
+% Number of wires
+nNumberOfWires = size(aAttachmentPoints, 2);
 
 
 
@@ -181,7 +193,7 @@ nFramesPerSecond = 25;
 % Only if its a seaprate plot and not a subplot
 if bOwnPlot
     % Set viewport
-    view(hAxes, mxdViewport)
+    view(haAxes, mxdViewport)
     
     % Set the axis
     if ~isempty(strtrim(chAxis))
@@ -197,33 +209,36 @@ if bOwnPlot
     dMaxZ = 1.1*(max(aPositions(:, 3)) + abs(max(max(aAttachmentPoints))));
     
     % Set the axes limits
-    set(hAxes, 'XLimMode', 'manual');
-    set(hAxes, 'XLim', [dMinX dMaxX]);
-    set(hAxes, 'YLimMode', 'manual');
-    set(hAxes, 'YLim', [dMinY dMaxY]);
-    set(hAxes, 'ZLimMode', 'manual');
-    set(hAxes, 'ZLim', [dMinZ dMaxZ]);
+    set(haAxes, 'XLimMode', 'manual');
+    set(haAxes, 'XLim', [dMinX dMaxX]);
+    set(haAxes, 'YLimMode', 'manual');
+    set(haAxes, 'YLim', [dMinY dMaxY]);
+    set(haAxes, 'ZLimMode', 'manual');
+    set(haAxes, 'ZLim', [dMinZ dMaxZ]);
+    axes(haAxes, 'equal');
 
     % Set a grid?
     if any(strcmp(chGrid, {'on', 'minor'}))
-        % For minor grids we will also enable the "major" grid
-        if strcmpi(chGrid, 'minor')
-            grid(hAxes, 'on');
-        end
         % Set grid on
-        grid(hAxes, chGrid);
+        grid(haAxes, 'on');
     end
     
+    % For minor grids we will also enable the "major" grid
+    if strcmpi(chGrid, 'minor')
+        grid(haAxes, 'on');
+    end
+    
+    % Set x-axis label, if provided
     if ~isempty(strtrim(chXLabel))
-        xlabel(hAxes, chXLabel);
+        xlabel(haAxes, chXLabel);
     end
     % Set y-axis label, if provided
     if ~isempty(strtrim(chYLabel))
-        ylabel(hAxes, chYLabel);
+        ylabel(haAxes, chYLabel);
     end
     % Set z-axis label, if provided
     if ~isempty(strtrim(chZLabel))
-        zlabel(hAxes, chZLabel);
+        zlabel(haAxes, chZLabel);
     end
 end
 
@@ -239,7 +254,7 @@ if bSaveMovie
     writerObj = VideoWriter(sprintf('%s.mp4', chMovieFilename), 'MPEG-4');
     
     % Cleanup function to properly close the movie object
-    hCleanup = @(x) iif(bMovieFileOpen, close(writerObj), true, true);
+    haCleanup = @(x) iif(bMovieFileOpen, close(writerObj), true, true);
     
     % Set the framerate to 25fps
     writerObj.FrameRate = 25;
@@ -275,12 +290,15 @@ end
 % Plot for the trajectory trace
 hTargetPlotTrajectory = plot3(NaN, NaN, NaN);
 % Calculate the platform bounding box
-[aInitialAttachmentPointsBoundingBox, aInitialAttachmentPointsBoundingBoxFaces] = boundingbox3(aAttachmentPoints(1, :), aAttachmentPoints(2, :), aAttachmentPoints(3, :));
+[aInitialAttachmentPointsBoundingBox, aInitialAttachmentPointsBoundingBoxFaces] = boundingbox3(aAttachmentPoints(1,:), aAttachmentPoints(2,:), aAttachmentPoints(3,:));
 % Patch of the platform
 hTargetPlotPlatform = patch('Faces', aInitialAttachmentPointsBoundingBoxFaces, 'Vertices', aInitialAttachmentPointsBoundingBox, 'FaceColor', 'none');
 % Create the title handle
-hTitle = title(hAxes, 'Initializing...');
+hTitle = title(haAxes, 'Initializing...');
 set(hTitle, 'Interpreter', 'latex');
+
+% Code optimization because we need this lateron in form [b1, b2, ...]
+aInitialAttachmentPointsBoundingBox = transpose(aInitialAttachmentPointsBoundingBox);
 
 % Time counter to pace the drawing
 % dTimeStart = tic;
@@ -290,10 +308,14 @@ dMaxAnimationTime = vTime(end);
 vFramesTime = 0:1/nFramesPerSecond:dMaxAnimationTime;
 vFrames = zeros(numel(vFramesTime), 1);
 
+% This might also work as a vectorized function call
 for iFrameTime = 1:numel(vFramesTime)
     vDiff = abs(vTime - vFramesTime(iFrameTime));
     vFrames(iFrameTime) = find(vDiff == min(vDiff), 1, 'first');
 end
+
+% Initialize variable for trajectory tracking
+nFirstFrame = 1;
 
 % Step over the simulation time
 for iFrame = 1:1:size(vFrames)
@@ -313,7 +335,7 @@ for iFrame = 1:1:size(vFrames)
     
     % Adjust the bounding box of the attachment points given the current
     % rotation
-    aCurrentAttachmentPointsBoundingBox = transpose(repmat(vCurrentPosition, 1, size(aAttachmentPoints, 2)) + aCurrentRotation*transpose(aInitialAttachmentPointsBoundingBox));
+    aCurrentAttachmentPointsBoundingBox = transpose(repmat(vCurrentPosition, 1, nNumberOfWires) + aCurrentRotation*aInitialAttachmentPointsBoundingBox);
     
     % And update the platform patch to a new position
     set(hTargetPlotPlatform, ...
@@ -321,12 +343,11 @@ for iFrame = 1:1:size(vFrames)
     
     % Plot the path of the trajectory that has passed so far (if requested)
     if strcmp(chTraceTrajectory, 'on')
-        nFirstFrame = 1;
         nLastFrame = nFrame;
         % We only want to plot the last 4 seconds of the trajectory, so adjust
         % the first frame counter accordingly
-        if iFrame > 4*25
-            nFirstFrame = vFrames(iFrame - 4*25);
+        if iFrame > 4*nFramesPerSecond
+            nFirstFrame = vFrames(iFrame - 4*nFramesPerSecond);
         end
         set(hTargetPlotTrajectory, 'XData', aPositions(nFirstFrame:nLastFrame,1), 'YData', aPositions(nFirstFrame:nLastFrame,2), 'ZData', aPositions(nFirstFrame:nLastFrame,3));
     end

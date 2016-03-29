@@ -118,11 +118,15 @@ function [length, varargout] = inverseKinematics(Pose, PulleyPositions, CableAtt
 %   first row is the rotation about the z-axis of the pulley, and the second
 %   row is the wrapping angle about the pulley. Returned only for algorithms
 %   'pulley' and 'catenary+pulley'
-% 
-% 
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-12-15
+% Date: 2016-03-29
 % Changelog:
+%   2016-03-29
+%       * Code cleanup
 %   2015-12-15
 %       * Fix some old info in help section
 %       * Move optional argument 'PulleyRadius' before 'PulleyOrientations'
@@ -139,8 +143,10 @@ function [length, varargout] = inverseKinematics(Pose, PulleyPositions, CableAtt
 %       * Add option 'ReturnStruct' to return a struct of all available
 %       variables instead of a long list of variable varargouts
 %       * Change 'Winch' to 'Pulley' in all its forms
-%   2015-04-22: Add commentary for outputs CableVector and CableUnitVector
-%   2015-04-03: Initial release
+%   2015-04-22
+%       * Add commentary for outputs CableVector and CableUnitVector
+%   2015-04-03
+%       * Initial release
 
 
 

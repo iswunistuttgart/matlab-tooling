@@ -1,4 +1,4 @@
-function [StructureMatrix, varargout] = structureMatrix(MotionPattern, CableAttachments, CableVectors, varargin)
+function StructureMatrix = structureMatrix(MotionPattern, CableAttachments, CableVectors, varargin)
 % STRUCTUREMATRIX(CableAttachments, CableVectors) gets the structure matrix
 %   for the given cable attachment and vector combination
 %   
@@ -33,11 +33,16 @@ function [StructureMatrix, varargout] = structureMatrix(MotionPattern, CableAtta
 %   of all the available variables as per the algorithm. Can be set to any valid
 %   string of 'off', 'no', 'on', 'yes', 'please'. Only 'on', 'yes', and 'please'
 %   will actually return a struct then
-%   
-%   
+%
+
+
+
+%% File Information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-06-25
+% Date: 2016-03-29
 % Changelog:
+%   2016-03-29
+%       * Code cleanup
 %   2015-06-25
 %       * Add option 'MotionPattern'
 %   2015-06-19
