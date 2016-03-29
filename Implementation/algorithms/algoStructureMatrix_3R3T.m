@@ -1,5 +1,4 @@
-function StructureMatrix = algoStructureMatrix_3R3T(CableAttachments, CableVectors, Rotation)
-%#codegen
+function StructureMatrix = algoStructureMatrix_3R3T(CableAttachments, CableVectors, Rotation)%#codegen
 % ALGOSTRUCTUREMATRIX - Calculate the structure matrix for the given cable
 %   attachment points and cable vectors of a 3R3T cable robot
 % 
@@ -26,18 +25,24 @@ function StructureMatrix = algoStructureMatrix_3R3T(CableAttachments, CableVecto
 % 
 %   STRUCTUREMATRIX: Structure matrix A' for the given attachment points
 %   given the cable vectors. Is of size 6xM
-% 
+%
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-08-19
+% Date: 2016-03-29
 % Changelog:
+%   2016-03-29
+%       * Code cleanup
 %   2015-08-19
 %       * Add support for code generation
-%   2015-06-25:
+%   2015-06-25
 %       * Make this function only return the structure matrix for a 3R3T cable
 %       robot
-%   2015-06-13:
+%   2015-06-13
 %       * Add optional argument for the current rotation to method
-%   2015-04-22:
+%   2015-04-22
 %       * Initial release
 
 

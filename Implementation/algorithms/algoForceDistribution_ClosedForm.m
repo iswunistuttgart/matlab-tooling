@@ -1,5 +1,4 @@
-function [Distribution, varargout] = algoForceDistribution_ClosedForm(Wrench, StructureMatrix, ForceMinimum, ForceMaximum)
-%#codegen
+function [Distribution] = algoForceDistribution_ClosedForm(Wrench, StructureMatrix, ForceMinimum, ForceMaximum)%#codegen
 % ALGOFORCEDISTRIBUTION_CLOSEDFORM - Determine the force distribution for
 %   the given robot using the closed-form force distribution algorithm
 % 
@@ -33,14 +32,20 @@ function [Distribution, varargout] = algoForceDistribution_ClosedForm(Wrench, St
 %   DISTRIBUTION: Vector of force distribution values as determined by the
 %   algorithm
 %
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-06-12
+% Date: 2016-03-29
 % Changelog:
-%   2015-06-12:
+%   2016-03-29
+%       * Code cleanup
+%   2015-06-12
 %       * Make sure that vForce{Max,Min}imum are column vectors
 %       * Fix typos in comments and variable names
 %       * Finally write method help documentation
-%   2015-04-22:
+%   2015-04-22
 %       * Initial release
 
 

@@ -1,6 +1,6 @@
-function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = algoInverseKinematics_Pulley(Pose, PulleyPositions, CableAttachments, PulleyRadius, PulleyOrientations)
-%#codegen
-% ALGOINVERSEKINEMATICS_PULLEY - Perform inverse kinematics for the given pose
+function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = algoInverseKinematics_Pulley(Pose, PulleyPositions, CableAttachments, PulleyRadius, PulleyOrientations)%#codegen
+% ALGOINVERSEKINEMATICS_PULLEY Determine cable lengths based on pulley
+% kinematics
 %   
 %   Inverse kinematics means to determine the values for the joint variables (in
 %   this case cable lengths) for a given endeffector pose.
@@ -16,19 +16,19 @@ function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = alg
 % 
 %   LENGTH = ALGOINVERSEKINEMATICS_PULLEY(POSE, PULLEYPOSITIONS, CABLEATTACHMENTS)
 %   performs simple inverse kinematics with the cables running from a_i to b_i
-%   for the given pose
+%   for the given pose.
 % 
 %   [LENGTH, CABLEUNITVECTORS] = ALGOINVERSEKINEMATICS_PULLEY(...) also provides
-%   the the unit vectors for each cable which might come in handy at times
+%   the the unit vectors for each cable which might come in handy at times.
 % 
-%   [LENGTH, CABLEUNITVECTORS, PULLEYPOSITIONCORRECTED] =
+%   [LENGTH, CABLEUNITVECTORS, PULLEYANGLES] = ALGOINVERSEKINEMATICS_PULLEY(...)
+%   returns the two angles gamma (in first row) and beta (in second row) of the
+%   rotation of the pulley about its z-axis and the wrap angle of the cable
+%   along the pulley.
+% 
+%   [LENGTH, CABLEUNITVECTORS, PULLEYANGLES, PULLEYPOSITIONCORRECTED] =
 %   ALGOINVERSEKINEMATICS_PULLEY(...) additionally returns the corrected pulley
 %   positions.
-% 
-%   [LENGTH, CABLEUNITVECTORS, PULLEYPOSITIONCORRECTED, PULLEYANGLES] =
-%   ALGOINVERSEKINEMATICS_PULLEY(...) returns the two angles gamma (in first
-%   row) and beta (in second row) of the rotation of the pulley about its z-axis
-%   and the wrap angle of the cable along the pulley
 %   
 %   
 %   Inputs:
@@ -68,14 +68,17 @@ function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = alg
 %   of pulley and cable on pulley, respectively, given as 2xM matrix where the
 %   first row is the rotation about the z-axis of the pulley, and the second
 %   row is the wrapping angle about the pulley.
-%   
-%   CABLESHAPE: Array of [2xKxM] points with the cable shape. First dimension is
-%   the cable's local frame's x and z coordinate, second is the discretization
-%   along the length of L with K-many steps, M is the number of cables
-% 
+%
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-08-31
+% Date: 2016-03-29
 % Changelog:
+%   2016-03-29
+%       * Vectorize code to provide a slightly improved execution time (down by
+%       0.001s)
 %   2015-08-31
 %       * Remove code for shape generation and put into a separate function
 %       called algoCableShape_Pulley
@@ -134,7 +137,8 @@ aPulleyAngles = zeros(2, nNumberOfCables);
 for iUnit = 1:nNumberOfCables
     % Rotation matrix to rotate any vector given in pulley coordinate system
     % K_P into the global coordinate system K_O
-    aRotation_kP2kO = rotz(aPulleyOrientations(3,iUnit))*roty(aPulleyOrientations(2,iUnit))*rotx(aPulleyOrientations(1,iUnit));
+%     aRotation_kP2kO = rotz(aPulleyOrientations(3,iUnit))*roty(aPulleyOrientations(2,iUnit))*rotx(aPulleyOrientations(1,iUnit));
+    aRotation_kP2kO = rotationMatrixZYX(aPulleyOrientations(1,iUnit), aPulleyOrientations(2,iUnit), aPulleyOrientations(3,iUnit));
 
     % Vector from contact point of cable on pulley A to cable attachment point
     % on the platform B given in coordinates of system A
@@ -188,7 +192,8 @@ for iUnit = 1:nNumberOfCables
 
     % Vector from pulley center M to adjusted cable release point C in nothing
     % but the x-axis rotated by the angle beta about the y-axis of K_M
-    v_M2C_in_kC = transpose(roty(dAngleBetween_xM_and_M2C_Degree))*(vPulleyRadius(iUnit).*[1; 0; 0]);
+    aRotation_kC2kM = roty(dAngleBetween_xM_and_M2C_Degree);
+    v_M2C_in_kC = transpose(aRotation_kC2kM)*(vPulleyRadius(iUnit).*[1; 0; 0]);
 
     % Wrapping angle can be calculated in to ways, either by getting the angle
     % between the scaled negative x-axis (M to P) and the vector M to C, or by

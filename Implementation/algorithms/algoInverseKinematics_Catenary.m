@@ -1,5 +1,4 @@
-function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinematics_Catenary(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions)
-%#codegen
+function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinematics_Catenary(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions)%#codegen
 % ALGOINVERSEKINEMATICS_CATENARY - Perform inverse kinematics for the given
 %   pose of the virtual robot using catenary lines
 %   Inverse kinematics means to determine the values for the joint
@@ -81,9 +80,14 @@ function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinema
 %   BENCHMARK: A struct with fields x, fval, exitflag, output, lambda, grad,
 %   hessian as returned by the call to fmincon
 % 
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-04
+% Date: 2016-03-29
 % Changelog:
+%   2016-03-29
+%       * Code cleanup
 %   2016-03-04:
 %       * Fix wrong transformation matrix from optimization vector to local
 %       cable vector
@@ -172,7 +176,6 @@ vInitialStateForOptimization = zeros(3*nNumberOfCables, 1);
 aLinearEqualityConstraints = zeros(6, 3*nNumberOfCables);
 % Linear equality constraints vector b
 vLinearEqualityConstraints = zeros(6, 1) - Wrench;
-
 
 %%% Linear inequality constraints Ax <= b
 % Linear inequality constraints matrix A
@@ -333,7 +336,7 @@ end
 
 
 
-function value = in_aIK_C_optimizationCostFunctional(vOptimizationVector)
+function value = in_aIK_C_optimizationCostFunctional(vOptimizationVector)%#codegen
 % Value of the evaluated cost functional is the norm of the vector
 value = norm(vOptimizationVector);
 
@@ -341,7 +344,7 @@ end
 
 
 
-function [c, ceq] = aIK_C_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum, nIndexForcesX, nIndexForcesZ, nIndexLength)
+function [c, ceq] = aIK_C_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum, nIndexForcesX, nIndexForcesZ, nIndexLength)%#codegen
 
 %% Quickhand variables
 % Number of wires
@@ -382,6 +385,7 @@ for iCable = 1:nNumberOfCables
     % Max force
     c(iCable + 1 + dOffset) = sqrt(vForcesX(iCable)^2 + vForcesZ(iCable)^2) - dForceMaximum;
 end
+
 
 end
 

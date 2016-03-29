@@ -1,35 +1,31 @@
-function [Length, CableUnitVectors, PulleyAngles] = algoInverseKinematics_Standard(Pose, PulleyPositions, CableAttachments)
-%#codegen
-% ALGOINVERSEKINEMATICS_STANDARD - Perform inverse kinematics for the given
-%   pose of the virtual robot
-%   Inverse kinematics means to determine the values for the joint
-%   variables (in this case cable lengths) for a given endeffector pose.
-%   This is quite a simple setup for cable-driven parallel robots because
-%   the equation for the kinematic loop has to be solved, which is the sole
-%   purpose of this method.
-%   It can determine the cable lengths for any given robot configuration
-%   (note that calculations will be done as if we were looking at a 3D/6DOF
-%   cable robot following necessary conventions, so adjust your variables
+function [Length, CableUnitVectors, PulleyAngles] = algoInverseKinematics_Standard(Pose, PulleyPositions, CableAttachments)%#codegen
+% ALGOINVERSEKINEMATICS_STANDARD Determine cable lengths based on standard
+% kinematics
+%   
+%   Inverse kinematics means to determine the values for the joint variables (in
+%   this case cable lengths) for a given endeffector pose.
+%   This is quite a simple setup for cable-driven parallel robots because the
+%   equation for the kinematic loop has to be solved, which is the sole purpose
+%   of this method.
+%   It can determine the cable lengths for any given robot configuration (note
+%   that calculations will be done as if we were looking at a 3D/6DOF cable
+%   robot following necessary conventions, so adjust your variables
 %   accordingly). To determine the cable lengths, both the standard kinematic
 %   loop can be used as well as the advanced pulley kinematics (considering
 %   pulley radius and rotatability).
 % 
-%   LENGTH = ALGOINVERSEKINEMATICS_STANDARD(POSE, PULLEYPOSITIONS, CABLEATTACHMENTS)
-%   performs standard inverse kinematics with the cables running from a_i to
-%   b_i for the given pose
+%   LENGTH = ALGOINVERSEKINEMATICS_STANDARD(POSE, PULLEYPOSITIONS,
+%   CABLEATTACHMENTS) performs standard inverse kinematics with the cables
+%   running from a_i to b_i for the given pose
 % 
-%   [LENGTH, CABLEUNITVECTOR] = ALGOINVERSEKINEMATICS_STANDARD(...) also provides
-%   the unit vectors for each cable which might come in handy at times because
-%   it provides the direction of the force created by the cable on the mobile
-%   platform.
+%   [LENGTH, CABLEUNITVECTOR] = ALGOINVERSEKINEMATICS_STANDARD(...) also
+%   provides the unit vectors for each cable which might come in handy at times
+%   because it provides the direction of the force impinged by the cable on the
+%   mobile platform.
 % 
 %   [LENGTH, CABLEUNITVECTOR, PULLEYANGLES] = ALGOINVERSEKINEMATICS_STANDARD(...)
 %   additionally returns the angle of rotation that the cable local frame has
 %   relative to the world frame's z_0
-% 
-%   [LENGTH, CABLEUNITVECTOR, PULLEYANGLES, CABLESHAPE] =
-%   ALGOINVERSEKINEMATICS_STANDARD(...) additionally returns the shape of the
-%   cable in the cable's local frame with a discretization of K = 10e4 points
 %   
 %   
 %   Inputs:
@@ -66,14 +62,19 @@ function [Length, CableUnitVectors, PulleyAngles] = algoInverseKinematics_Standa
 %   PULLEYANGLES: Vector of gamma angles of rotation of the cable plane relative
 %   to the world frame, given as 1xM vector where the column is the respective
 %   pulley
-%   
-%   CABLESHAPE: Array of [2xKxM] points with the cable shape. First dimension is
-%   the cable's local frame's x and z coordinate, second is the discretization
-%   along the length of L with K-many steps, M is the number of cables
 % 
+%
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-08-31
+% Date: 2016-03-29
 % Changelog:
+%   2016-03-29
+%       * Code cleanup
+%       * Vectorize code to provide a slightly improved execution time (down by
+%       0.001s)
 %   2015-08-31
 %       * Remove code for shape generation and put into a separate function
 %       called algoCableShape_Standard

@@ -1,7 +1,7 @@
-function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinematics_CatenaryElastic(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions)
-%#codegen
+function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinematics_CatenaryElastic(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions)%#codegen
 % ALGOINVERSEKINEMATICS_CATENARYELASTIC - Perform inverse kinematics for the given
 %   pose of the virtual robot using catenary lines
+%   
 %   Inverse kinematics means to determine the values for the joint
 %   variables (in this case cable lengths) for a given endeffector pose.
 %   This is quite a simple setup for cable-driven parallel robots because
@@ -28,13 +28,6 @@ function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinema
 %   rotation of the pulley about its z-axos so that it's pointing towards the
 %   platform
 %   
-%   [LENGTH, CABLEUNITVECTORS, PULLEYANGLES, CABLESHAPE] =
-%   ALGOINVERSEKINEMATICS_CATENARYELASTIC(...) will return the cable shape for
-%   each cable. CABLESHAPE is a matrix of dimension 2x10e3xM where the first
-%   dimension is either the cable's local x- or z-axis, the second dimension the
-%   corresponding x- or z-coordinates, and the third dimension is the cable
-%   number
-%
 %   LENGTH = ALGOINVERSEKINEMATICS_CATENARYELASTIC(..., SOLVEROPTIONS) allows
 %   to override some pre-adjusted solver options. See input argument
 %   SOLVEROPTIONS further down for specific details
@@ -74,20 +67,22 @@ function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinema
 % 
 %   LENGTH: Length is a vector of size 1xM with the cable lengths
 %   determined using either catenary kinematics
-%
-%   CABLEVECTOR: Vectors of each cable from attachment point to corrected
-%   pulley point given as 3xM matrix
 %   
 %   CABLEUNITVECTOR: Normalized vector for each cable from attachment point
 %   to its corrected pulley point as 3xM matrix
 %   
-%   CABLEWRAPANGLES: Matrix of gamma and beta angles of rotation and
-%   wrapping angle of pulley and cable on pulley respectively, given as 2xM
-%   matrix
-% 
+%   PULLEYANGLES: Matrix of gamma and beta angles of rotation and wrapping angle
+%   of pulley and cable on pulley, respectively, given as 2xM matrix
+%
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-02-19
+% Date: 2016-03-29
 % Changelog:
+%   2016-03-29
+%       * Code cleanup
 %   2016-02-19
 %       * Move the optimization cost functional into an inline function to
 %       prepare for it being an optional input parameter
