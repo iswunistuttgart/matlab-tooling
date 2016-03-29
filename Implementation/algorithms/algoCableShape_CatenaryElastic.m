@@ -1,5 +1,4 @@
-function [Shape] = algoCableShape_CatenaryElastic(Length, LocalCableForces, PulleyAngle, CableProperties, GravityConstant, DiscretizationPoints)
-%#codegen
+function [Shape] = algoCableShape_CatenaryElastic(Length, LocalCableForces, PulleyAngle, CableProperties, GravityConstant, DiscretizationPoints)%#codegen
 % ALGOCABLESHAPE_CATENARYELASTIC - Determines the cable shape for the hefty
 %   non-elastic kinematics
 %   
@@ -50,10 +49,15 @@ function [Shape] = algoCableShape_CatenaryElastic(Length, LocalCableForces, Pull
 %   matrix with the local cable frame coordinates [x,y,z] along the first
 %   dimension, the discretization points along the second, and the cable along
 %   the third
-% 
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-08-31
+% Date: 2016-03-29
 % Changelog:
+%   2016-03-29
+%       * Code cleanup
 %   2015-08-31
 %       * Initial release
 

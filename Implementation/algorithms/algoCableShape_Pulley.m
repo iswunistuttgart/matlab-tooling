@@ -1,5 +1,4 @@
-function [Shape] = algoCableShape_Pulley(Length, UnitVector, PulleyAngle, PulleyRadius, PulleyOrientation, DiscretizationPoints)
-%#codegen
+function [Shape] = algoCableShape_Pulley(Length, UnitVector, PulleyAngle, PulleyRadius, PulleyOrientation, DiscretizationPoints)%#codegen
 % ALGOCABLESHAPE_PULLEY - Calculates the cable shape for the pulley kinematics
 %   
 %   SHAPE = ALGOCABLESHAPE_STANDARD(LENGTH, UNITVECTOR, PULLEYANGLES) draws the
@@ -29,10 +28,15 @@ function [Shape] = algoCableShape_Pulley(Length, UnitVector, PulleyAngle, Pulley
 %   matrix with the local cable frame coordinates [x,y,z] along the first
 %   dimension, the discretization points along the second, and the cable along
 %   the third
-% 
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-08-31
+% Date: 2016-03-29
 % Changelog:
+%   2016-03-29
+%       * Code cleanup
 %   2015-08-31
 %       * Initial release
 
@@ -48,17 +52,39 @@ end
 
 %% Assertion
 % Assert cable length
-assert(~isempty(Length) && isa(Length, 'numeric') && ismatrix(Length) && isvector(Length) && ( numel(Length) == size(UnitVector, 2) ) && all(all(Length > 0)));
+assert(~isempty(Length));
+assert(isa(Length, 'numeric'));
+assert(ismatrix(Length));
+assert(isvector(Length));
+assert(( numel(Length) == size(UnitVector, 2) ));
+assert(all(all(Length > 0)));
 % Assert cable vectors
-assert(~isempty(UnitVector) && isa(UnitVector, 'numeric') && ismatrix(UnitVector) && ( size(UnitVector, 1) == 3 ) && ( size(UnitVector, 2) == numel(Length) ));
+assert(~isempty(UnitVector));
+assert(isa(UnitVector, 'numeric'));
+assert(ismatrix(UnitVector));
+assert(( size(UnitVector, 1) == 3 ));
+assert(( size(UnitVector, 2) == numel(Length) ));
 % Assert cable vectors
-assert(~isempty(PulleyAngle) && isa(PulleyAngle, 'numeric') && ismatrix(PulleyAngle) && ( size(PulleyAngle, 1) >= 1) && ( size(PulleyAngle, 2) == numel(Length) ) );
+assert(~isempty(PulleyAngle));
+assert(isa(PulleyAngle, 'numeric'));
+assert(ismatrix(PulleyAngle));
+assert(( size(PulleyAngle, 1) >= 1));
+assert(( size(PulleyAngle, 2) == numel(Length) ) );
 % Assert pulley radius
-assert(~isempty(PulleyRadius) && isa(PulleyRadius, 'numeric') && isvector(PulleyRadius) && ( numel(PulleyRadius) == numel(Length) ) && all(PulleyRadius > 0) );
+assert(~isempty(PulleyRadius));
+assert(isa(PulleyRadius, 'numeric'));
+assert(isvector(PulleyRadius));
+assert(( numel(PulleyRadius) == numel(Length) ));
+assert(all(PulleyRadius > 0) );
 % Assert pulley orientations
-assert(~isempty(PulleyOrientation) && isa(PulleyOrientation, 'numeric') && ismatrix(PulleyOrientation) && ( size(PulleyOrientation, 1) == 3 ) && ( size(PulleyOrientation, 2) == numel(Length) ) );
+assert(~isempty(PulleyOrientation));
+assert(isa(PulleyOrientation, 'numeric'));
+assert(ismatrix(PulleyOrientation));
+assert(( size(PulleyOrientation, 1) == 3 ));
+assert(( size(PulleyOrientation, 2) == numel(Length) ) );
 % Asserrt discretization points
-assert(isa(DiscretizationPoints, 'numeric') && isscalar(DiscretizationPoints) && DiscretizationPoints > 0);
+assert(isa(DiscretizationPoints, 'numeric') );
+assert(isscalar(DiscretizationPoints) && DiscretizationPoints > 0);
 
 
 
