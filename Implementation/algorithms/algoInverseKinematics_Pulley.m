@@ -142,12 +142,11 @@ for iUnit = 1:nNumberOfCables
 
     % Determine the angle of rotation of the pulley to have the pulley's x-axis
     % point in the direction of the cable which points towards B
-    dRotationAngleAbout_kAz_Degree = atan2d(v_A2B_in_kP(2), v_A2B_in_kP(1));
-    aPulleyAngles(1,iUnit) = dRotationAngleAbout_kAz_Degree;
+    aPulleyAngles(1,iUnit) = atan2d(v_A2B_in_kP(2), v_A2B_in_kP(1));
 
     % Rotation matrix from pulley coordinate system K_P to cable coordinate 
     % system K_C
-    aRotation_kC2kP = rotz(dRotationAngleAbout_kAz_Degree);
+    aRotation_kC2kP = rotz(aPulleyAngles(1,iUnit));
 
     % Vector from point P (center of coordinate system K_P) to the cable
     % attachment point B given in the coordinate system of the pulley (easily
