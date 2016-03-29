@@ -99,12 +99,6 @@ assert(isa(CableAttachments, 'double') && size(CableAttachments, 1) <= 3 && size
 aCableAttachments = CableAttachments;
 aPulleyPositions = PulleyPositions;
 nNumberOfCables = size(aPulleyPositions, 2);
-% Holds the actual cable vector
-aCableVector = zeros(3, nNumberOfCables);
-% Holds the normalized cable vector
-aCableVectorUnit = zeros(3, nNumberOfCables);
-% Holds the cable lengths
-vCableLength = zeros(nNumberOfCables, 1);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
@@ -114,25 +108,23 @@ aPulleyAngles = zeros(1, nNumberOfCables);
 
 
 
-%% Do the magic
-% Loop over every pulley and ...
-for iCable = 1:nNumberOfCables
-    % Calculate the cable vector
-    aCableVector(:,iCable) = aPulleyPositions(:,iCable) - ( vPlatformPosition + aPlatformRotation*aCableAttachments(:,iCable) );
-    
-    % Calculate the cable length
-    vCableLength(iCable) = norm(aCableVector(:,iCable));
-    
-    % Calculate the direciton of the unit vector of the current cable
-    aCableVectorUnit(:,iCable) = aCableVector(:,iCable)./vCableLength(iCable);
-    
-    % ... calculate the angle of rotation of the cable local frame K_c relative
-    % to K_0
-    dRotationAngleAbout_kCz_Degree = atan2d(-aCableVector(2,iCable), -aCableVector(1,iCable));
-    
-    % Assign it
-    aPulleyAngles(1,iCable) = dRotationAngleAbout_kCz_Degree;
-end
+%% Do the magic with vectorized code
+% Get the matrix of all cable vectors
+aCableVector = aPulleyPositions - (repmat(vPlatformPosition, 1, nNumberOfCables) + aPlatformRotation*aCableAttachments);
+
+% Get the cable lengths (note, ```norm``` doesn't work here because that would
+% take the norm of the matrix, however, we want the norm of each column thus
+% we're using sqrt(sum(col.^2))
+vCableLength = sqrt(sum(aCableVector.^2));
+
+% Get the unit vectors of each cable (note this is the matrix of cable vectors
+% divided per element by the corresponding length i.e., the first column of the
+% divisor is only the first cable's length
+aCableVectorUnit = aCableVector./repmat(vCableLength, 3, 1);
+
+% Calculate the angle of rotation of the cable local frame K_c relative to K_0
+% for all cables at once
+aPulleyAngles(1,:) = atan2d(-aCableVector(2,:), -aCableVector(1,:));
 
 
 
