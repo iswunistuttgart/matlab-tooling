@@ -1,11 +1,14 @@
-function StructureMatrix = algoStructureMatrix_3R3T(CableAttachments, CableVectors, Rotation)%#codegen
-% ALGOSTRUCTUREMATRIX - Calculate the structure matrix for the given cable
+function [StructureMatrix, NullSpace] = algoStructureMatrix_3R3T(CableAttachments, CableVectors, Rotation)%#codegen
+% ALGOSTRUCTUREMATRIX_3R3T - Calculate the structure matrix for the given cable
 %   attachment points and cable vectors of a 3R3T cable robot
 % 
-%   STRUCTUREMATRIX = ALGOSTRUCTUREMATRIX(CABLEATTACHMENTS, CABLEVECTORS)
+%   STRUCTUREMATRIX = ALGOSTRUCTUREMATRIX_3R3T(CABLEATTACHMENTS, CABLEVECTORS)
 %   determines the structure matrix for the given cable attachment points
 %   and the given cable vectors. Cable vectors can but must not be a matrix
 %   of normalized vectors
+%
+%   [STRUCTUREMATRIX, NULLSPACE] = ALGOSTRUCTUREMATRIX_3R3T(...) also returns
+%   the nullspace of structure matrix STRUCTUREMATRIX
 %   
 %   Inputs:
 %   
@@ -23,16 +26,20 @@ function StructureMatrix = algoStructureMatrix_3R3T(CableAttachments, CableVecto
 % 
 %   Outputs:
 % 
-%   STRUCTUREMATRIX: Structure matrix A' for the given attachment points
-%   given the cable vectors. Is of size 6xM
+%   STRUCTUREMATRIX: Structure matrix At for the given attachment points
+%   given the cable vectors. At is of size 6xM
+%
+%   NULLSPACE: The corresponding nullspace to structure matrix At
 %
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-29
+% Date: 2016-03-30
 % Changelog:
+%   2016-03-30
+%       * Add output parameter NULLSPACE
 %   2016-03-29
 %       * Code cleanup
 %   2015-08-19
@@ -99,7 +106,13 @@ end
 
 
 %% Assign output quantities
+% First output: structure matrix; required
 StructureMatrix = aStructureMatrix;
+
+% Second output: nullspace of structure matrix; optional
+if nargout > 1
+    NullSpace = null(StructureMatrix);
+end
 
 
 end
