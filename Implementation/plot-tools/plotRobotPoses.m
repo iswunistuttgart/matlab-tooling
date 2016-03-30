@@ -8,6 +8,9 @@ function varargout = plotRobotPoses(Time, Poses, varargin)
 %   poses in a different style. Possible values are
 %   
 %       2D      plot [X, Y, Z] against [T]
+%       2DTX    plot [X] against T
+%       2DTY    plot [Y] against T
+%       2DTZ    plot [Z] against T
 %       2DXY    plot [Y] against [X]
 %       2DYX    plot [X] against [Y]
 %       2DYZ    plot [Z] against [Y]
@@ -165,7 +168,7 @@ addRequired(ip, 'Poses', valFcn_Poses);
 
 % Let user decide on the plot style
 % Plot style can be chosen anything from the list below
-valFcn_PlotStyle = @(x) any(validatestring(x, {'2D', '2DXY', '2DYX', '2DYZ', '2DZY', '2DXZ', '2DZX', '3D'}, mfilename, 'PlotStyle'));
+valFcn_PlotStyle = @(x) any(validatestring(x, {'2D', '2DTX', '2DTY', '2DTZ', '2DXY', '2DYX', '2DYZ', '2DZY', '2DXZ', '2DZX', '3D'}, mfilename, 'PlotStyle'));
 addOptional(ip, 'PlotStyle', '2D', valFcn_PlotStyle);
 
 % Let user decied on the plot spec
@@ -328,7 +331,7 @@ switch chPlotStyle
         % Plot X, Y, Z three dimensionally
         hPlot3d = plot3(mPoses(:, 1), mPoses(:, 2), mPoses(:, 3));
         
-        % Set specific line specs on the plot?
+        % Set custom line specs on the plot?
         if ~isempty(ceLineSpec)
             set(hPlot3d, ceLineSpec{:});
         end
@@ -388,7 +391,7 @@ switch chPlotStyle
                 end
             end
         end
-    case {'2DXY', '2DYX', '2DYZ', '2DZY', '2DXZ', '2DZX'}
+    case {'2DYX', '2DYZ', '2DZY', '2DXZ', '2DZX'}
         switch chPlotStyle
             case '2DXY'
                 vIndex = [1, 2];
@@ -404,9 +407,9 @@ switch chPlotStyle
                 vIndex = [1, 3];
         end
         % Plot the 2d plot with defined columns as defined above
-        hPlot2d = plot(mPoses(:, vIndex(1)), mPoses(:, vIndex(2)));
+        hPlot2d = plot(mPoses(:,vIndex(1)), mPoses(:,vIndex(2)));
         
-        % Set specific line specs on the plot?
+        % Set custom line specs on the plot?
         if ~isempty(ceLineSpec)
             set(hPlot2d, ceLineSpec);
         end
@@ -461,9 +464,22 @@ switch chPlotStyle
                 end
             end
         end
-    case '2D'
-        hPlot2d = plot(vTime, mPoses);
+    case {'2D', '2DTX', '2DTY', '2DTZ', '2DXY'}
+        switch chPlotStyle
+            case '2D'
+                vIndex = [1, 2, 3];
+            case '2DTX'
+                vIndex = 1;
+            case '2DTY'
+                vIndex = 2;
+            case '2DTZ'
+                vIndex = 3;
+        end
+        % Plot t-vs-{something} where something can be [x], [y], [z], or all of
+        % them
+        hPlot2d = plot(vTime, mPoses(:,vIndex));
         
+        % Set custom line specs on the plot?
         if ~isempty(ceLineSpec)
             set(hPlot2d, ceLineSpec);
         end
