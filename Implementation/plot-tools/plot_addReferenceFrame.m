@@ -252,11 +252,11 @@ drawnow
 % have created or were given a parameter to this function
 axes(haAxes);
 
-% Enforce drawing of the image before returning anything
-drawnow
-
 % Clear the hold off the current axes
 hold(haAxes, 'off');
+
+% Enforce drawing of the image before returning anything
+drawnow
 
 
 end
