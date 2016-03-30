@@ -44,20 +44,51 @@ function varargout = plotRobotPoses(Time, Poses, varargin)
 %   
 %   Only works in standalone mode.
 %
-%   PLOTROBOTPOSES(TIME, POSES, 'Title', Title) puts a title on the figure.
+%   PLOTROBOTPOSES(TIME, POSES, 'Title', Title, ...) puts a title on the figure.
 %   Only works in standalone mode.
 %
-%   PLOTROBOTPOSES(TIME, POSES, 'XLabel', XLabel) sets the x-axis label to
+%   PLOTROBOTPOSES(TIME, POSES, 'TitleSpec', 
+%
+%   PLOTROBOTPOSES(TIME, POSES, 'XLabel', XLabel, ...) sets the x-axis label to
 %   the specified char. Only works in standalone mode.
 %
-%   PLOTROBOTPOSES(TIME, POSES, 'YLabel', YLabel) sets the y-axis label to
+%   PLOTROBOTPOSES(TIME, POSES, 'YLabel', YLabel, ...) sets the y-axis label to
 %   the specified char. Only works in standalone mode.
 %
-%   PLOTROBOTPOSES(TIME, POSES, 'ZLabel', ZLabel) sets the z-axis label to
+%   PLOTROBOTPOSES(TIME, POSES, 'ZLabel', ZLabel, ...) sets the z-axis label to
 %   the specified char. Only works in standalone mode.
+%
+%   PLOTROBOTPOSES(TIME, POSES, 'Animate', Toggle, ...) animates the movement
+%   over time in a real-time like feel. Speed can be adjusted by 'Fps'. Toggle
+%   can be any value of the valid ones {'on', 'off', 'yes', 'no', 'please'}.
+%
+%   PLOTROBOTPOSES(TIME, POSES, 'Fps', Fps, ...) animate the movement with a
+%   different frames per seconds setting. Defaults to 25. Must be larger or
+%   equal to 1.
+%
+%   PLOTROBOTPOSES(TIME, POSES, 'TraceTrajectory', Toggle, ...) traces the
+%   trajectory over the last 4 seconds. Only works for animations. Toggle can be
+%   any value of the valid ones {'on', 'off', 'yes', 'no', 'please'}.
+%
+%   PLOTROBOTPOSES(TIME, POSES, 'TraceTrajectoryLength', Length, ...) traces the
+%   trajectory over the last LENGTH seconds instead of the default 4. Only works
+%   for animations. Must be larger than 0.
+%
+%   PLOTROBOTPOSES(TIME, POSES, 'VideoSave', Toggle, ...) saves the video to a
+%   a file. Toggle can be any value of the valid ones {'on', 'off', 'yes', 'no',
+%   'please'}.
+%
+%   PLOTROBOTPOSES(TIME, POSES, 'VideoFilename', Filename, ...) saves the video
+%   to the given filename. If none is given, the current timestamp will be
+%   chosen formatted to 'yyyymmdd_HHMMSSFFF' e.g., '20160330_172556671'
 %   
 %   PLOTROBOTPOSES(AX, TIME, POSES, ...) plots the poses into the specified
 %   axes.
+%
+%   PLOTROBOTPOSES(TS, ...) plots the poses given in the timeseries object TS.
+%
+%   PLOTROBOTPOSES(STRUCT, ...) plots the poses given in the struct object
+%   STRUCT which must have the fields 'Time', and 'Pose'
 %   
 %   Inputs:
 %   
@@ -68,7 +99,8 @@ function varargout = plotRobotPoses(Time, Poses, varargin)
 %   the [x, y, z] tuple of platform center of gravity positon at the time
 %   corresponding to that value
 %
-%   See also: VIEW, PLOT, PLOT3, LINESPEC, GRID, TITLE, XLABEL, YLABEL, ZLABEL
+%   See also: VIEW, PLOT, PLOT3, LINESPEC, GRID, TITLE, XLABEL, YLABEL, ZLABEL,
+%   DATESTR
 %
 
 
@@ -112,7 +144,7 @@ if isa(Time, 'timeseries')
 % Check if time might be a struct, then we will get the information from there
 elseif isa(Time, 'struct')
     assert(isfield(Time, 'Time') && isfield(Time, 'Pose'), 'Struct provided does not contain required fields ''Time'' and ''Pose''');
-    Pose = Time.Pose(:,1:3);
+    Poses = Time.Pose(:,1:3);
     Time = Time.Time;
 end
 
@@ -130,12 +162,6 @@ addRequired(ip, 'Time', valFcn_Time);
 % List of poses must be a matrix with as many columns as Time has rows
 valFcn_Poses = @(x) validateattributes(x, {'numeric'}, {'2d', 'size', [size(Time, 1), 3]}, mfilename, 'Poses');
 addRequired(ip, 'Poses', valFcn_Poses);
-
-% Axes may be given, too, as always, so that we could add the poses to the
-% frame and winch plot or pose list plot
-% Option to 'axes' must be a handle and also a 'axes' handle
-% valFcn_Axes = @(x) validateattributes(x, {'handle', 'matlab.graphics.axis.Axes'}, {}, mfilename, 'Axes');
-% addOptional(ip, 'Axes', false, valFcn_Axes);
 
 % Let user decide on the plot style
 % Plot style can be chosen anything from the list below
@@ -187,6 +213,30 @@ addOptional(ip, 'Title', '', valFcn_Title);
 valFcn_TitleSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'TitleSpec');
 addOptional(ip, 'TitleSpec', {}, valFcn_TitleSpec);
 
+% Allow user to enable/disable animate movement rather than getting a complete plot
+valFcn_Animate = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no', 'please'}, mfilename, 'Animate'));
+addOptional(ip, 'Animate', 'off', valFcn_Animate)
+
+% Allow user to set the frames per second manually
+valFcn_Fps = @(x) validateattributes(x, {'double'}, {'nonempty', 'scalar', 'positive', 'finite'}, mfilename, 'Fps');
+addOptional(ip, 'Fps', 25, valFcn_Fps);
+
+% Allow user to enable/disable plotting a trace of the trajectory
+valFcn_TraceTrajectory = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no', 'please'}, mfilename, 'TraceTrajectory'));
+addOptional(ip, 'TraceTrajectory', 'off', valFcn_TraceTrajectory);
+
+% Length of the traced trajectory may be adjusted
+valFcn_TraceTrajectoryLength = @(x) validateattributes(x, {'double'}, {'nonempty', 'scalar', 'positive', 'finite'}, mfilename, 'TraceTrajectoryLength');
+addOptional(ip, 'TraceTrajectoryLength', 4, valFcn_TraceTrajectoryLength);
+
+% Allow user to enable/disable saving of video to file
+valFcn_SaveVideo = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no', 'please'}, mfilename, 'VideoSave'));
+addOptional(ip, 'VideoSave', 'off', valFcn_SaveVideo);
+
+% Allow user to specify the filename that the file shall have
+valFcn_VideoFilename = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'VideoFilename');
+addOptional(ip, 'VideoFilename', '', valFcn_VideoFilename);
+
 % Configuration of input parser
 ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
@@ -205,6 +255,10 @@ mPoses = ip.Results.Poses;
 if ~ishandle(hAxes)
     hFig = figure;
     hAxes = gca;
+end
+% Check the figure is visible. If not, we will make it magically appear/visible
+if strcmp('off', get(hFig, 'Visible'))
+    set(hFig, 'Visible', 'on');
 end
 % General plot style
 chPlotStyle = upper(ip.Results.PlotStyle);
@@ -236,6 +290,25 @@ ceYLabelSpec = ip.Results.YLabelSpec;
 chZLabel = ip.Results.ZLabel;
 % and the specs for the z-axis label
 ceZLabelSpec = ip.Results.ZLabelSpec;
+% Animate toggle
+chAnimate = inCharToValidArgument(ip.Results.Animate);
+% Animation speed / fps
+nFps = ip.Results.Fps;
+% Trajectory tracing
+chTraceTrajectory = inCharToValidArgument(ip.Results.TraceTrajectory);
+% Trajectory tracing length
+dTraceTrajectoryLength = ip.Results.TraceTrajectoryLength;
+% Save video?
+chVideoSave = inCharToValidArgument(ip.Results.VideoSave);
+% Video filename
+chVideoFilename = ip.Results.VideoFilename;
+% Holds a flag whether the video file could successfully be opened or not
+bVideoFileOpen = false;
+% If no filename is given but a video is to be saved, we will get the filename
+% from the current time as yyyymmdd_HHMMSSFFF
+if strcmp('on', chVideoSave) && isempty(chVideoFilename)
+    chVideoFilename = datestr(now, 'yyyymmdd_HHMMSSFFF');
+end
 
 % Is this our own plot?
 bOwnPlot = isempty(get(hAxes, 'Children'));
@@ -438,14 +511,16 @@ switch chPlotStyle
             % Set a grid?
             if any(strcmp(chGrid, {'on', 'minor'}))
                 % Set grid on
-                grid(hAxes, chGrid);
-                % For minor grids we will also enable the "major" grid
-                if strcmpi(chGrid, 'minor')
-                    grid(hAxes, 'on');
-                end
+                grid(hAxes, 'on');
+            end
+            
+            % For minor grids we will also enable the "minor" grid
+            if strcmpi(chGrid, 'minor')
+                grid(hAxes, 'minor');
             end
         end
     otherwise
+        error('Requested unsupported plot style. Exiting!');
 end
 
 % Finally, set the active axes handle to be the first most axes handle we
