@@ -1,19 +1,33 @@
-function StructureMatrix = structureMatrix(MotionPattern, CableAttachments, CableVectors, varargin)
-% STRUCTUREMATRIX(CableAttachments, CableVectors) gets the structure matrix
-%   for the given cable attachment and vector combination
+function [StructureMatrix, NullSpace] = structureMatrix(MotionPattern, CableAttachments, CableVectors, varargin)
+% STRUCTUREMATRIX gets the structure matrix for the given robot
 %   
-%   STRUCTUREMATRIX = STRUCTUREMATRIX(CABLEATTACHMENTS, CABLEVECTORS)
-%   calculates the structure matrix for the given combination of cable
-%   attachment points and cable vectors (which can come from any 'inverse
+%   STRUCTUREMATRIX = STRUCTUREMATRIX(MOTIONPATTERN, CABLEATTACHMENTS,
+%   CABLEVECTORS) calculates the structure matrix for the given combination of
+%   cable attachment points and cable vectors (which can come from any 'inverse
 %   kinematics' algorithm. This performs calculation of the structure matrix
 %   according to a non-rotated platform. In case the platform is rotated, you
 %   need to provide its rotation as well (see below).
 %
-%   STRUCTUREMATRIX = STRUCTUREMATRIX(CABLEATTACHMENTS, CABLEVECTORS, 
-%   ROTATION) also takes into account the rotation of the platform to determine
-%   the correct entries of the structure matrix.
+%   STRUCTUREMATRIX = STRUCTUREMATRIX(MOTIONPATTERN, CABLEATTACHMENTS,
+%   CABLEVECTOR, ROTATION) also takes into account the rotation of the platform
+%   to determine the correct entries of the structure matrix.
+%
+%   STRUCTUREMATRIX = STRUCTUREMATRIX(MOTIONPATTERN, CABLEATTACHMENTS,
+%   CABLEVECTOR, ROTATION, 'ReturnStruct', 'on') will return the result as a
+%   structure rather than a matrix. Only works with one output argument then
 %
 %   Inputs:
+%
+%   MOTIONPATTERN: Required name of the motion pattern to use for the underlying
+%   determination of the structure matrix. Supported motion patterns are
+%
+%       '2T'
+%       '3T'
+%       '1R2T'
+%       '3R3T'
+%
+%   Motion pattern 1T is quite simple while 2R3T is too specific (which are the
+%   two axes that you allow rotation about?)
 %   
 %   CABLEATTACHMENTS: A matrix of the cable attachment points w.r.t. the
 %   platform's coordinate system given as a 3xM matrix where each column is a
@@ -34,13 +48,24 @@ function StructureMatrix = structureMatrix(MotionPattern, CableAttachments, Cabl
 %   string of 'off', 'no', 'on', 'yes', 'please'. Only 'on', 'yes', and 'please'
 %   will actually return a struct then
 %
+%   Outputs:
+%
+%   STRUCTUREMATRIX: The determined structure matrix At given the cable unit
+%   vectors and rotation
+%
+%   NULLSPACE: Nullspace of the structure matrix At satisfying At*NULLSPACE = 0 
+%
 
 
 
 %% File Information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-29
+% Date: 2016-03-30
 % Changelog:
+%   2016-03-30
+%       * Add missing input paramter MOTIONPATTERN
+%       * Add return option NULLSPACE
+%       * Update help doc
 %   2016-03-29
 %       * Code cleanup
 %   2015-06-25
@@ -87,24 +112,37 @@ parse(ip, MotionPattern, CableAttachments, CableVectors, varargin{:});
 
 
 %% Parse variables so we can use them natively
+% Get the motion pattern
 chMotionPattern = ip.Results.MotionPattern;
+% Cable attachment points
 aCableAttachments = ip.Results.CableAttachments;
+% Cable (unit) vectors
 aCableVectors = ip.Results.CableVectors;
+% Rotation matrix
 aRotation = ip.Results.Rotation;
+% And whether to return as a struct or not
 chReturnStruct = inCharToValidArgument(ip.Results.ReturnStruct);
+
+
+
+%% Post-processing of input
+% If the return value shall be a struct, then we only allow one return value
+if strcmp('on', chReturnStruct)
+    nargoutchk(0, 1);
+end
 
 
 
 %% Do the magic
 switch chMotionPattern
     case '2T'
-        aStructureMatrix = algoStructureMatrix_2T(aCableAttachments, aCableVectors);
+        [aStructureMatrix, aNullSpace] = algoStructureMatrix_2T(aCableAttachments, aCableVectors);
     case '3T'
-        aStructureMatrix = algoStructureMatrix_3T(aCableAttachments, aCableVectors);
+        [aStructureMatrix, aNullSpace] = algoStructureMatrix_3T(aCableAttachments, aCableVectors);
     case '1R2T'
-        aStructureMatrix = algoStructureMatrix_1R2T(aCableAttachments, aCableVectors, aRotation);
+        [aStructureMatrix, aNullSpace] = algoStructureMatrix_1R2T(aCableAttachments, aCableVectors, aRotation);
     case '3R3T'
-        aStructureMatrix = algoStructureMatrix_3R3T(aCableAttachments, aCableVectors, aRotation);
+        [aStructureMatrix, aNullSpace] = algoStructureMatrix_3R3T(aCableAttachments, aCableVectors, aRotation);
     otherwise
         error('Unsupported or unknown motion pattern');
 end
@@ -113,15 +151,22 @@ end
 
 %% Assign output quantities
 % Struct requested as return value?
-if strcmp(chReturnStruct, 'on')
+if strcmp('on', chReturnStruct)
     StructureMatrix = struct();
     
     StructureMatrix.StructureMatrix = aStructureMatrix;
+    StructureMatrix.NullSpace = aNullSpace;
     
     StructureMatrix = orderfields(StructureMatrix);
 % No struct as return value
 else
+    % First output: structure matrix; required
     StructureMatrix = aStructureMatrix;
+    
+    % Second output: null space; optional
+    if nargout > 1
+        NullSpace = aNullSpace;
+    end
 end
 % end if strcmpi(chReturnStruct, 'on');
 
