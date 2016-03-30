@@ -24,7 +24,7 @@ function varargout = plotRobotPoses(Time, Poses, varargin)
 %   PLOTROBOTPOSES(TIME, POSES, 'LineSpec', LineSpecs) forces the given
 %   line specs on the 2D or 3D plot. See LINESPEC
 %   
-%   PLOTROBOTPOSES(TIME, POSES, , 'Viewport', viewport, ...) adjusts the
+%   PLOTROBOTPOSES(TIME, POSES, 'Viewport', viewport, ...) adjusts the
 %   viewport of the 3d plot to the set values. Allowed values are 2, 3, [az,
 %   el], or [x, y, z]. See documentation of view for more info. Only works in
 %   standalone mode.
@@ -50,7 +50,9 @@ function varargout = plotRobotPoses(Time, Poses, varargin)
 %   PLOTROBOTPOSES(TIME, POSES, 'Title', Title, ...) puts a title on the figure.
 %   Only works in standalone mode.
 %
-%   PLOTROBOTPOSES(TIME, POSES, 'TitleSpec', 
+%   PLOTROBOTPOSES(TIME, POSES, 'TitleSpec', TitleSpec, ...) allows for setting
+%   custom properties on the title by providing a cell array compliant with text
+%   properties.
 %
 %   PLOTROBOTPOSES(TIME, POSES, 'XLabel', XLabel, ...) sets the x-axis label to
 %   the specified char. Only works in standalone mode.
