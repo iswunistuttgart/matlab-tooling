@@ -82,6 +82,7 @@ function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinema
 % 
 
 
+
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
 % Date: 2016-03-29

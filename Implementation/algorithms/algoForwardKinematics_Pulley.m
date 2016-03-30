@@ -40,9 +40,15 @@ function [Pose, varargout] = algoForwardKinematics_Pulley(CableLength, PulleyPos
 %   POSE: Estimated pose given as 1x12 vector with the interpretation of pose =
 %   [x_e, y_e, z_e, R11_e, R12_e, R13_e, R21_e, R22_e, R23_e, R31_e, R32_e, R33_e]
 % 
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-08-05
+% Date: 2016-03-30
 % Changelog:
+%   2016-03-30
+%       * Code cleanup
 %   2015-08-05
 %       * Initial release
 

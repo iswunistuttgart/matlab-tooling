@@ -29,6 +29,7 @@ function [Shape] = algoCableShape_Standard(Length, UnitVector, PulleyAngle, Disc
 %   matrix with the local cable frame coordinates [x,y,z] along the first
 %   dimension, the discretization points along the second, and the cable along
 %   the third
+% 
 
 
 
@@ -58,21 +59,21 @@ assert(~isempty(Length));
 assert(isa(Length, 'numeric'));
 assert(ismatrix(Length));
 assert(isvector(Length));
-assert(( numel(Length) == size(UnitVector, 2) ));
+assert(numel(Length) == size(UnitVector, 2));
 assert(all(all(Length > 0)));
 % Assert cable vectors
 assert(~isempty(UnitVector));
 assert(isa(UnitVector, 'numeric'));
 assert(ismatrix(UnitVector));
 assert(isvector(UnitVector));
-assert(( size(UnitVector, 1) == 3 ));
-assert(( size(UnitVector, 2) == numel(Length) ));
+assert(size(UnitVector, 1) == 3);
+assert(size(UnitVector, 2) == numel(Length));
 % Assert cable vectors
 assert(~isempty(PulleyAngle));
 assert(isa(PulleyAngle, 'numeric'));
 assert(ismatrix(PulleyAngle));
-assert(( size(PulleyAngle, 1) >= 1));
-assert(( size(PulleyAngle, 2) == numel(Length) ) );
+assert(size(PulleyAngle, 1) >= 1);
+assert(size(PulleyAngle, 2) == numel(Length));
 % Asserrt discretization points
 assert(isa(DiscretizationPoints, 'numeric'));
 assert(isscalar(DiscretizationPoints));

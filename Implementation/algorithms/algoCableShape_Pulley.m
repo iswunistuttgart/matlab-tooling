@@ -28,6 +28,7 @@ function [Shape] = algoCableShape_Pulley(Length, UnitVector, PulleyAngle, Pulley
 %   matrix with the local cable frame coordinates [x,y,z] along the first
 %   dimension, the discretization points along the second, and the cable along
 %   the third
+% 
 
 
 

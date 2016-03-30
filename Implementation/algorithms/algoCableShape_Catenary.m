@@ -48,6 +48,7 @@ function [Shape] = algoCableShape_Catenary(Length, LocalCableForces, PulleyAngle
 %   matrix with the local cable frame coordinates [x,y,z] along the first
 %   dimension, the discretization points along the second, and the cable along
 %   the third
+% 
 
 
 
@@ -75,34 +76,34 @@ end
 
 
 %% Assertion
-%%% Assert cable length
+% Assert cable length
 assert(~isempty(Length));
 assert(isa(Length, 'numeric'));
 assert(ismatrix(Length));
 assert(isvector(Length));
 assert( numel(Length) == size(UnitVector, 2) );
 assert(all(all(Length > 0)));
-%%% Assert the cable forces
+% Assert the cable forces
 assert(~isempty(LocalCableForces));
 assert(isa(LocalCableForces, 'numeric'));
 assert(ismatrix(LocalCableForces));
 assert(size(LocalCableForces, 2) == numel(Length));
-%%% Assert cable vectors
+% Assert cable vectors
 assert(~isempty(PulleyAngle));
 assert(isa(PulleyAngle, 'numeric'));
 assert(ismatrix(PulleyAngle));
 assert(size(PulleyAngle, 1) >= 1);
 assert(size(PulleyAngle, 2) == numel(Length));
-%%% Assert pulley orientations
+% Assert pulley orientations
 assert(~isempty(CableProperties));
 assert(isa(CableProperties, 'struct'));
 assert(isfield(CableProperties, 'Density'));
 assert(isfield(CableProperties, 'UnstrainedSection'));
-%%% Asserrt gravity constant
+% Asserrt gravity constant
 assert(isa(GravityConstant, 'numeric'));
 assert(isscalar(GravityConstant));
 assert(GravityConstant > 0);
-%%% Asserrt discretization points
+% Asserrt discretization points
 assert(isa(DiscretizationPoints, 'numeric'));
 assert(isscalar(DiscretizationPoints));
 assert(DiscretizationPoints > 0);

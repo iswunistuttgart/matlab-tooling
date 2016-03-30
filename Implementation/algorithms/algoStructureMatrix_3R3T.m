@@ -49,17 +49,24 @@ function StructureMatrix = algoStructureMatrix_3R3T(CableAttachments, CableVecto
 
 %% Default arguments
 if nargin < 3
-    Rotation = [1,0,0; ...
-                0,1,0; ...
-                0,0,1];
+    Rotation = eye(3);
 end
 
 
 
 %% Assertion for code generation
-assert(isa(CableAttachments, 'double') && size(CableAttachments, 1) == 3 && size(CableAttachments, 2) >= 1);
-assert(isa(CableVectors, 'double') && size(CableVectors, 1) == 3 && size(CableVectors, 2) >= 1);
-assert(isa(Rotation, 'double') && size(Rotation, 1) == 3 && size(Rotation, 2) == 3);
+% Assert CableAttachments
+assert(isa(CableAttachments, 'double'));
+assert(size(CableAttachments, 1) == 3);
+assert(size(CableAttachments, 2) == size(CableVectors, 2));
+% Assert CableVectors
+assert(isa(CableVectors, 'double'));
+assert(size(CableVectors, 1) == 3);
+assert(size(CableVectors, 2) == size(CableAttachments, 2));
+% Assert Rotation
+assert(isa(Rotation, 'double'));
+assert(size(Rotation, 1) == 3);
+assert(size(Rotation, 2) == 3);
 
 
 

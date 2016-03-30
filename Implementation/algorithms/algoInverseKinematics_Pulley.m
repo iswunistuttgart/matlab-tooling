@@ -97,11 +97,26 @@ function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = alg
 
 
 %% Assertion for code generation
-assert(isa(Pose, 'double') && numel(Pose) == 12 );
-assert(isa(PulleyPositions, 'double') && size(PulleyPositions, 1) <= 3 && size(PulleyPositions, 2) >= 1);
-assert(isa(CableAttachments, 'double') && size(CableAttachments, 1) <= 3 && size(CableAttachments, 2) >= 1);
-assert(isa(PulleyRadius, 'double') && size(PulleyRadius, 1) == 1 && size(PulleyRadius, 2) >= 1);
-assert(isa(PulleyOrientations, 'double') && size(PulleyOrientations, 1) == 3 && size(PulleyOrientations, 2) >= 1);
+% Assert pose
+assert(isa(Pose, 'double'));
+assert(numel(Pose) == 12);
+assert(any(1 == size(Pose)));
+% Assert PulleyPositions
+assert(isa(PulleyPositions, 'double'));
+assert(size(PulleyPositions, 1) == 3);
+assert(size(PulleyPositions, 2) == size(CableAttachments, 2));
+% Assert CableAttachments
+assert(isa(CableAttachments, 'double'));
+assert(size(CableAttachments, 1) == 3);
+assert(size(CableAttachments, 2) == size(PulleyPositions, 2));
+% Assert PulleyRadius
+assert(isa(PulleyRadius, 'double'));
+assert(isvector(PulleyRadius));
+assert(numel(PulleyRadius) == size(PulleyPositions, 2));
+% Assert PulleyOrientations
+assert(isa(PulleyOrientations, 'double'));
+assert(size(PulleyOrientations, 1) == 3);
+assert(size(PulleyOrientations, 2) == size(PulleyPositions, 2));
 
 
 

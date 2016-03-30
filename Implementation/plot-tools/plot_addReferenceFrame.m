@@ -55,9 +55,15 @@ function plot_addReferenceFrame(varargin)
 %
 %   See also: QUIVER, QUIVER3
 %
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-04-26
+% Date: 2016-03-30
 % Changelog:
+%   2016-03-30
+%       * Code cleanup
 %   2016-03-29
 %       * Fix length of axes arrows to be the specified length: last argument
 %       to quiver/quiver3 before the line specs is the scaling factor. Setting

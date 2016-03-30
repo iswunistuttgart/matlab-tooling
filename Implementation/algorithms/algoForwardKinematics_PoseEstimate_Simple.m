@@ -33,9 +33,15 @@ function [PoseEstimate] = algoForwardKinematics_PoseEstimate_Simple(CableLength,
 %   guess in [x, y, z] and the initial rotation guess in [a, b, c]
 %   (currently set to 0)
 % 
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-08-05
+% Date: 2016-03-30
 % Changelog:
+%   2016-03-30
+%       * Code cleanup
 %   2015-08-05
 %       * Initial release
 

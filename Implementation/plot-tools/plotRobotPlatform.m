@@ -68,9 +68,15 @@ function [varargout] = plotRobotPlatform(CableAttachments, varargin)
 %
 %   See also: VIEW, PLOT3, TEXT, PATCH, GRID, TITLE, XLABEL, YLABEL, ZLABEL
 %
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-04-26
+% Date: 2016-03-30
 % Changelog:
+%   2016-03-30
+%       * Code cleanup
 %   2015-04-26: Introduce options 'XLabel', 'YLabel', 'ZLabel', 'Title'. Also
 %               fix the logic behind {'AnchorLabels', true} so we won't have
 %               duplicate code for doing basically the same thing in a different

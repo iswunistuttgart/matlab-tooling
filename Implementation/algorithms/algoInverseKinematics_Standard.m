@@ -62,7 +62,6 @@ function [Length, CableUnitVectors, PulleyAngles] = algoInverseKinematics_Standa
 %   PULLEYANGLES: Vector of gamma angles of rotation of the cable plane relative
 %   to the world frame, given as 1xM vector where the column is the respective
 %   pulley
-% 
 %
 
 
@@ -89,9 +88,18 @@ function [Length, CableUnitVectors, PulleyAngles] = algoInverseKinematics_Standa
 
 
 %% Assertion for code generation
-assert(isa(Pose, 'double') && size(Pose, 1) == 1 && size(Pose, 2) == 12);
-assert(isa(PulleyPositions, 'double') && size(PulleyPositions, 1) <= 3 && size(PulleyPositions, 2) >= 1);
-assert(isa(CableAttachments, 'double') && size(CableAttachments, 1) <= 3 && size(CableAttachments, 2) >= 1);
+% Assert Pose
+assert(isa(Pose, 'double'));
+assert(numel(Pose) == 12);
+assert(any(1 == size(Pose)));
+% Assert PulleyPositions
+assert(isa(PulleyPositions, 'double'));
+assert(size(PulleyPositions, 1) == 3);
+assert(size(PulleyPositions, 2) == size(CableAttachments, 2));
+% Assert CableAttachments
+assert(isa(CableAttachments, 'double'));
+assert(size(CableAttachments, 1) == 3);
+assert(size(CableAttachments, 2) == size(PulleyPositions, 2));
 
 
 

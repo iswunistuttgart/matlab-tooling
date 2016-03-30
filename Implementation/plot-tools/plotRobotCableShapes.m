@@ -61,9 +61,15 @@ function [varargout] = plotRobotCableShapes(PulleyPositions, PulleyAngles, Cable
 %
 %   See also: VIEW, PLOT3, TEXT, PATCH, GRID, TITLE, XLABEL, YLABEL, ZLABEL
 %
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-08-31
+% Date: 2016-03-30
 % Changelog:
+%   2016-03-30
+%       * Code cleanup
 %   2015-08-31:
 %       * Rename options 'AnchorLabel' and 'AnchorLabelSpec' to 'PulleyLabel'
 %       and 'PulleyLabelSpec', respectively
