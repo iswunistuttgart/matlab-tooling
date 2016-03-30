@@ -307,10 +307,10 @@ Length = vCableLength;
 % Second output is the matrix of normalized cable vectors
 if nargout > 1
     % To get the cable force unit vectors we will have to take the forces of the
-    % cables and transform them from the C frame to the 0 frame
+    % cables at b_i and transform them from frame C to frame 0
     for iCable = 1:nNumberOfCables
         % Get the rotation matrix from C to 0
-        aRotation_kC2k0 = rotz(vPulleyAngles(1, iCable));
+        aRotation_kC2k0 = rotz(vPulleyAngles(1,iCable));
         
         % Get the force vector in C
         vForceVector_in_C = [vCableForcesX(iCable), 0, vCableForcesZ(iCable)]';
@@ -318,7 +318,7 @@ if nargout > 1
         % Transform force vector in K_0. Watch out, the cable forces are the
         % ones that are acting on the platform i.e., pointing outwards from the
         % platform. That's why we are reversing these vectors here with the -1
-        vForceVector_in_0 = -aRotation_kC2k0*vForceVector_in_C;
+        vForceVector_in_0 = -1*aRotation_kC2k0*vForceVector_in_C;
         
         % And calculate the force vector from the components of the
         % resulted cable force in K_0
