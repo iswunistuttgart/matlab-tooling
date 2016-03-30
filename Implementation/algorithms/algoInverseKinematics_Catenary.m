@@ -1,6 +1,7 @@
-function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinematics_Catenary(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions)%#codegen
+function [Length, CableUnitVector, PulleyAngle, Benchmark] = algoInverseKinematics_Catenary(Pose, PulleyPositions, CableAttachments, Wrench, CableForceLimits, CableProperties, GravityConstant, SolverOptions)%#codegen
 % ALGOINVERSEKINEMATICS_CATENARY - Perform inverse kinematics for the given
 %   pose of the virtual robot using catenary lines
+%   
 %   Inverse kinematics means to determine the values for the joint
 %   variables (in this case cable lengths) for a given endeffector pose.
 %   This is quite a simple setup for cable-driven parallel robots because
@@ -61,9 +62,11 @@ function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinema
 %   solver. All values may be overriden and this function makes use of the
 %   following pre-overriden options
 %   
-%       Algorithm:  'trust-region-reflective'
+%       Algorithm:  'interior-point'
 %       Display:    'off'
-%       TolX:       1e-12
+%       TolCon:     1e-10
+%       TolFun:     1e-6
+%       TolX:       1e-8
 % 
 %   Outputs:
 % 
@@ -73,7 +76,7 @@ function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinema
 %   CABLEUNITVECTOR: Normalized vector for each cable from attachment point
 %   to its corrected pulley point as 3xM matrix
 %   
-%   CABLEWRAPANGLES: Matrix of gamma and beta angles of rotation and
+%   PULLEYANGLE: Matrix of gamma and beta angles of rotation and
 %   wrapping angle of pulley and cable on pulley respectively, given as 2xM
 %   matrix
 %
@@ -85,8 +88,13 @@ function [Length, CableUnitVectors, PulleyAngles, Benchmark] = algoInverseKinema
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-29
+% Date: 2016-03-30
 % Changelog:
+%   2016-03-30
+%       * Add info to help about values fof default solver options TolCon and
+%       TolFun
+%       * Change solver option 'TolX' to 1e-8
+%       * Add a few more comments to code
 %   2016-03-29
 %       * Code cleanup
 %   2016-03-04:
@@ -143,6 +151,8 @@ dCablePropDensity = stCableProperties.Density;
 dGravityConstant = GravityConstant;
 % Custom solver options may be provided as the 8th argument
 stSolverOptionsGiven = SolverOptions;
+% Degrees of freedom of the mobile platform
+nDegreeOfFreedom = 6;
 
 
 
@@ -174,16 +184,14 @@ vInitialStateForOptimization = zeros(3*nNumberOfCables, 1);
 
 %%% Linear equality constraints Ax = b
 % Linear equality constraints matrix A
-aLinearEqualityConstraints = zeros(6, 3*nNumberOfCables);
+aLinearEqualityConstraints = zeros(nDegreeOfFreedom, 3*nNumberOfCables);
 % Linear equality constraints vector b
-vLinearEqualityConstraints = zeros(6, 1) - Wrench;
+vLinearEqualityConstraints = zeros(nDegreeOfFreedom, 1) - Wrench;
 
 %%% Linear inequality constraints Ax <= b
 % Linear inequality constraints matrix A
-% aLinearInequalityConstraints = zeros(6, 3*nNumberOfCables);
 aLinearInequalityConstraints = [];
 % Linear inequality constraints vector b
-% vLinearInequalityConstraints = zeros(6, 1);
 vLinearInequalityConstraints = [];
 
 % To populate the initial cable lengths and forces, we will use the straight
@@ -204,7 +212,6 @@ vLowerBoundaries(nIndexLength) = 0;
 vUpperBoundaries = Inf(3*nNumberOfCables, 1);
 
 % Optimization target function
-% inOptimizationTargetFunction = @(x) norm(reshape(x(nIndexLength), nNumberOfCables, 1) - vInitialLength(:)) + norm(vInitForceDistribution - sqrt(x(nIndexForcesX).^2 + x(nIndexForcesZ).^2));
 inOptimizationTargetFunction = @in_aIK_C_optimizationCostFunctional;
 
 
@@ -248,10 +255,11 @@ end
 % Set our default optimization options
 opSolverOptions = optimoptions('fmincon');
 % trust-region-reflective does not work (read the docs)
-% opSolverOptions.Algorithm = 'sqp';
 opSolverOptions.Display = 'off';
-opSolverOptions.TolX = 1e-12;
-opSolverOptions.TolFun = 1e-10;
+opSolverOptions.TolCon = 1e-10;
+opSolverOptions.TolFun = 1e-6;
+opSolverOptions.TolX = 1e-8;
+
 % And parse custom solver options
 if ~isempty(stSolverOptionsGiven)
     % Get the fields of the struct provided
@@ -276,6 +284,7 @@ end
 xFinal = xFinal(:);
 
 
+
 %% Output parsing
 %%% Extract the solutions from the final optimized vector
 % Forces X
@@ -295,26 +304,28 @@ if nargout > 1
     % cables at b_i and transform them from frame C to frame 0
     for iCable = 1:nNumberOfCables
         % Get the rotation matrix from C to 0
-        aRotation_kC2k0 = rotz(vPulleyAngles(1, iCable));
+        aRotation_kC2k0 = rotz(vPulleyAngles(1,iCable));
         
         % Get the force vector in C
         vForceVector_in_C = [vCableForcesX(iCable), 0, vCableForcesZ(iCable)]';
         
-        % Transform force vector in K_0
-        vForceVector_in_0 = -aRotation_kC2k0*vForceVector_in_C;
+        % Transform force vector in K_0. Watch out, the cable forces are the
+        % ones that are acting on the platform i.e., pointing outwards from the
+        % platform. That's why we are reversing these vectors here with the -1
+        vForceVector_in_0 = -1*aRotation_kC2k0*vForceVector_in_C;
         
         % And calculate the force vector from the components of the
         % resulted cable force in K_0
         aCableVectorUnit(:,iCable) = vForceVector_in_0./norm(vForceVector_in_0);
     end
     
-    CableUnitVectors = aCableVectorUnit;
+    CableUnitVector = aCableVectorUnit;
 end
 
 % Third output is the angle of rotation of the cable local frame relative to the
 % world frame
 if nargout > 2
-    PulleyAngles = vPulleyAngles;
+    PulleyAngle = vPulleyAngles;
 end
 
 % Very last output argument is information on the algorithm (basically, all the
@@ -340,6 +351,7 @@ end
 function value = in_aIK_C_optimizationCostFunctional(vOptimizationVector)%#codegen
 % Value of the evaluated cost functional is the norm of the vector
 value = norm(vOptimizationVector);
+
 
 end
 
