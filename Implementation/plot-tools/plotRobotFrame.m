@@ -125,7 +125,7 @@ addOptional(ip, 'BoundingBoxSpec', {}, valFcn_BoundingBoxSpec);
 
 % The 3d view may be defined, too. Viewport may be 2, 3, [az, el], or [x, y, z]
 valFcn_Viewport = @(x) validateattributes(x, {'logical', 'numeric'}, {'2d'}, mfilename, 'Viewport');
-addOptional(ip, 'Viewport', [-13, 10], valFcn_Viewport);
+addOptional(ip, 'Viewport', [-19, 18], valFcn_Viewport);
 
 % Maybe also display the winch labels? Or custom labels?
 valFcn_WinchLabels = @(x) validateattributes(x, {'numeric', 'cell'}, {'2d', 'ncols', size(winchPositions, 2)}, mfilename, 'WinchLabels');
