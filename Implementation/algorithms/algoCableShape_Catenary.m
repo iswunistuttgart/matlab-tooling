@@ -155,6 +155,9 @@ for iCable = 1:nNumberOfCables
     aCableShape(:,:,iCable) = rotz(vPulleyAngle(1,iCable))*aCableShapeLocal;
 end
 
+% Avoid numerical issues by setting anything smaller than eps to zero
+aCableShape(aCableShape < eps) = 0;
+
 
 
 %% Output assignment
