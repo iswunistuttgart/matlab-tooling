@@ -15,7 +15,8 @@ function res = isplot2d(varargin)
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
 % Date: 2016-03-25
 % Changelog:
-%   2016-03-25: Initial release
+%   2016-03-25
+%       * Initial release
 
 res = ~isplot3d(varargin{:});
 
