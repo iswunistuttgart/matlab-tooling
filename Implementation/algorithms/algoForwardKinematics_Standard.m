@@ -28,8 +28,8 @@ function [Pose, varargout] = algoForwardKinematics_Standard(CableLength, PulleyP
 %   attachment on the platform to pulley.
 %
 %   SOLVEROPTIONS: A struct of optimization options to set for the lsqnonlin
-%   solver. All values may be overriden and this function makes use of the
-%   following pre-overriden options
+%   solver. All values may be overwriten and this function makes use of the
+%   following pre-overwriten options
 %   
 %       Algorithm:  'levenberg-marquardt'
 %       Display:    'off'

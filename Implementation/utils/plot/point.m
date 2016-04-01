@@ -90,7 +90,7 @@ nPoints = size(aPoints, 1);
 
 
 %% And draw it
-% Make sure we don't override previous plot data
+% Make sure we don't overwrite previous plot data
 hold(haAxes, 'on');
 
 % Since we allow for drawing many points

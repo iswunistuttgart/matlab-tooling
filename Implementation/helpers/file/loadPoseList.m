@@ -132,7 +132,7 @@ if isstruct(xData)
         end
     end
     
-    % User may override the sample time, so let's make this preceed over extract
+    % User may overwrite the sample time, so let's make this preceed over extract
     % extracting the time data from xData.data
     if dSampletime > 0
         vTime = 0:dSampletime:((size(xData.data, 1)-1)*dSampletime);

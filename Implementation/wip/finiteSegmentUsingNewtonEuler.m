@@ -50,7 +50,7 @@ end
 
 clear iNode* vNodeForce;
 
-figure; plot(aNodePositions(1, :), aNodePositions(2, :), '-*', aNodePositions(1, [1, end]), aNodePositions(2, [1, end]), 'r');
+figure; plot(aNodePositions(1,:), aNodePositions(2,:), '-*', aNodePositions(1,[1, end]), aNodePositions(2,[1, end]), 'r');
 
 
 return;

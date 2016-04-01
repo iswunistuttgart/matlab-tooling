@@ -33,7 +33,7 @@ function [Length, CableUnitVector, PulleyAngle, Benchmark] = algoInverseKinemati
 %   results of the fmincon optimization
 %   
 %   LENGTH = ALGOINVERSEKINEMATICS_CATENARYELASTIC(..., SOLVEROPTIONS) allows
-%   to override some pre-adjusted solver options. See input argument
+%   to overwrite some pre-adjusted solver options. See input argument
 %   SOLVEROPTIONS further down for specific details
 %   
 %   Inputs:
@@ -60,8 +60,8 @@ function [Length, CableUnitVector, PulleyAngle, Benchmark] = algoInverseKinemati
 %   attachment on the platform to pulley.
 %
 %   SOLVEROPTIONS: A struct of optimization options to set for the fmincon
-%   solver. All values may be overriden and this function makes use of the
-%   following pre-overriden options
+%   solver. All values may be overwriten and this function makes use of the
+%   following pre-overwriten options
 %   
 %       Algorithm:  'interior-point'
 %       Display:    'off'
@@ -139,7 +139,7 @@ vPlatformPosition = reshape(Pose(1:3), 3, 1);
 aPlatformRotation = rotationRowToMatrix(Pose(4:12));
 % Get the gravity constant (7th argument) to the given value
 dGravityConstant = GravityConstant;
-% Custom solver options may be given to override the defaults
+% Custom solver options may be given to overwrite the defaults
 stSolverOptionsGiven = SolverOptions;
 % Get the cable properties struct
 stCableProperties = CableProperties;
