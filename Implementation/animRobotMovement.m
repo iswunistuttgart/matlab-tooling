@@ -334,8 +334,9 @@ for iFrame = 1:1:size(vFrames)
     aCurrentRotation = inferCurrentRotation(aCurrentRotation);
     
     % Adjust the bounding box of the attachment points given the current
-    % rotation
-    aCurrentAttachmentPointsBoundingBox = transpose(repmat(vCurrentPosition, 1, nNumberOfWires) + aCurrentRotation*aInitialAttachmentPointsBoundingBox);
+    % rotation (the 8 comes because it's a 3D plot thus the bounding box has 8
+    % corners).
+    aCurrentAttachmentPointsBoundingBox = transpose(repmat(vCurrentPosition, 1, 8) + aCurrentRotation*aInitialAttachmentPointsBoundingBox);
     
     % And update the platform patch to a new position
     set(hTargetPlotPlatform, ...
