@@ -301,11 +301,11 @@ ceZLabelSpec = ip.Results.ZLabelSpec;
 % Animate toggle
 chAnimate = inCharToValidArgument(ip.Results.Animate);
 % Animation speed / fps
-nFps = ip.Results.Fps;
+nFps = str2double(ip.Results.Fps);
 % Trajectory tracing
 chTraceTrajectory = inCharToValidArgument(ip.Results.TraceTrajectory);
 % Trajectory tracing length
-dTraceTrajectoryLength = ip.Results.TraceTrajectoryLength;
+dTraceTrajectoryLength = str2double(ip.Results.TraceTrajectoryLength);
 % Save video?
 chVideoSave = inCharToValidArgument(ip.Results.VideoSave);
 % Video filename
