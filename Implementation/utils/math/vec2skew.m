@@ -20,9 +20,9 @@ function skew = vec2skew(vec)%#codegen
 
 %% Input parsing
 % Gotta have doubles
-assert(isa(vec, 'double'));
+assert(isa(vec, 'double') || isa(vec, 'sym'), 'Input must be double or symbolic.');
 % Gotta have at least three elements inside VEC
-assert(numel(vec) >= 3);
+assert(numel(vec) == 3, 'Input must be only three elements long.');
 
 
 
