@@ -70,6 +70,8 @@ function [Length, CableUnitVectors, PulleyAngles] = algoInverseKinematics_Standa
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
 % Date: 2016-03-29
 % Changelog:
+%   2016-04-04
+%       * Add matnormcols for normalization of cable vectors
 %   2016-03-29
 %       * Code cleanup
 %       * Vectorize code to provide a slightly improved execution time (down by
@@ -112,8 +114,6 @@ nNumberOfCables = size(aPulleyPositions, 2);
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
 aPlatformRotation = rotationRowToMatrix(Pose(4:12));
-% Hold the local rotation angles of each cable's local frame relative to K_0
-aPulleyAngles = zeros(1, nNumberOfCables);
 
 
 
@@ -126,15 +126,6 @@ aCableVector = aPulleyPositions - (repmat(vPlatformPosition, 1, nNumberOfCables)
 % we're using sqrt(sum(col.^2))
 vCableLength = sqrt(sum(aCableVector.^2));
 
-% Get the unit vectors of each cable (note this is the matrix of cable vectors
-% divided per element by the corresponding length i.e., the first column of the
-% divisor is only the first cable's length
-aCableVectorUnit = aCableVector./repmat(vCableLength, 3, 1);
-
-% Calculate the angle of rotation of the cable local frame K_c relative to K_0
-% for all cables at once
-aPulleyAngles(1,:) = atan2d(-aCableVector(2,:), -aCableVector(1,:));
-
 
 
 %% Output parsing
@@ -144,12 +135,15 @@ Length = vCableLength;
 % Further outputs as requested
 % Second output is the matrix of normalized cable vectors
 if nargout > 1
-    CableUnitVectors = aCableVectorUnit;
+    % Get the unit vectors of each cable
+    CableUnitVectors = matnormalcols(aCableVector);
 end
 
 % Third output is the rotation angle of each cable plane
 if nargout > 2
-    PulleyAngles = aPulleyAngles;
+    % Calculate the angle of rotation of the cable local frame K_c relative to K_0
+    % for all cables at once
+    PulleyAngles = atan2d(-aCableVector(2,:), -aCableVector(1,:));
 end
 
 

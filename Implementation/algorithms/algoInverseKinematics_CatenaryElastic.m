@@ -131,8 +131,6 @@ nNumberOfCables = size(aPulleyPositions, 2);
 % aCableVector = zeros(3, nNumberOfCables);
 % Holds the normalized cable vector
 aCableVectorUnit = zeros(3, nNumberOfCables);
-% Holds the cable lengths
-vCableLength = zeros(nNumberOfCables, 1);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
