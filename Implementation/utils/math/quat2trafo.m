@@ -33,8 +33,6 @@ assert(size(q, 2) == 4, 'Number of columns must be qual to 4');
 
 
 
-
-
 %% Process inputs
 % Get matrix of quaternion
 aQuaternions = q;
