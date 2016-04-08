@@ -152,8 +152,7 @@ aPulleyAngles = zeros(2, nNumberOfCables);
 for iUnit = 1:nNumberOfCables
     % Rotation matrix to rotate any vector given in pulley coordinate system
     % K_P into the global coordinate system K_O
-%     aRotation_kP2kO = rotz(aPulleyOrientations(3,iUnit))*roty(aPulleyOrientations(2,iUnit))*rotx(aPulleyOrientations(1,iUnit));
-    aRotation_kP2kO = rotationMatrixZYX(aPulleyOrientations(1,iUnit), aPulleyOrientations(2,iUnit), aPulleyOrientations(3,iUnit));
+    aRotation_kP2kO = angle2rotzyx(aPulleyOrientations(3,iUnit)/180*pi, aPulleyOrientations(2,iUnit)/180*pi, aPulleyOrientations(3,iUnit)/180*pi);
 
     % Vector from contact point of cable on pulley A to cable attachment point
     % on the platform B given in coordinates of system A
