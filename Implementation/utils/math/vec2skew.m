@@ -23,9 +23,9 @@ function skew = vec2skew(vec)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-04-12
+% Date: 2016-04-13
 % Changelog:
-%   2016-04-12
+%   2016-04-13
 %       * Allow vec2skew to work on matrices thanks to help from quat2rot.m
 %       * Update help doc
 %       * Add block "File information"
