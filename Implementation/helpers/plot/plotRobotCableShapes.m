@@ -173,7 +173,6 @@ parse(ip, PulleyPositions, PulleyAngles, CableShapes, varargin{:});
 % Ensure the handle for the axes is a valid handle. If none given, we will
 % create our own figure with handle
 if ~ishandle(hAxes)
-    hFig = figure;
     hAxes = gca;
 % Check we are looking at a 3D plot, if a plot is given
 else

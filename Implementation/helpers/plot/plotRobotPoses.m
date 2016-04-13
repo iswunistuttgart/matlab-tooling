@@ -261,12 +261,7 @@ vTime = ip.Results.Time;
 mPoses = ip.Results.Poses;
 % Axes handle
 if ~ishandle(hAxes)
-    hFig = figure;
     hAxes = gca;
-end
-% Check the figure is visible. If not, we will make it magically appear/visible
-if strcmp('off', get(hFig, 'Visible'))
-    set(hFig, 'Visible', 'on');
 end
 % General plot style
 chPlotStyle = upper(ip.Results.PlotStyle);

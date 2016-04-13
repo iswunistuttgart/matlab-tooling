@@ -58,7 +58,6 @@ end
 % figure handle, otherwise select the given one to be the active axes
 % handle
 if ~ishandle(hAxes)
-    hFig = figure();
     hAxes = gca();
 else
     axes(hAxes);
