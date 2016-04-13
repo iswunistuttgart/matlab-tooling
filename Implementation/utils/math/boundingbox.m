@@ -29,8 +29,10 @@ function [Box, Traversal] = boundingbox(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-04-01
+% Date: 2016-04-13
 % Changelog:
+%   2016-04-13
+%       * Fix bug on getting the min and max vals of X, Y, and Z
 %   2016-04-01
 %       * Initial release
 
@@ -50,8 +52,8 @@ assert(numel(X) == numel(Y));
 
 %% Do the magic!
 % First, get all minimum and maximum values of X, Y, and Z
-minVals = min(min(X), min(Y));
-maxVals = max(max(X), max(Y));
+minVals = [min(X), min(Y)];
+maxVals = [max(X), max(Y)];
 
 % Holds our output
 aBoundingBox = zeros(4, 2);
