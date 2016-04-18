@@ -88,8 +88,11 @@ function [Length, CableUnitVector, PulleyAngle, Benchmark] = algoInverseKinemati
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-30
+% Date: 2016-04-18
 % Changelog:
+%   2016-04-18
+%       * Mathematical code optimization: Set values with magnitudes smaller
+%       than eps to zero
 %   2016-03-30
 %       * Add info to help about values fof default solver options TolCon and
 %       TolFun
@@ -230,6 +233,7 @@ for iCable = 1:nNumberOfCables
     
     % Rotation matrix about K_C
     aRotation_kC2k0 = rotz(dRotationAngleAbout_kCz_Degree);
+    aRotation_kC2k0(abs(aRotation_kC2k0) < eps) = 0;
     
     % Anchor positions in C
     aAnchorPositionsInC(:,iCable) = transpose(aRotation_kC2k0)*(vPlatformPosition + aPlatformRotation*aCableAttachments(:,iCable) - aPulleyPositions(:,iCable));
@@ -246,6 +250,11 @@ for iCable = 1:nNumberOfCables
     vInitialStateForOptimization(nIndexForcesX(iCable)) = vForceOfBiInC(1);
     vInitialStateForOptimization(nIndexForcesZ(iCable)) = vForceOfBiInC(3);
 end
+
+% Mathematical optimization: Every value smaller than eps will be set to zero
+aLinearEqualityConstraints(abs(aLinearEqualityConstraints) < eps) = 0;
+vInitialStateForOptimization(abs(vInitialStateForOptimization) < eps) = 0;
+aAnchorPositionsInC(abs(aAnchorPositionsInC) < eps) = 0;
 
 
 
@@ -303,6 +312,7 @@ if nargout > 1
     for iCable = 1:nNumberOfCables
         % Get the rotation matrix from C to 0
         aRotation_kC2k0 = rotz(vPulleyAngles(1,iCable));
+        aRotation_kC2k0(abs(aRotation_kC2k0)) = 0;
         
         % Get the force vector in C
         vForceVector_in_C = [vCableForcesX(iCable), 0, vCableForcesZ(iCable)]';

@@ -227,6 +227,7 @@ for iCable = 1:nNumberOfCables
     
     % Rotation matrix about K_C
     aRotation_kC2k0 = rotz(dRotationAngleAbout_kCz_Degree);
+    aRotation_kC2k0(abs(aRotation_kC2k0) < eps) = 0;
     
     % Anchor positions in C
     aAnchorPositionsInC(:,iCable) = transpose(aRotation_kC2k0)*(vPlatformPosition + aPlatformRotation*aCableAttachments(:,iCable) - aPulleyPositions(:,iCable));
@@ -243,6 +244,11 @@ for iCable = 1:nNumberOfCables
     vInitialStateForOptimization(nIndexForcesX(iCable)) = vForceOfBiInC(1);
     vInitialStateForOptimization(nIndexForcesZ(iCable)) = vForceOfBiInC(3);
 end
+
+% Mathematical optimization: Every value smaller than eps will be set to zero
+aLinearEqualityConstraints(abs(aLinearEqualityConstraints) < eps) = 0;
+vInitialStateForOptimization(abs(vInitialStateForOptimization) < eps) = 0;
+aAnchorPositionsInC(abs(aAnchorPositionsInC) < eps) = 0;
 
 
 
