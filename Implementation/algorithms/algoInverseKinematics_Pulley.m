@@ -74,8 +74,10 @@ function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = alg
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-29
+% Date: 2016-04-18
 % Changelog:
+%   2016-04-18
+%       * Unification of variable names and matching with new convention by PTT
 %   2016-03-29
 %       * Vectorize code to provide a slightly improved execution time (down by
 %       0.001s)
@@ -195,7 +197,7 @@ for iUnit = 1:nNumberOfCables
 
     % Determine the angle of rotation of that vector relative to the x-axis of
     % K_P. This is beta_2 in PTT's sketch
-    dAngleBetween_M2B_and_xM_Degree = atan2d(v_M2B_in_kR(3), v_M2B_in_kR(1));
+    dAngleBetween_M2B_and_xR_Degree = atan2d(v_M2B_in_kR(3), v_M2B_in_kR(1));
 
     % Now we can determine the angle between M2B and M2C using trigonometric
     % functions because cos(beta_3) = radius/M2B and as well sin(beta_3) = L/M2B
@@ -204,11 +206,11 @@ for iUnit = 1:nNumberOfCables
 
     % Angle between the x-axis of M and the vector from M to Ac given in
     % coordinate system K_M and in degree
-    dAngleBetween_xM_and_M2Ac_Degree = dAngleBetween_M2B_and_M2Ac_Degree + dAngleBetween_M2B_and_xM_Degree;
+    dAngleBetween_xR_and_M2Ac_Degree = dAngleBetween_M2B_and_M2Ac_Degree + dAngleBetween_M2B_and_xR_Degree;
 
     % Vector from pulley center M to adjusted cable release point Ac in nothing
     % but the x-axis rotated by the angle beta about the y-axis of K_M
-    v_M2Ac_in_kR = transpose(roty(dAngleBetween_xM_and_M2Ac_Degree))*(vPulleyRadius(iUnit).*[1; 0; 0]);
+    v_M2Ac_in_kR = transpose(roty(dAngleBetween_xR_and_M2Ac_Degree))*(vPulleyRadius(iUnit).*[1; 0; 0]);
 
     % Wrapping angle can be calculated in two ways, either by getting the angle
     % between the scaled negative x-axis (M to W) and the vector M to Ac, or by
