@@ -14,9 +14,10 @@ function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = alg
 %   can be used as well as the advanced pulley kinematics (considering pulley
 %   radius and rotatability).
 % 
-%   LENGTH = ALGOINVERSEKINEMATICS_PULLEY(POSE, PULLEYPOSITIONS, CABLEATTACHMENTS)
-%   performs simple inverse kinematics with the cables running from a_i to b_i
-%   for the given pose.
+%   LENGTH = ALGOINVERSEKINEMATICS_PULLEY(POSE, PULLEYPOSITIONS,
+%   CABLEATTACHMENTS, PULLEYRADIUS, PULLEYORIENTATIONS) performs pulley-based
+%   inverse kinematics with the cables running from a_i to b_i for the given
+%   pose.
 % 
 %   [LENGTH, CABLEUNITVECTORS] = ALGOINVERSEKINEMATICS_PULLEY(...) also provides
 %   the the unit vectors for each cable which might come in handy at times.
@@ -52,6 +53,13 @@ function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = alg
 %   of 3xM values. The number of cables i.e., N, must match the number of
 %   pulleys in PULLEYPOSITIONS (i.e., its column count) and the order must
 %   match the real linkage of cable attachment on the platform to pulley.
+%
+%   PULLEYRADIUS: 1xM matrix of pulley radius for each pulley.
+%
+%   PULLEYORIENTATIONS: 3xM matrix of orientations of the pulley wrt the
+%   inertial reference frame. The transformation will be done using Tait-Bryan
+%   XYZ angles in the ZYX convention of ABC (first A about X, then B about Y,
+%   finally C about Z).
 % 
 %   Outputs:
 % 
@@ -78,6 +86,8 @@ function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = alg
 % Changelog:
 %   2016-04-18
 %       * Unification of variable names and matching with new convention by PTT
+%       * Add missing help doc for input parameters PULLEYRADIUS and
+%       PULLEYORIENTATIONS
 %   2016-03-29
 %       * Vectorize code to provide a slightly improved execution time (down by
 %       0.001s)
