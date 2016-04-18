@@ -152,34 +152,36 @@ aPulleyAngles = zeros(2, nNumberOfCables);
 for iUnit = 1:nNumberOfCables
     % Rotation matrix to rotate any vector given in pulley coordinate system
     % K_P into the global coordinate system K_O
-    aRotation_kP2kO = angle2rotzyx(aPulleyOrientations(3,iUnit)/180*pi, aPulleyOrientations(2,iUnit)/180*pi, aPulleyOrientations(3,iUnit)/180*pi);
+    aRotation_kW2kO = angle2rotzyx(aPulleyOrientations(3,iUnit)/180*pi, aPulleyOrientations(2,iUnit)/180*pi, aPulleyOrientations(3,iUnit)/180*pi);
+    aRotation_kW2kO(abs(aRotation_kW2kO) < eps) = 0;
 
     % Vector from contact point of cable on pulley A to cable attachment point
     % on the platform B given in coordinates of system A
-    v_A2B_in_kP = transpose(aRotation_kP2kO)*(vPlatformPosition + aPlatformRotation*aCableAttachments(:,iUnit) - aPulleyPositions(:,iUnit));
+    v_W2B_in_kW = transpose(aRotation_kW2kO)*(vPlatformPosition + aPlatformRotation*aCableAttachments(:,iUnit) - aPulleyPositions(:,iUnit));
 
     % Determine the angle of rotation of the pulley to have the pulley's x-axis
     % point in the direction of the cable which points towards B
-    aPulleyAngles(1,iUnit) = atan2d(v_A2B_in_kP(2), v_A2B_in_kP(1));
+    aPulleyAngles(1,iUnit) = atan2d(v_W2B_in_kW(2), v_W2B_in_kW(1));
 
-    % Rotation matrix from pulley coordinate system K_P to cable coordinate 
-    % system K_C
-    aRotation_kC2kP = rotz(aPulleyAngles(1,iUnit));
+    % Rotation matrix from winch coordinate system K_W to roller coordinate 
+    % system K_R
+    aRotation_kR2kW = rotz(aPulleyAngles(1,iUnit));
+    aRotation_kR2kW(abs(aRotation_kR2kW) < eps) = 0;
 
-    % Vector from point P (center of coordinate system K_P) to the cable
+    % Vector from point P (center of coordinate system K_R) to the cable
     % attachment point B given in the coordinate system of the pulley (easily
-    % transferable from the same vector given in K_A by simply rotating it about
-    % the local z-axis of K_A)
-    v_A2B_in_kC = transpose(aRotation_kC2kP)*v_A2B_in_kP;
+    % transferable from the same vector given in K_W by simply rotating it about
+    % the local z-axis of K_W)
+    v_W2B_in_kR = transpose(aRotation_kR2kW)*v_W2B_in_kW;
 
-    % Vector from P to the pulley center given in the pulley coordinate system
+    % Vector from W to the pulley center given in the pulley coordinate system
     % K_P
-    v_P2M_in_kC = vPulleyRadius(iUnit)*[1; 0; 0];
+    v_W2M_in_kR = vPulleyRadius(iUnit)*[1; 0; 0];
 
     % Closed vector loop to determine the vector from M to B in coordinate
     % system K_P: P2M + M2B = P2B. This basically also transforms our coordinate
     % system K_P to K_M
-    v_M2B_in_kC = v_A2B_in_kC - v_P2M_in_kC;
+    v_M2B_in_kR = v_W2B_in_kR - v_W2M_in_kR;
 
     % Convert everything in to the coordinate system K_M of the
     % pulley's center
@@ -189,35 +191,35 @@ for iUnit = 1:nNumberOfCables
     % angle beta_3 to later on determine the angle of the vector from M to C in
     % the coordinate system of M. It is quite simple to do so using Pythagoras:
     % l^2 + radius^2 = M2B^2
-    dCableLength_C2B = sqrt(norm(v_M2B_in_kC)^2 - vPulleyRadius(iUnit)^2);
+    dCableLength_C2B = sqrt(norm(v_M2B_in_kR)^2 - vPulleyRadius(iUnit)^2);
 
     % Determine the angle of rotation of that vector relative to the x-axis of
     % K_P. This is beta_2 in PTT's sketch
-    dAngleBetween_M2B_and_xM_Degree = atan2d(v_M2B_in_kC(3), v_M2B_in_kC(1));
+    dAngleBetween_M2B_and_xM_Degree = atan2d(v_M2B_in_kR(3), v_M2B_in_kR(1));
 
     % Now we can determine the angle between M2B and M2C using trigonometric
     % functions because cos(beta_3) = radius/M2B and as well sin(beta_3) = L/M2B
     % or tan(beta_3) = L/radius
-    dAngleBetween_M2B_and_M2C_Degree = atand(dCableLength_C2B/vPulleyRadius(iUnit));
+    dAngleBetween_M2B_and_M2Ac_Degree = atand(dCableLength_C2B/vPulleyRadius(iUnit));
 
-    % Angle between the x-axis of M and the vector from M to C given in
+    % Angle between the x-axis of M and the vector from M to Ac given in
     % coordinate system K_M and in degree
-    dAngleBetween_xM_and_M2C_Degree = dAngleBetween_M2B_and_M2C_Degree + dAngleBetween_M2B_and_xM_Degree;
+    dAngleBetween_xM_and_M2Ac_Degree = dAngleBetween_M2B_and_M2Ac_Degree + dAngleBetween_M2B_and_xM_Degree;
 
-    % Vector from pulley center M to adjusted cable release point C in nothing
+    % Vector from pulley center M to adjusted cable release point Ac in nothing
     % but the x-axis rotated by the angle beta about the y-axis of K_M
-    aRotation_kC2kM = roty(dAngleBetween_xM_and_M2C_Degree);
-    v_M2C_in_kC = transpose(aRotation_kC2kM)*(vPulleyRadius(iUnit).*[1; 0; 0]);
+    v_M2Ac_in_kR = transpose(roty(dAngleBetween_xM_and_M2Ac_Degree))*(vPulleyRadius(iUnit).*[1; 0; 0]);
 
-    % Wrapping angle can be calculated in to ways, either by getting the angle
-    % between the scaled negative x-axis (M to P) and the vector M to C, or by
-    % getting the angle between the scaled positive x-axis and the vector M to C
-    v_M2P_in_kM = vPulleyRadius(iUnit).*[-1; 0; 0];
-    dAngleWrap_Degree = acosd(dot(v_M2P_in_kM, v_M2C_in_kC)/(norm(v_M2P_in_kM)*norm(v_M2C_in_kC)));
+    % Wrapping angle can be calculated in two ways, either by getting the angle
+    % between the scaled negative x-axis (M to W) and the vector M to Ac, or by
+    % getting the angle between the scaled positive x-axis and the vector M to
+    % Ac
+    v_M2W_in_kM = vPulleyRadius(iUnit).*[-1; 0; 0];
+    dAngleWrap_Degree = acosd(dot(v_M2W_in_kM, v_M2Ac_in_kR)/(norm(v_M2W_in_kM)*norm(v_M2Ac_in_kR)));
     aPulleyAngles(2,iUnit) = dAngleWrap_Degree;
 
     % Adjust the pulley position given the coordinates to point C
-    aPulleyPositionsCorrected(:,iUnit) = aPulleyPositions(:,iUnit) + aRotation_kP2kO*(aRotation_kC2kP*(v_P2M_in_kC + v_M2C_in_kC));
+    aPulleyPositionsCorrected(:,iUnit) = aPulleyPositions(:,iUnit) + aRotation_kW2kO*(aRotation_kR2kW*(v_W2M_in_kR + v_M2Ac_in_kR));
     vCableLengthOffset(iUnit) = dAngleWrap_Degree*pi/180*vPulleyRadius(iUnit);
     
     % Finally, calculate the cable vector (from corrected pulley position to the
