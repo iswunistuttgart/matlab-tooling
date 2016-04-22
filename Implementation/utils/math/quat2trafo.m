@@ -1,7 +1,7 @@
 function T = quat2trafo(q)%#codegen
 % QUAT2TRAFO Gives the transformation matrix from Q to 
 % 
-%   R = QUAT2TRAFO(Q) determines the rotation matrix transformations from
+%   T = QUAT2TRAFO(Q) determines the rotation matrix transformations from
 %   quaternion to angular velocities of size 3x4xN for each quaternion
 %   
 %   Inputs:
@@ -10,7 +10,7 @@ function T = quat2trafo(q)%#codegen
 %
 %   Outputs:
 %
-%   R: 3x4xN matrix of transformation matrix from quaternion to angular
+%   T: 3x4xN matrix of transformation matrix from quaternion to angular
 %   velocoties for each quaternion provided
 %
 
@@ -54,12 +54,12 @@ qy = aQuaternions2(3,1,:);
 qz = aQuaternions2(4,1,:);
 
 % Explicitly define concatenation dimension for codegen
-tempR = cat(1, -qx, qw, -qz, qy,...
+tempT = cat(1, -qx, qw, -qz, qy,...
 -qy, qz, qw, -qx,...
 -qz, -qy, qz, qw );
 
 % Reshape the matrix to its proper dimensions
-aTrafos = reshape(tempR, [4, 3, nQuaternions]);
+aTrafos = reshape(tempT, [4, 3, nQuaternions]);
 % Restore correct order of dimensions
 aTrafos = 2.*permute(aTrafos, [2, 1, 3]);
 
