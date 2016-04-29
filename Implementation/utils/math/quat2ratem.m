@@ -20,7 +20,7 @@ function W = quat2ratem(q)
 % Date: 2016-04-29
 % Changelog:
 %   2016-04-29
-%       * Change name to "quat2ratem"
+%       * Change name to ```quat2ratem```
 %   2016-04-22
 %       * Initial release
 
