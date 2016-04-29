@@ -1,7 +1,7 @@
-function W = quat2ratemat(q)
-% QUAT2RATEMAT Gives the quaternion rate matrices
+function W = quat2ratem(q)
+% QUAT2RATEM Gives the quaternion rate matrices
 % 
-%   T = QUAT2RATEMAT(Q) determines the quaternion rate matrices of size 3x4xN for
+%   T = QUAT2RATEM(Q) determines the quaternion rate matrices of size 3x4xN for
 %   each quaternion in Q.
 %   
 %   Inputs:
@@ -17,8 +17,10 @@ function W = quat2ratemat(q)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-04-22
+% Date: 2016-04-29
 % Changelog:
+%   2016-04-29
+%       * Change name to "quat2ratem"
 %   2016-04-22
 %       * Initial release
 
@@ -38,7 +40,7 @@ aQuaternions = q;
 % Number of quaternions
 nQuaternions = size(aQuaternions, 1);
 % Normalize quaternions i.e., each row of the matrix of quaternions
-% aQuaternions = matnormalrows(aQuaternions);
+aQuaternions = matnormalrows(aQuaternions);
 
 
 
