@@ -1,7 +1,7 @@
-function R = angle2rotzyx(yaw, pitch, roll)%#codegen
-% ANGLE2ROTZYX Create Tait-Bryan rotation matrices from rotation angles
+function R = angle2rotm(yaw, pitch, roll)%#codegen
+% ANGLE2ROTM Create Tait-Bryan rotation matrices from rotation angles
 %
-%   R = ANGLE2ROTZYX(YAW, PITCH, ROLL) calculates the rotation matrix R for the
+%   R = ANGLE2ROTM(YAW, PITCH, ROLL) calculates the rotation matrix R for the
 %   angles YAW, PITCH, ROLL following Tait-Bryan angle convention i.e., YAW
 %   about Z, PITCH about Y-axis, and ROLL about X-axis following the order ZYX
 %   i.e., first rotation about global X-axis, then global Y-axis, then global
@@ -26,8 +26,10 @@ function R = angle2rotzyx(yaw, pitch, roll)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-04-08
+% Date: 2016-04-29
 % Changelog:
+%   2016-04-29
+%       * Change name to ```angle2rotm```
 %   2016-04-08
 %       * Initial release
 
