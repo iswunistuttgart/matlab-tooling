@@ -118,6 +118,9 @@ function [length, varargout] = inverseKinematics(Pose, PulleyPositions, CableAtt
 %   first row is the rotation about the z-axis of the pulley, and the second
 %   row is the wrapping angle about the pulley. Returned only for algorithms
 %   'pulley' and 'catenary+pulley'
+%
+%   SEE: EUL2ROTM
+%
 
 
 

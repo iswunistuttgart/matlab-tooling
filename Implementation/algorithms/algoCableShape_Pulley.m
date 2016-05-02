@@ -132,7 +132,9 @@ for iCable = 1:nNumberOfCables
     
     % Now transform the local cable shape to the global frame
     aRotation_kC2kP = rotz(aPulleyAngles(1,iCable));
-    aRotation_kP2kO = rotz(aPulleyOrientation(3,iCable))*roty(aPulleyOrientation(2,iCable))*rotx(aPulleyOrientation(1,iCable));
+    vEuler = [aPulleyOrientation(3,iCable), aPulleyOrientation(2,iCable), aPulleyOrientation(1,iCable)]./180.*pi;
+    aRotation_kP2kO = eul2rotm(vEuler, 'ZYX');
+    aRotation_kP2kO(abs(aRotation_kP2kO) < 2*eps) = 0;
     
     % Get the unit vector from global frame to local frame
     vCableUnitVectorInKc = transpose(aRotation_kC2kP)*(transpose(aRotation_kP2kO)*(-aCableVector(:,iCable)));

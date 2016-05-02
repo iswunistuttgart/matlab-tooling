@@ -39,14 +39,18 @@ function [Pose, varargout] = algoForwardKinematics_Pulley(CableLength, PulleyPos
 % 
 %   POSE: Estimated pose given as 1x12 vector with the interpretation of pose =
 %   [x_e, y_e, z_e, R11_e, R12_e, R13_e, R21_e, R22_e, R23_e, R31_e, R32_e, R33_e]
+%
+%   SEE: EUL2ROTM
 % 
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-30
+% Date: 2016-05-01
 % Changelog:
+%   2016-05-01
+%       * Update to using EUL2ROTM(eul, 'ZYX') for rotation matrix determination
 %   2016-03-30
 %       * Code cleanup
 %   2015-08-05
@@ -123,8 +127,9 @@ vPosition = xFinal(1:3);
 % Extract the yaw-pitch-roll rotation angles and ...
 vRotation = xFinal(4:6);
 % ... transform it into a rotation matrix
-% aRotation = spinCalc('QtoDCM', vRotation, 1e-5, 0);
-aRotation = rotz(vRotation(3))*roty(vRotation(2))*rotx(vRotation(1));
+vEuler = [vRotation(3), vRotation(2), vRotation(1)]./180.*pi;
+aRotation = eul2rotm(vEuler, 'ZYX');
+aRotation(abs(aRotation) < 2*eps) = 0;
 
 % Build the final estimated pose
 vPoseEstimate = [reshape(vPosition, 1, 3), rotationMatrixToRow(aRotation)];
@@ -177,8 +182,9 @@ vPosition = vEstimatedPose(1:3);
 vRotation = vEstimatedPose(4:6).';
 % Transform the rotation given in quaternions to a DCM (direct cosine
 % matrix)
-% aRotation = spinCalc('QtoDCM', vRotation, 1e-4, 0);
-aRotation = rotz(vRotation(3))*roty(vRotation(2))*rotx(vRotation(1));
+vEuler = [vRotation(3), vRotation(2), vRotation(1)]./180.*pi;
+aRotation = eul2rotm(vEuler, 'ZYX');
+aRotation(abs(aRotation) < 2*eps) = 0;
 % Create the needed pose for the inverse kinematics algorithm composed of
 % [x, y, z, R11, R12, R13, R21, R22, R23, R31, R32, R33]
 vEstimatedPose = [reshape(vPosition, 1, 3), rotationMatrixToRow(aRotation)];
@@ -219,7 +225,9 @@ if nargout > 1
     t38 = t15 * t1;
     for iCable = 1:nNumberOfCables
         rhom = vPulleyRadius(iCable);
-        aPulleyRotation = rotz(aPulleyOrientation(3,iCable))*roty(aPulleyOrientation(2,iCable))*rotx(aPulleyOrientation(1,iCable));
+        vEuler = [aPulleyOrientation(3,iCable), aPulleyOrientation(2,iCable), aPulleyOrientation(1,iCable)]./180.*pi;
+        aPulleyRotation = eul2rotm(vEuler, 'ZYX');
+        aPulleyRotation(abs(aPulleyRotation) < 2*eps) = 0;
 
         t4 = t3 * aCableAttachment(1,iCable);
         t7 = t6 * aCableAttachment(2,iCable);

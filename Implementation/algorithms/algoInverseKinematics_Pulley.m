@@ -77,13 +77,20 @@ function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = alg
 %   first row is the rotation about the z-axis of the pulley, and the second
 %   row is the wrapping angle about the pulley.
 %
+%   SEE: EUL2ROTM
+%
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-04-18
+% Date: 2016-05-01
 % Changelog:
+%   2016-05-01
+%       * Update to using EUL2ROTM(eul, 'ZYX') instead of custom-built rotation
+%       matrix generation function
+%       * Add check to cancel out numeric issues in determination of rotation
+%       matrices such that R(abs(R) < 2*eps) = 0
 %   2016-04-18
 %       * Unification of variable names and matching with new convention by PTT
 %       * Add missing help doc for input parameters PULLEYRADIUS and
@@ -164,8 +171,9 @@ aPulleyAngles = zeros(2, nNumberOfCables);
 for iUnit = 1:nNumberOfCables
     % Rotation matrix to rotate any vector given in pulley coordinate system
     % K_P into the global coordinate system K_O
-    aRotation_kW2kO = angle2rotzyx(aPulleyOrientations(3,iUnit)/180*pi, aPulleyOrientations(2,iUnit)/180*pi, aPulleyOrientations(3,iUnit)/180*pi);
-    aRotation_kW2kO(abs(aRotation_kW2kO) < eps) = 0;
+    vEuler = [aPulleyOrientations(3,iUnit), aPulleyOrientations(2,iUnit), aPulleyOrientations(3,iUnit)].*pi./180;
+    aRotation_kW2kO = eul2rotm(vEuler, 'ZYX');
+    aRotation_kW2kO(abs(aRotation_kW2kO) < 2*eps) = 0;
 
     % Vector from contact point of cable on pulley A to cable attachment point
     % on the platform B given in coordinates of system A
@@ -178,7 +186,7 @@ for iUnit = 1:nNumberOfCables
     % Rotation matrix from winch coordinate system K_W to roller coordinate 
     % system K_R
     aRotation_kR2kW = rotz(aPulleyAngles(1,iUnit));
-    aRotation_kR2kW(abs(aRotation_kR2kW) < eps) = 0;
+    aRotation_kR2kW(abs(aRotation_kR2kW) < 2*eps) = 0;
 
     % Vector from point P (center of coordinate system K_R) to the cable
     % attachment point B given in the coordinate system of the pulley (easily

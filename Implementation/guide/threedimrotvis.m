@@ -80,7 +80,7 @@ function axTarget_CreateFcn(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 
 % Hint: place code in OpeningFcn to populate axTarget
-aRotation = rotz(0)*roty(0)*rotx(0);
+aRotation = eul2rotm([0, 0, 0], 'ZYX');
 vAxesX = aRotation*[1; 0; 0];
 vAxesY = aRotation*[0; 1; 0];
 vAxesZ = aRotation*[0; 0; 1];
@@ -195,7 +195,9 @@ dRotationX = get(handles.sliderX, 'Value');
 dRotationY = get(handles.sliderY, 'Value');
 dRotationZ = get(handles.sliderZ, 'Value');
 
-aRotation = rotz(dRotationZ)*roty(dRotationY)*rotx(dRotationX);
+vEuler = [dRotationZ, dRotationY, dRotationX]./180.*pi;
+aRotation = eul2rotm(vEuler, 'ZYX');
+aRotation(abs(aRotation) < 2*eps) = 0;
 vAxesX = aRotation*[1; 0; 0];
 vAxesY = aRotation*[0; 1; 0];
 vAxesZ = aRotation*[0; 0; 1];

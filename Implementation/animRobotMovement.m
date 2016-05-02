@@ -28,8 +28,11 @@ function [varargout] = animRobotMovement(Time, Position, Rotation, AttachmentPoi
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-29
+% Date: 2016-05-01
 % Changelog:
+%   2016-05-01
+%       * Update function ```inferCurrentRotation``` to use EUL2ROTM and
+%       QUAT2ROTM instead of manually typed code
 %   2016-03-29
 %       * Code cleanup
 %   2015-09-02
@@ -398,9 +401,11 @@ function CurrentRotation = inferCurrentRotation(CurrentRotation)
 
 switch numel(CurrentRotation)
     case 3
-        CurrentRotation = rotz(rad2deg(CurrentRotation(3)))*roty(rad2deg(CurrentRotation(2)))*rotx(rad2deg(CurrentRotation(1)));
+        vEuler = [CurrentRotation(3), CurrentRotation(2), CurrentRotation(1)];
+        CurrentRotation = eul2rotm(vEuler, 'ZYX');
+        CurrentRotation(abs(CurrentRotation) < 2*eps) = 0;
     case 4
-        CurrentRotation = eye(3) + 2*CurrentRotation(1)*vec2skew(CurrentRotation(2:4)) + 2*transpose(vec2skew(CurrentRotation(2:4)))*vec2skew(CurrentRotation(2:4));
+        CurrentRotation = quat2rotm(CurrentRotation);
     case 9
         CurrentRotation = rotationRowToMatrix(CurrentRotation);
     otherwise
