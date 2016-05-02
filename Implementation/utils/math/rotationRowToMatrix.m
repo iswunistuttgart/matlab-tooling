@@ -1,5 +1,4 @@
-function Matrix = rotationRowToMatrix(Row)
-%#codegen
+function Matrix = rotationRowToMatrix(Row)%#codegen
 % ROTATIONROWTOMATRIX converts a 1d rotation matrix row vector to its matrix
 % 
 %   MATRIX = ROTATIONROWTOMATRIX(ROW) converts the 1x9 row vector into the
@@ -17,12 +16,22 @@ function Matrix = rotationRowToMatrix(Row)
 %    R21 R22 R23; ...
 %    R31 R32 R33];
 % 
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-08-07
+% Date: 2016-05-01
 % Changelog:
+%   2016-05-01
+%       * Update to using permute instead of transpose
 %   2015-08-07
 %       * Initial release
 
-Matrix = transpose(reshape(Row, 3, 3));
+
+
+%% Transformation
+Matrix = permute(reshape(Row, 3, 3), [2, 1]);
+
 
 end
