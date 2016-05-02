@@ -44,17 +44,17 @@ assert(size(vec, 2) == 3, 'Input must have three columns.');
 
 %% Process inputs
 % Get all vectors for wich to get the skew-symmetric matrix
-aVectors = vec.';
-% Number of vectors == cols of aVectors
+aVectors = transpose(vec);
+% Number of vectors == rows of aVectors
 nVectors = size(aVectors, 2);
 % Reshape the vector in the depth dimension
-aVectors = reshape(aVectors, [3, 1, nVectors]);
+aVectors2 = reshape(aVectors, [3, 1, nVectors]);
 
 % Quicker access to important parts
 s = zeros(1, 1, nVectors);
-x = aVectors(1,1,:);
-y = aVectors(2,1,:);
-z = aVectors(3,1,:);
+x = aVectors2(1,1,:);
+y = aVectors2(2,1,:);
+z = aVectors2(3,1,:);
 
 
 
