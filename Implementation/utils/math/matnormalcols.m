@@ -9,7 +9,7 @@ function Mn = matnormalcols(M)%#codegen
 %
 %   Outputs:
 %
-%   MN: Matrix with the each column's norm being one.
+%   MN: Matrix with each column's norm being one.
 %
 
 
@@ -24,7 +24,7 @@ function Mn = matnormalcols(M)%#codegen
 
 
 %% Assertion
-assert(isa(M, 'double') || isa(M, 'sym'), 'Input must be of type double or symbolic'););
+assert(isa(M, 'double'), 'Input must be of type double');
 
 
 
