@@ -5,10 +5,13 @@ function [StructureMatrix, NullSpace] = algoStructureMatrix_3R3T(CableAttachment
 %   STRUCTUREMATRIX = ALGOSTRUCTUREMATRIX_3R3T(CABLEATTACHMENTS, CABLEVECTORS)
 %   determines the structure matrix for the given cable attachment points
 %   and the given cable vectors. Cable vectors can but must not be a matrix
-%   of normalized vectors
+%   of normalized vectors.
+%
+%   STRUCTUREMATRIX = ALGOSTRUCTUREMATRIX_3R3T(CABLEATTACHMENTS, CABLEVECTORS,
+%   ROTATION) assumes the given rotation for the platform.
 %
 %   [STRUCTUREMATRIX, NULLSPACE] = ALGOSTRUCTUREMATRIX_3R3T(...) also returns
-%   the nullspace of structure matrix STRUCTUREMATRIX
+%   the nullspace of structure matrix STRUCTUREMATRIX.
 %   
 %   Inputs:
 %   
@@ -23,6 +26,11 @@ function [StructureMatrix, NullSpace] = algoStructureMatrix_3R3T(CableAttachment
 %   CABLEVECTORS: Matrix of cable direction vectors from CABLEATTACHMENTS
 %   to the winch attachment point. Must not be a matrix of normalized
 %   values, however, must be a 3xM matrix of coordinates [x, y, z]'
+%
+%   ROTATION: Current rotation of the platform. Can be a 1x3 vector representing
+%   Tait-Bryan Euler angles ZYX (yaw = z, pitch = y, roll = x) rotation. May
+%   also directly be a rotation matrix of size 3x3. If not provided,
+%   unit-rotation will be assumed
 % 
 %   Outputs:
 % 
@@ -36,8 +44,11 @@ function [StructureMatrix, NullSpace] = algoStructureMatrix_3R3T(CableAttachment
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-30
+% Date: 2016-05-01
 % Changelog:
+%   2016-05-02
+%       * Add ability to let rotation be given as Tait-Bryan Euler Angles ZYX
+%       * Update help with parameter Rotation
 %   2016-03-30
 %       * Add output parameter NULLSPACE
 %   2016-03-29
@@ -72,8 +83,7 @@ assert(size(CableVectors, 1) == 3);
 assert(size(CableVectors, 2) == size(CableAttachments, 2));
 % Assert Rotation
 assert(isa(Rotation, 'double'));
-assert(size(Rotation, 1) == 3);
-assert(size(Rotation, 2) == 3);
+assert(numel(Rotation) == 3 || issquare(Rotation, 3));
 
 
 
@@ -85,8 +95,16 @@ aStructureMatrix = zeros(6, nNumberOfWires);
 % Keeping variable names consistent
 aCableVectors = CableVectors;
 aCableAttachments = CableAttachments;
-% Platform rotation
-aRotation = Rotation;
+% If rotation given as vector, we infer it to be used as ZYX Tait-Bryan
+% yaw-pitch-roll angles
+if isvector(Rotation)
+    aRotation = eul2rotm(Rotation(:).', 'ZYX');
+% Rotation directly given
+else
+    aRotation = Rotation;
+end
+% Nullspace is an Mx2 matrix;
+NullSpace = zeros(nNumberOfWires, 2);
 
 
 

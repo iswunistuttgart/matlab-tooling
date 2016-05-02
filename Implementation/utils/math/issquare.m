@@ -1,28 +1,73 @@
-function flag = issquare(A)
+function flag = issquare(A, n)%#codegen
 % ISSQUARE - Check whether the given matrix is square
 % 
-%   FLAG = ISSQUARE(A) checks the matrix a for squareness i.e., checks that
-%   the number of rows equals the number of columns
+%   FLAG = ISSQUARE(A) checks matrix A is square i.e., has same row and column
+%   count or $n == m$.
+%
+%   FLAG = ISSQUARE(A, N) checks that matrix A is of square size N i.e., has N
+%   rows and N columns.
 % 
 %   Inputs:
 % 
 %   A: matrix to check for squareness
+%
+%   N: Finite, positive integer to check square size of A against
 % 
 %   Outputs:
 % 
-%   FLAG: vector of force distribution values as determined by the
-%   algorithm
-% 
+%   FLAG: Logical true if A is square (and of size NxN), otherwise fale
+%
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-04-22
+% Date: 2016-05-01
 % Changelog:
-%   2015-04-22: Initial release
+%   2016-05-01
+%       * Add input argument N
+%       * Add new file information block
+%       * Add assertion
+%       * Add codegen directive
+%       * Advance checking of matrix A
+%   2015-04-22
+%       * Initial release
 
 
-%------------- BEGIN CODE --------------
+
+%% Input parsing
+if nargin < 2
+    n = Inf;
+end
 
 
-flag = ismatrix(A) && isequal(size(A, 1), size(A, 2));
+
+%% Assertion
+% Assert that the optional argument n is either inf (set by us) or that it is
+% not inf and a positive integer
+if ~isinf(n)
+    % Positive number required
+    assert(n > 0);
+    % Integer required
+    assert(mod(n, 1) < eps);
+end
+
+
+
+%% Actual check
+% Default check result
+flag = false;
+% Check A is a matrix and not a vector (otherwise any row or column vector would
+% continue to be checked).
+if ismatrix(A) && ~isvector(A)
+    % Check for a given size
+    if ~isinf(n)
+        flag = isequal(size(A, 1), size(A, 2), n);
+    % Check its square in general
+    else
+        flag = isequal(size(A, 1), size(A, 2));
+    end
+end
 
 
 end
