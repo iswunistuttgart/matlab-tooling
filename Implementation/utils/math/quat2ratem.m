@@ -40,13 +40,13 @@ aQuaternions = q;
 % Number of quaternions
 nQuaternions = size(aQuaternions, 1);
 % Normalize quaternions i.e., each row of the matrix of quaternions
-aQuaternions = matnormalrows(aQuaternions);
+aQuaternions = transpose(matnormalrows(aQuaternions));
 
 
 
 %% Magic, here we go
 % Reshape the quaternions in the depth dimension
-aQuaternions2 = reshape(aQuaternions.', [4, 1, nQuaternions]);
+aQuaternions2 = reshape(aQuaternions, [4, 1, nQuaternions]);
 
 % Extract the parts [qw, qx, qy, qz] from q to make writing code easier
 qw = aQuaternions2(1,1,:);
