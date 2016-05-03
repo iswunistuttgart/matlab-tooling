@@ -25,8 +25,11 @@ function saveWorkspace(varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-04-01
+% Date: 2016-05-03
 % Changelog:
+%   2016-05-03
+%       * Fix bug in input parser's ```parse```
+%       * Fix bug resulting from different variable types (```char``` vs. ```cell```)
 %   2016-04-01
 %       * Add input parser
 %       * Add help doc
@@ -55,17 +58,17 @@ ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
-parse(ip, Time, Poses, varargin{:});
+parse(ip, varargin{:});
 
 
 
 %% Parse variables to local scope
 % Prefix
-chPrefix = ip.Results.Prefix;
+chPrefix = char(ip.Results.Prefix);
 % Suffix
-chSuffix = ip.Results.Suffix;
+chSuffix = char(ip.Results.Suffix);
 % Date format
-chDateFormat = ip.Results.DateFormat;
+chDateFormat = char(ip.Results.DateFormat);
 
 
 
