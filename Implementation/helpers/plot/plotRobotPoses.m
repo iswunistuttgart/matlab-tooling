@@ -391,7 +391,7 @@ switch chPlotStyle
                 end
             end
         end
-    case {'2DYX', '2DYZ', '2DZY', '2DXZ', '2DZX'}
+    case {'2DXY', '2DYZ', '2DZX', '2DYX', '2DZY', '2DXZ'}
         switch chPlotStyle
             case '2DXY'
                 vIndex = [1, 2];
@@ -464,7 +464,7 @@ switch chPlotStyle
                 end
             end
         end
-    case {'2D', '2DTX', '2DTY', '2DTZ', '2DXY'}
+    case {'2D', '2DTX', '2DTY', '2DTZ'}
         switch chPlotStyle
             case '2D'
                 vIndex = [1, 2, 3];
