@@ -29,10 +29,6 @@ function varargout = plotRobotPoses(Time, Poses, varargin)
 %   el], or [x, y, z]. See documentation of view for more info. Only works in
 %   standalone mode.
 %   
-%   PLOTROBOTPOSES(TIME, POSES, 'BoundingBoxSpec', {'Color', 'r'},
-%   ...) will print the bounding box with 'r' lines instead of the default
-%   'k' lines. See documentation of Patch Spec for available options.
-%   
 %   PLOTROBOTPOSES(TIME, POSES, 'Viewport', viewport, ...) adjusts the
 %   viewport of the 3d plot to the set values. Allowed values are [az, el],
 %   [x, y, z], 2, 3. See documentation of view for more info. Only works in
@@ -46,6 +42,8 @@ function varargout = plotRobotPoses(Time, Poses, varargin)
 %       'minor'     turns minor and major grid on
 %   
 %   Only works in standalone mode.
+%
+%   PLOTROBOTPOSES(TIME, POSES, 'Box', Box, ...) sets the state on the plot box.
 %
 %   PLOTROBOTPOSES(TIME, POSES, 'Title', Title, ...) puts a title on the figure.
 %   Only works in standalone mode.
@@ -185,6 +183,10 @@ addOptional(ip, 'LineSpec', {}, valFcn_LineSpec);
 valFcn_Viewport = @(x) validateattributes(x, {'numeric'}, {'row'}, mfilename, 'Viewport') || validateattributes(x, {'numeric'}, {'ncols', '>=', 2, 'ncols', '<=', 3}, mfilename, 'Viewport');
 addOptional(ip, 'Viewport', [-13, 10], valFcn_Viewport);
 
+% Allow user to choose whether a figure bounding box should be plotted
+valFcn_Box = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no', 'please'}, mfilename, 'Box'));
+addOptional(ip, 'Box', 'off', valFcn_Box);
+
 % Allow user to choose grid style (either 'on', 'off', or 'minor')
 valFcn_Grid = @(x) any(validatestring(x, {'on', 'off', 'minor'}, mfilename, 'Grid'));
 addOptional(ip, 'Grid', 'off', valFcn_Grid);
@@ -293,6 +295,8 @@ ceYLabelSpec = ip.Results.YLabelSpec;
 chZLabel = ip.Results.ZLabel;
 % and the specs for the z-axis label
 ceZLabelSpec = ip.Results.ZLabelSpec;
+% Box option
+chBox = inCharToValidArgument(ip.Results.Box);
 % Animate toggle
 chAnimate = inCharToValidArgument(ip.Results.Animate);
 % Animation speed / fps
@@ -463,6 +467,11 @@ switch chPlotStyle
                     grid(hAxes, 'on');
                 end
             end
+            
+            % Print a box?
+            if strcmp(chBox, 'on')
+                box on;
+            end
         end
     case {'2D', '2DTX', '2DTY', '2DTZ'}
         switch chPlotStyle
@@ -533,6 +542,11 @@ switch chPlotStyle
             % For minor grids we will also enable the "minor" grid
             if strcmpi(chGrid, 'minor')
                 grid(hAxes, 'minor');
+            end
+            
+            % Print a box?
+            if strcmp(chBox, 'on')
+                box on;
             end
         end
     otherwise
