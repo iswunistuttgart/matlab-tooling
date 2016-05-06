@@ -188,7 +188,7 @@ valFcn_Box = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no', 'please'}, mf
 addOptional(ip, 'Box', 'off', valFcn_Box);
 
 % Allow user to choose grid style (either 'on', 'off', or 'minor')
-valFcn_Grid = @(x) any(validatestring(x, {'on', 'off', 'minor'}, mfilename, 'Grid'));
+valFcn_Grid = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no', 'please', 'minor'}, mfilename, 'Grid'));
 addOptional(ip, 'Grid', 'off', valFcn_Grid);
 
 % Allow user to set the xlabel ...
@@ -279,7 +279,11 @@ ceLineSpec = ip.Results.LineSpec;
 % 3D viewport (only used for 3d plot style)
 vViewport = ip.Results.Viewport;
 % Grid options
-chGrid = inCharToValidArgument(ip.Results.Grid);
+if strcmp(ip.Results.Grid, 'minor')
+    chGrid = ip.Results.Grid;
+else
+    chGrid = inCharToValidArgument(ip.Results.Grid);
+end
 % Get the desired figure title (works only in standalone mode)
 chTitle = ip.Results.Title;
 ceTitleSpec = ip.Results.TitleSpec;
@@ -393,6 +397,11 @@ switch chPlotStyle
                 if strcmpi(chGrid, 'minor')
                     grid(hAxes, 'on');
                 end
+            end
+            
+            % Print a box?
+            if strcmp(chBox, 'on')
+                box on;
             end
         end
     case {'2DXY', '2DYZ', '2DZX', '2DYX', '2DZY', '2DXZ'}
