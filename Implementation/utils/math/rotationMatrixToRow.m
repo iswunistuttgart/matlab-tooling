@@ -18,12 +18,16 @@ function Row = rotationMatrixToRow(Matrix)%#codegen
 %   like ROW = [R11 R12 R13 R21 R22 R23 R31 R32 R33]
 %
 
+warning('ROTATIONMATRIXTOROW function is obsolete. Use the ROTM2ROW function instead');
+
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-01
+% Date: 2016-05-09
 % Changelog:
+%   2016-05-09
+%       * Deprecate function in favor of shorter method name `rowm2row`
 %   2016-05-01
 %       * Update to using permute instead of transpose
 %   2015-08-07
@@ -32,7 +36,8 @@ function Row = rotationMatrixToRow(Matrix)%#codegen
 
 
 %% Transformation
-Row = reshape(permute(Matrix, [2, 1]), 1, 9);
+Row = rotm2row(Matrix);
+% Row = reshape(permute(Matrix, [2, 1]), 1, 9);
 
 
 end
