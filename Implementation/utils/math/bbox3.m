@@ -1,14 +1,17 @@
-function [Box, Traversal] = boundingbox3(X, Y, Z, varargin)
-% BOUNDINGBOX3 Calculates the 3D bounding box for the given points
+function [Box, Traversal] = bbox3(X, Y, Z, varargin)
+% BBOX3 Calculates the 3D bounding box for the given points
 %  
-%   Box = BOUNDINGBOX3(X, Y, Z) calculates the bounding box for the given points
-%   in X, Y, Z position and returns a matrix of size 3x8 where each column is
-%   one of the bounding box' corners.
-%   Basically, what BOUNDINGBOX3 does is take all the mins and max' from the
-%   values of X, Y, and Z and assigns them properly into box.
+%   Box = BBOX3(X, Y, Z) calculates the bounding box for the given points in X,
+%   Y, Z position and returns a matrix of size 3x8 where each column is one of
+%   the bounding box' corners.
+%   Basically, what BBOX3 does is take all the mins and max' from the values of
+%   X, Y, and Z and assigns them properly into box.
 %
-%   [Box, Traversal] = BOUNDINGBOX3(X, Y, Z) also returns the array of
-%   traversals which relates to the corners of BOX to get a full patch
+%   BOX = BBOX3(MATRIX) extracts the X, Y, and Z data from the Nx3 matrix MATRIX
+%   and then gets the bounding box on these values.
+%
+%   [Box, Traversal] = BBOX3(X, Y, Z) also returns the array of traversals which
+%   relates to the corners of BOX to get a full patch.
 %
 %   
 %   Inputs:
@@ -32,8 +35,11 @@ function [Box, Traversal] = boundingbox3(X, Y, Z, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-04-13
+% Date: 2016-05-10
 % Changelog:
+%   2016-05-10
+%       * Rename to bbox3
+%       * Add possibility to pass a 3xN or Nx3 matrix as only argument
 %   2016-04-13
 %       * Fix bug on getting the min and max vals of X, Y, and Z
 %   2016-04-01
@@ -45,18 +51,31 @@ function [Box, Traversal] = boundingbox3(X, Y, Z, varargin)
 
 
 
+%% Pre-process input
+% If there's only one argument and it is a matrix of 3 columns ...
+if ismatrix(X) && size(X,2) == 3
+    % ... grab Z from X
+    Z = X(3,:);
+    % ... grab Y from X
+    Y = X(2,:);
+    % ... and grab X from X
+    X = X(1,:);
+end
+
+
+
 %% Check and prepare the arguments
 % X must not be a scalar and must be a vector
-assert(~isscalar(X))
-assert(isvector(X));
+assert(~isscalar(X), 'X cannot be a scalar value.')
+assert(isvector(X), 'X must be a vector.');
 % Y must not be a scalar and must be a vector
-assert(~isscalar(Z))
-assert(isvector(Z));
+assert(~isscalar(Y), 'Y cannot be a scalar value.')
+assert(isvector(Y), 'Y must be a vector.');
 % Z must not be a scalar and must be a vector
-assert(~isscalar(Y))
-assert(isvector(Y));
+assert(~isscalar(Z), 'Z cannot be a scalar value.')
+assert(isvector(Z), 'Z must be a vector.');
 % X, Y, and Z must have the same number of elements
-assert(numel(X) == numel(Y) && numel(Y) == numel(Z));
+assert(numel(X) == numel(Y) && numel(Y) == numel(Z), 'X, Y, and Z must have the same number of elements');
 
 
 
@@ -79,7 +98,7 @@ aBoundingBox(6, :) = [vMaxVals(1), vMinVals(2), vMaxVals(3)];
 aBoundingBox(7, :) = [vMaxVals(1), vMaxVals(2), vMaxVals(3)];
 aBoundingBox(8, :) = [vMinVals(1), vMaxVals(2), vMaxVals(3)];
 
-% This allows to use results of boundingbox3 as input to patch('Vertices', box, 'Faces', traversal)
+% This allows to use results of bbox3 as input to patch('Vertices', box, 'Faces', traversal)
 aTraversal = [1, 2, 3, 4; ...
     5, 6, 7, 8; ...
     1, 2, 6, 5; ...

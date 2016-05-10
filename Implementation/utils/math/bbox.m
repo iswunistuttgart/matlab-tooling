@@ -1,14 +1,14 @@
-function [Box, Traversal] = boundingbox(X, Y, varargin)
-% BOUNDINGBOX Calculates the 2D bounding box for the given points
+function [Box, Traversal] = bbox(X, Y, varargin)
+% BBOX Calculates the 2D bounding box for the given points
 %  
-%   Box = BOUNDINGBOX(X, Y) calculates the bounding box for the given points in
-%   X and Y position and returns a matrix of size 3x8 where each column is one
-%   of the bounding box' corners.
-%   Basically, what BOUNDINGBOX3 does is take all the mins and max' from the
-%   values of X and Y and assigns them properly into box.
+%   Box = BBOX(X, Y) calculates the bounding box for the given points in X and Y
+%   position and returns a matrix of size 3x8 where each column is one of the
+%   bounding box' corners.
+%   Basically, what BBOX does is take all the mins and max' from the values of X
+%   and Y and assigns them properly into box.
 %
-%   [Box, Traversal] = BOUNDINGBOX3(X, Y) also returns the array of traversals
-%   with relates to the corners of BOX to get a full patch
+%   [Box, Traversal] = BBOX(X, Y) also returns the array of traversals which
+%   relates to the corners of BOX to get a full patch
 %
 %   
 %   Inputs:
@@ -34,10 +34,23 @@ function [Box, Traversal] = boundingbox(X, Y, varargin)
 % Changelog:
 %   2016-05-10
 %       * Add END OF CODE block
+%       * Rename to bbox
+%       * Add possibility to pass an Nx2 matrix instead of two separate vectors
 %   2016-04-13
-%       * Fix bug on getting the min and max vals of X, Y, and Z
+%       * Fix bug on getting the min and max vals of X, Y
 %   2016-04-01
 %       * Initial release
+
+
+
+%% Pre-process input
+% If there's only one argument and it is a matrix of one dimension equal to 3
+if ismatrix(X) && size(X, 2) == 2
+    % Grab Y from X
+    Y = X(:,2);
+    % And grab X from X
+    X = X(:,1);
+end
 
 
 
@@ -67,7 +80,7 @@ aBoundingBox(2, :) = [maxVals(1), minVals(2)];
 aBoundingBox(3, :) = [maxVals(1), maxVals(2)];
 aBoundingBox(4, :) = [minVals(1), maxVals(2)];
 
-% This allows to use results of boundingbox3 as input to patch('Vertices', box, 'Faces', traversal)
+% This allows to use results of bbox as input to patch('Vertices', box, 'Faces', traversal)
 aTraversal = [1, 2, 3, 4];
 
 
