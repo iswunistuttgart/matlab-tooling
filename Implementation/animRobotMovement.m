@@ -407,7 +407,7 @@ switch numel(CurrentRotation)
     case 4
         CurrentRotation = quat2rotm(CurrentRotation);
     case 9
-        CurrentRotation = rotationRowToMatrix(CurrentRotation);
+        CurrentRotation = rotrow2m(CurrentRotation);
     otherwise
         CurrentRotation = eye(3);
 end
