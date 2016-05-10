@@ -13,7 +13,7 @@ dRotY = 0;
 dRotZ = 0;
 Rotation = rotz(dRotZ)*roty(dRotY)*rotx(dRotX);
 
-Pose = [reshape(Position, 1, 3), rotationMatrixToRow(Rotation)];
+Pose = [reshape(Position, 1, 3), rotm2row(Rotation)];
 
 L_Ref = algoInverseKinematics_Standard(Pose, IPAnema3.cfg_gears_a, IPAnema3.cfg_platform_b);
 

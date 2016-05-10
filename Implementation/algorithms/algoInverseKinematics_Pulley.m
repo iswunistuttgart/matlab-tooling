@@ -159,7 +159,7 @@ vCableLengthOffset = zeros(1, nNumberOfCables);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
-aPlatformRotation = rotationRowToMatrix(Pose(4:12));
+aPlatformRotation = rotrow2m(Pose(4:12));
 % Holds the rotation angle gamma and the wrapping angle beta
 aPulleyAngles = zeros(2, nNumberOfCables);
 

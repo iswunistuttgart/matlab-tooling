@@ -113,7 +113,7 @@ nNumberOfCables = size(aPulleyPositions, 2);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotatin from the pose
-aPlatformRotation = rotationRowToMatrix(Pose(4:12));
+aPlatformRotation = rotrow2m(Pose(4:12));
 
 
 

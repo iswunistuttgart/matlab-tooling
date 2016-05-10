@@ -115,7 +115,7 @@ vRotation = xFinal(4:6)'
 aRotation = rotz(vRotation(3))*roty(vRotation(2))*rotx(vRotation(1));
 
 % Build the final estimated pose
-vPoseEstimate = [reshape(vPosition, 1, 3), rotationMatrixToRow(aRotation)];
+vPoseEstimate = [reshape(vPosition, 1, 3), rotm2row(aRotation)];
 
 
 
@@ -161,7 +161,7 @@ vRotation = vEstimatedPose(4:6);
 aRotation = rotz(vRotation(3))*roty(vRotation(2))*rotx(vRotation(1));
 % Create the needed pose for the inverse kinematics algorithm composed of
 % [x, y, z, R11, R12, R13, R21, R22, R23, R31, R32, R33]
-vEstimatedPose = [reshape(vPosition, 1, 3), rotationMatrixToRow(aRotation)];
+vEstimatedPose = [reshape(vPosition, 1, 3), rotm2row(aRotation)];
 % Array holding the Jacobian
 aJacobian = zeros(nNumberOfCables, 6);
 
