@@ -5,6 +5,7 @@ function [N] = nrows(A, NExpected)%#codegen
 %
 %   N = NROWS(A, NEXPECTED) checks the number of rows of 2D matrix A against
 %   NEXPECTED. If it is the same number, then M is true, otherwise false.
+%
 %   
 %   Inputs:
 %   

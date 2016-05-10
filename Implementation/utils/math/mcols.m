@@ -5,6 +5,7 @@ function [M] = mcols(A, MExpected)%#codegen
 %
 %   M = MCOLS(A, MEXPECTED) checks the number of rows of 2D matrix A against
 %   MEXPECTED. If it is the same number, then M is true, otherwise false.
+%
 %   
 %   Inputs:
 %   

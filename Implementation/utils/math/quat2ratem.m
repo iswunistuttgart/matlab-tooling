@@ -1,8 +1,9 @@
-function W = quat2ratem(q)
+function W = quat2ratem(q)%#codegen
 % QUAT2RATEM Gives the quaternion rate matrices
 % 
 %   T = QUAT2RATEM(Q) determines the quaternion rate matrices of size 3x4xN for
 %   each quaternion in Q.
+%
 %   
 %   Inputs:
 %   
@@ -17,8 +18,10 @@ function W = quat2ratem(q)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-04-29
+% Date: 2016-05-10
 % Changelog:
+%   2016-05-10
+%       * Add codegen-directive
 %   2016-04-29
 %       * Change name to ```quat2ratem```
 %   2016-04-22
@@ -70,4 +73,11 @@ aTrafos = permute(aTrafos, [2, 1, 3]);
 % Only output is the matrix of transformation matrices
 W = aTrafos;
 
+
 end
+
+%------------- END OF CODE --------------
+% Please send suggestions for improvement of this file to the original
+% author as can be found in the header
+% Your contribution towards improving this function will be acknowledged in
+% the "Changes" section of the header

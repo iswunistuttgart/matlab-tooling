@@ -5,6 +5,7 @@ function R = quat2rotzyx(q)%#codegen
 %   convention for a given quaternion Q. If input Q is an Mx4 matrix, R is a
 %   three-dimensional matrix containing M rotation matrices along the third
 %   dimension.
+%
 %   
 %   Inputs:
 %   

@@ -7,6 +7,7 @@ function R = angle2rotm(yaw, pitch, roll)%#codegen
 %   i.e., first rotation about global X-axis, then global Y-axis, then global
 %   Z-axis.
 %
+%
 %   Inputs:
 %
 %   YAW: Array of M third rotation angles

@@ -23,8 +23,10 @@ warning('ROTATIONROWTOMATRIX function is obsolete. Use the ROTROW2M function ins
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-09
+% Date: 2016-05-10
 % Changelog:
+%   2016-05-10
+%       * Add END OF CODE block
 %   2016-05-09
 %       * Deprecate function in favor of shorter method name `rotrow2m`
 %   2016-05-01
@@ -40,3 +42,9 @@ Matrix = rotrow2m(Row);
 
 
 end
+
+%------------- END OF CODE --------------
+% Please send suggestions for improvement of this file to the original
+% author as can be found in the header
+% Your contribution towards improving this function will be acknowledged in
+% the "Changes" section of the header

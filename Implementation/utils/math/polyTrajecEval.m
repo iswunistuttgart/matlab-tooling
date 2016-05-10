@@ -39,3 +39,9 @@ DeltaPosition = cell2mat(transpose(arrayfun(@(zi) zi.*(coeffs*TimeVector), Delta
 Eval = transpose(cell2mat(transpose(arrayfun(@(zi) StartPosition(zi) + DeltaPosition(zi,:), 1:numel(StartPosition), 'UniformOutput', false))));
 
 end
+
+%------------- END OF CODE --------------
+% Please send suggestions for improvement of this file to the original
+% author as can be found in the header
+% Your contribution towards improving this function will be acknowledged in
+% the "Changes" section of the header

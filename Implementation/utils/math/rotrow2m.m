@@ -21,8 +21,10 @@ function Matrix = rotrow2m(Row)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-09
+% Date: 2016-05-10
 % Changelog:
+%   2016-05-10
+%       * Add END OF CODE block
 %   2016-05-09
 %       * Initial release
 
@@ -35,6 +37,10 @@ nRows = size(Row, 1);
 Matrix = permute(reshape(transpose(Row), 3, 3, nRows), [2 1 3]);
 
 
-
-
 end
+
+%------------- END OF CODE --------------
+% Please send suggestions for improvement of this file to the original
+% author as can be found in the header
+% Your contribution towards improving this function will be acknowledged in
+% the "Changes" section of the header

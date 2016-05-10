@@ -18,8 +18,10 @@ function Row = rotm2row(Matrix)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-09
+% Date: 2016-05-10
 % Changelog:
+%   2016-05-10
+%       * Add END OF CODE block
 %   2016-05-09
 %       * Initial release
 
@@ -33,3 +35,9 @@ Row = reshape(permute(Matrix, [3, 2, 1]), nMatrices, 9);
 
 
 end
+
+%------------- END OF CODE --------------
+% Please send suggestions for improvement of this file to the original
+% author as can be found in the header
+% Your contribution towards improving this function will be acknowledged in
+% the "Changes" section of the header

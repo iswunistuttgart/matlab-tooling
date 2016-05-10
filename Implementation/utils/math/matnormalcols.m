@@ -2,6 +2,7 @@ function Mn = matnormalcols(M)%#codegen
 % MATNORMALCOLS Normalize a matrix per column
 % 
 %   MN = MATNORMALROWS(M) normalizes each column of matrix MAT by its norm.
+%
 %   
 %   Inputs:
 %   

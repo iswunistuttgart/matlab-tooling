@@ -9,6 +9,7 @@ function [Box, Traversal] = boundingbox3(X, Y, Z, varargin)
 %
 %   [Box, Traversal] = BOUNDINGBOX3(X, Y, Z) also returns the array of
 %   traversals which relates to the corners of BOX to get a full patch
+%
 %   
 %   Inputs:
 %   
@@ -99,3 +100,9 @@ end
 
 
 end
+
+%------------- END OF CODE --------------
+% Please send suggestions for improvement of this file to the original
+% author as can be found in the header
+% Your contribution towards improving this function will be acknowledged in
+% the "Changes" section of the header

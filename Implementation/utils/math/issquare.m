@@ -6,6 +6,7 @@ function flag = issquare(A, n)%#codegen
 %
 %   FLAG = ISSQUARE(A, N) checks that matrix A is of square size N i.e., has N
 %   rows and N columns.
+%
 % 
 %   Inputs:
 % 

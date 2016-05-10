@@ -7,8 +7,9 @@ function [Box, Traversal] = boundingbox(X, Y, varargin)
 %   Basically, what BOUNDINGBOX3 does is take all the mins and max' from the
 %   values of X and Y and assigns them properly into box.
 %
-%   [Box, Traversal] = BOUNDINGBOX3(X, Y) also returns the array of
-%   traversals which relates to the corners of BOX to get a full patch
+%   [Box, Traversal] = BOUNDINGBOX3(X, Y) also returns the array of traversals
+%   with relates to the corners of BOX to get a full patch
+%
 %   
 %   Inputs:
 %   
@@ -29,8 +30,10 @@ function [Box, Traversal] = boundingbox(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-04-13
+% Date: 2016-05-10
 % Changelog:
+%   2016-05-10
+%       * Add END OF CODE block
 %   2016-04-13
 %       * Fix bug on getting the min and max vals of X, Y, and Z
 %   2016-04-01
@@ -80,3 +83,9 @@ end
 
 
 end
+
+%------------- END OF CODE --------------
+% Please send suggestions for improvement of this file to the original
+% author as can be found in the header
+% Your contribution towards improving this function will be acknowledged in
+% the "Changes" section of the header
