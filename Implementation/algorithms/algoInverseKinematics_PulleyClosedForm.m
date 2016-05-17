@@ -194,19 +194,17 @@ for iUnit = 1:nNumberOfCables
     % Angle between the x-axis of K_M/K_R and the corrected cable attachment
     % point can be easily inferred from solving the algebraic equation given in
     % PTT's lab notebook
-    dAngleBetween_xM_and_M2Ac_Degree = atan2d(dScalingTangentVector*v_M2B_in_kR(1) - vPulleyRadius(iUnit)*v_M2B_in_kR(3), -vPulleyRadius(iUnit)*v_M2B_in_kR(1) - dScalingTangentVector*v_M2B_in_kR(3));
+    dAngleBetween_xM_and_M2Ac_Degree = 180 + atan2d(dScalingTangentVector*v_M2B_in_kR(1) - vPulleyRadius(iUnit)*v_M2B_in_kR(3), -vPulleyRadius(iUnit)*v_M2B_in_kR(1) - dScalingTangentVector*v_M2B_in_kR(3));
 
     % Vector from pulley center M to adjusted cable release point Ac in nothing
     % but the x-axis rotated by the angle beta about the y-axis of K_M
     v_M2Ac_in_kR = transpose(roty(dAngleBetween_xM_and_M2Ac_Degree))*(vPulleyRadius(iUnit).*[1; 0; 0]);
 
-    % Wrapping angle can be calculated in two ways, either by getting the angle
-    % between the scaled negative x-axis (M to W) and the vector M to Ac, or by
-    % getting the angle between the scaled positive x-axis and the vector M to
-    % Ac
-    v_M2W_in_kM = vPulleyRadius(iUnit).*[-1; 0; 0];
-    dAngleWrap_Degree = acosd(dot(v_M2W_in_kM, v_M2Ac_in_kR)/(norm(v_M2W_in_kM)*norm(v_M2Ac_in_kR)));
-    aPulleyAngles(2,iUnit) = 180 + dAngleWrap_Degree;
+    % Wrapping angle is nothing but the negativeof the angle between xM and M2Ac
+    % (it has to be the negative because we are doing all above calculations in
+    % 3D where a positive rotation about the y-axis 
+    dAngleWrap_Degree = 180 - dAngleBetween_xM_and_M2Ac_Degree;
+    aPulleyAngles(2,iUnit) = dAngleWrap_Degree;
 
     % Adjust the pulley position given the coordinates to point C
     aPulleyPositionsCorrected(:,iUnit) = aPulleyPositions(:,iUnit) + aRotation_kW2kO*(aRotation_kR2kW*(v_W2M_in_kR + v_M2Ac_in_kR));
