@@ -152,7 +152,7 @@ aPulleyAngles = zeros(2, nNumberOfCables);
 for iUnit = 1:nNumberOfCables
     % Rotation matrix to rotate any vector given in pulley coordinate system
     % K_P into the global coordinate system K_O
-    vEuler = [aPulleyOrientations(3,iUnit), aPulleyOrientations(2,iUnit), aPulleyOrientations(3,iUnit)].*pi./180;
+    vEuler = fliplr(asrow(aPulleyOrientations(:,iUnit)))./180.*pi;
     aRotation_kW2kO = eul2rotm(vEuler, 'ZYX');
     aRotation_kW2kO(abs(aRotation_kW2kO) < 2*eps) = 0;
 
