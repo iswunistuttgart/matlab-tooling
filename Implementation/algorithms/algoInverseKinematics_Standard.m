@@ -68,8 +68,11 @@ function [Length, CableUnitVectors, PulleyAngles] = algoInverseKinematics_Standa
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-29
+% Date: 2016-05-20
 % Changelog:
+%   2016-05-20
+%       * Allow rotation to be given with Euler Angles ZYX, Quaternion, or a
+%       rotation matrix
 %   2016-04-04
 %       * Add matnormcols for normalization of cable vectors
 %   2016-03-29
@@ -92,7 +95,7 @@ function [Length, CableUnitVectors, PulleyAngles] = algoInverseKinematics_Standa
 %% Assertion for code generation
 % Assert Pose
 assert(isa(Pose, 'double'));
-assert(numel(Pose) == 12);
+assert(any(numel(Pose) == [6, 7, 12]));
 assert(any(1 == size(Pose)));
 % Assert PulleyPositions
 assert(isa(PulleyPositions, 'double'));
@@ -112,8 +115,16 @@ aPulleyPositions = PulleyPositions;
 nNumberOfCables = size(aPulleyPositions, 2);
 % Extract the position from the pose
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
-% Extract rotatin from the pose
-aPlatformRotation = rotrow2m(Pose(4:12));
+% Extract rotation given in Euler angles from Pose
+if numel(Pose) == 6
+    aPlatformRotation = eul2rotm(fliplr(asrow(Pose(4:6))), 'ZYX');
+% Extract rotation given as Quaternion from Posae
+elseif numel(Pose) == 7
+    aPlatformRotation = quat2rotm(asrow(Pose(4:7)));
+% Extract rotation given as row'ed Rotation matrix from Pose
+else
+    aPlatformRotation = rotrow2m(Pose(4:12));
+end
 
 
 

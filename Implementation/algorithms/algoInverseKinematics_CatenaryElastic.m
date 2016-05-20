@@ -88,8 +88,13 @@ function [Length, CableUnitVector, PulleyAngle, Benchmark] = algoInverseKinemati
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-30
+% Date: 2016-05-20
 % Changelog:
+%   2016-05-20
+%       * Allow rotation to be given with Euler Angles ZYX, Quaternion, or a
+%       rotation matrix
+%       * Introduce checks for values smaller than machine constant eps in
+%       in_aIK_C_nonlinearBoundaries
 %   2016-03-30
 %       * Add info to help about values fof default solver options TolCon and
 %       TolFun
@@ -132,9 +137,17 @@ nNumberOfCables = size(aPulleyPositions, 2);
 % Holds the normalized cable vector
 aCableVectorUnit = zeros(3, nNumberOfCables);
 % Extract the position from the pose
-vPlatformPosition = reshape(Pose(1:3), 3, 1);
-% Extract rotatin from the pose
-aPlatformRotation = rotrow2m(Pose(4:12));
+vPlatformPosition = ascolumn(Pose(1:3));
+% Extract rotation given in Euler angles from Pose
+if numel(Pose) == 6
+    aPlatformRotation = eul2rotm(fliplr(asrow(Pose(4:6))), 'ZYX');
+% Extract rotation given as Quaternion from Posae
+elseif numel(Pose) == 7
+    aPlatformRotation = quat2rotm(asrow(Pose(4:7)));
+% Extract rotation given as row'ed Rotation matrix from Pose
+else
+    aPlatformRotation = rotrow2m(Pose(4:12));
+end
 % Get the gravity constant (7th argument) to the given value
 dGravityConstant = GravityConstant;
 % Custom solver options may be given to overwrite the defaults
@@ -227,7 +240,7 @@ for iCable = 1:nNumberOfCables
     
     % Rotation matrix about K_C
     aRotation_kC2k0 = rotz(dRotationAngleAbout_kCz_Degree);
-    aRotation_kC2k0(abs(aRotation_kC2k0) < eps) = 0;
+    aRotation_kC2k0(abs(aRotation_kC2k0) < 2*eps) = 0;
     
     % Anchor positions in C
     aAnchorPositionsInC(:,iCable) = transpose(aRotation_kC2k0)*(vPlatformPosition + aPlatformRotation*aCableAttachments(:,iCable) - aPulleyPositions(:,iCable));
@@ -246,9 +259,9 @@ for iCable = 1:nNumberOfCables
 end
 
 % Mathematical optimization: Every value smaller than eps will be set to zero
-aLinearEqualityConstraints(abs(aLinearEqualityConstraints) < eps) = 0;
-vInitialStateForOptimization(abs(vInitialStateForOptimization) < eps) = 0;
-aAnchorPositionsInC(abs(aAnchorPositionsInC) < eps) = 0;
+aLinearEqualityConstraints(abs(aLinearEqualityConstraints) < 2*eps) = 0;
+vInitialStateForOptimization(abs(vInitialStateForOptimization) < 2*eps) = 0;
+aAnchorPositionsInC(abs(aAnchorPositionsInC) < 2*eps) = 0;
 
 
 
@@ -411,6 +424,11 @@ for iCable = 1:nNumberOfCables
     % Max force
     c(iCable + 1 + dOffset) = sqrt(vForcesX(iCable)^2 + vForcesZ(iCable)^2) - dForceMaximum;
 end
+
+% Avoid numerical issues and set any value of c and ceq to zero if its magnitude
+% is smaller than 2eps
+ceq(abs(ceq) < 2*eps) = 0;
+c(abs(c) < 2*eps) = 0;
 
 
 end

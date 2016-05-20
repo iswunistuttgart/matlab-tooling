@@ -88,8 +88,15 @@ function [Length, CableUnitVector, PulleyAngle, Benchmark] = algoInverseKinemati
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-04-18
+% Date: 2016-05-20
 % Changelog:
+%   2016-05-20
+%       * Allow rotation to be given with Euler Angles ZYX, Quaternion, or a
+%       rotation matrix
+%       * Introduce checks for values smaller than machine constant eps in
+%       in_aIK_C_nonlinearBoundaries
+%       * Rename aIK_C_nonlinearBoundaries to in_aIK_C_nonlinearBoundaries to
+%       match naming convention for inline functions
 %   2016-04-18
 %       * Mathematical code optimization: Set values with magnitudes smaller
 %       than eps to zero
@@ -142,9 +149,17 @@ nNumberOfCables = size(aPulleyPositions, 2);
 % Holds the normalized cable vector
 aCableVectorUnit = zeros(3, nNumberOfCables);
 % Extract the position from the pose
-vPlatformPosition = reshape(Pose(1:3), 3, 1);
-% Extract rotatin from the pose
-aPlatformRotation = rotrow2m(Pose(4:12));
+vPlatformPosition = ascolumn(Pose(1:3));
+% Extract rotation given in Euler angles from Pose
+if numel(Pose) == 6
+    aPlatformRotation = eul2rotm(fliplr(asrow(Pose(4:6))), 'ZYX');
+% Extract rotation given as Quaternion from Posae
+elseif numel(Pose) == 7
+    aPlatformRotation = quat2rotm(asrow(Pose(4:7)));
+% Extract rotation given as row'ed Rotation matrix from Pose
+else
+    aPlatformRotation = rotrow2m(Pose(4:12));
+end
 % Get the cable properties struct
 stCableProperties = CableProperties;
 dCablePropDensity = stCableProperties.Density;
@@ -233,7 +248,7 @@ for iCable = 1:nNumberOfCables
     
     % Rotation matrix about K_C
     aRotation_kC2k0 = rotz(dRotationAngleAbout_kCz_Degree);
-    aRotation_kC2k0(abs(aRotation_kC2k0) < eps) = 0;
+    aRotation_kC2k0(abs(aRotation_kC2k0) < 2*eps) = 0;
     
     % Anchor positions in C
     aAnchorPositionsInC(:,iCable) = transpose(aRotation_kC2k0)*(vPlatformPosition + aPlatformRotation*aCableAttachments(:,iCable) - aPulleyPositions(:,iCable));
@@ -252,9 +267,9 @@ for iCable = 1:nNumberOfCables
 end
 
 % Mathematical optimization: Every value smaller than eps will be set to zero
-aLinearEqualityConstraints(abs(aLinearEqualityConstraints) < eps) = 0;
-vInitialStateForOptimization(abs(vInitialStateForOptimization) < eps) = 0;
-aAnchorPositionsInC(abs(aAnchorPositionsInC) < eps) = 0;
+aLinearEqualityConstraints(abs(aLinearEqualityConstraints) < 2*eps) = 0;
+vInitialStateForOptimization(abs(vInitialStateForOptimization) < 2*eps) = 0;
+aAnchorPositionsInC(abs(aAnchorPositionsInC) < 2*eps) = 0;
 
 
 
@@ -283,7 +298,7 @@ end
     aLinearInequalityConstraints, vLinearInequalityConstraints, ... % Linear inequality constraints
     aLinearEqualityConstraints, vLinearEqualityConstraints, ... % Linear equality constraints
     vLowerBoundaries, vUpperBoundaries, ... % Lower and upper boundaries
-    @(vOptimizationVector) aIK_C_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropDensity, dGravityConstant, min(CableForceLimits), max(CableForceLimits), nIndexForcesX, nIndexForcesZ, nIndexLength), ... % Nonlinear constraints function
+    @(vOptimizationVector) in_aIK_C_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropDensity, dGravityConstant, min(CableForceLimits), max(CableForceLimits), nIndexForcesX, nIndexForcesZ, nIndexLength), ... % Nonlinear constraints function
     opSolverOptions ... % Solver options
 );
 
@@ -312,7 +327,7 @@ if nargout > 1
     for iCable = 1:nNumberOfCables
         % Get the rotation matrix from C to 0
         aRotation_kC2k0 = rotz(vPulleyAngles(1,iCable));
-        aRotation_kC2k0(abs(aRotation_kC2k0)) = 0;
+        aRotation_kC2k0(abs(aRotation_kC2k0) < 2*eps) = 0;
         
         % Get the force vector in C
         vForceVector_in_C = [vCableForcesX(iCable), 0, vCableForcesZ(iCable)]';
@@ -365,7 +380,7 @@ end
 
 
 
-function [c, ceq] = aIK_C_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum, nIndexForcesX, nIndexForcesZ, nIndexLength)%#codegen
+function [c, ceq] = in_aIK_C_nonlinearBoundaries(vOptimizationVector, aAnchorPositionsInC, dCablePropDensity, dGravity, dForceMinimum, dForceMaximum, nIndexForcesX, nIndexForcesZ, nIndexLength)%#codegen
 
 %% Quickhand variables
 % Number of wires
@@ -406,6 +421,11 @@ for iCable = 1:nNumberOfCables
     % Max force
     c(iCable + 1 + dOffset) = sqrt(vForcesX(iCable)^2 + vForcesZ(iCable)^2) - dForceMaximum;
 end
+
+% Avoid numerical issues and set any value of c and ceq to zero if its magnitude
+% is smaller than 2eps
+ceq(abs(ceq) < 2*eps) = 0;
+c(abs(c) < 2*eps) = 0;
 
 
 end

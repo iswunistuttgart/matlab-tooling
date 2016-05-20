@@ -84,8 +84,11 @@ function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = alg
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-01
+% Date: 2016-05-20
 % Changelog:
+%   2016-05-20
+%       * Allow rotation to be given with Euler Angles ZYX, Quaternion, or a
+%       rotation matrix
 %   2016-05-01
 %       * Update to using EUL2ROTM(eul, 'ZYX') instead of custom-built rotation
 %       matrix generation function
@@ -118,7 +121,7 @@ function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = alg
 %% Assertion for code generation
 % Assert pose
 assert(isa(Pose, 'double'));
-assert(numel(Pose) == 12);
+assert(any(numel(Pose) == [6, 7, 12]));
 assert(any(1 == size(Pose)));
 % Assert PulleyPositions
 assert(isa(PulleyPositions, 'double'));
@@ -157,9 +160,17 @@ vCableLength = zeros(nNumberOfCables, 1);
 % Holds offset to the cable lengths
 vCableLengthOffset = zeros(1, nNumberOfCables);
 % Extract the position from the pose
-vPlatformPosition = reshape(Pose(1:3), 3, 1);
-% Extract rotatin from the pose
-aPlatformRotation = rotrow2m(Pose(4:12));
+vPlatformPosition = ascolumn(Pose(1:3));
+% Extract rotation given in Euler angles from Pose
+if numel(Pose) == 6
+    aPlatformRotation = eul2rotm(fliplr(asrow(Pose(4:6))), 'ZYX');
+% Extract rotation given as Quaternion from Posae
+elseif numel(Pose) == 7
+    aPlatformRotation = quat2rotm(asrow(Pose(4:7)));
+% Extract rotation given as row'ed Rotation matrix from Pose
+else
+    aPlatformRotation = rotrow2m(Pose(4:12));
+end
 % Holds the rotation angle gamma and the wrapping angle beta
 aPulleyAngles = zeros(2, nNumberOfCables);
 
