@@ -74,6 +74,10 @@ function [varargout] = plotRobotPlatform(CableAttachments, varargin)
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
 % Date: 2016-03-30
+% TODO:
+%   Add ability to plot platform at a random point/pose e.g, 'PlaceAt', [0,0,0,
+%   0,0,0] where this is [x,y,z, a,b,c]. Then all other plots respective the
+%   platform are relative to that position
 % Changelog:
 %   2016-03-30
 %       * Code cleanup
