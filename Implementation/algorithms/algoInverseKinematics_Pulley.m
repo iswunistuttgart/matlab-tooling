@@ -34,11 +34,18 @@ function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = alg
 %   
 %   Inputs:
 %   
-%   POSE: The current robots pose given as a 12-column row vector that has the
-%   [x, y, z] position in the first three entries and then follwing are the
-%   entries of the rotation matrix such that the vector POSE looks something
-%   like
-%   pose = [x, y, z, R11, R12, R13, R21, R22, R23, R31, R32, R33]
+%   POSE: The current robot pose which can be given in three different
+%   parametrization options.
+%   1) Given as [x, y, z, a, b, c] where [x, y, z] is the linear position and
+%   [a, b, c] are Euler angles in Radian such that a is rotation about x, b
+%   about y, and c about z. The resulting rotation order is derived from
+%   Tait-Bryan angles i.e., ZYX (first a about x, then b about y, then c about
+%   z).
+%   2) Given as [x, y, z, qw, qx, qy, qz] where [x, y, z] is the linear position
+%   and [qw, qx, qy, qz] is a quaternion representing the current rotation
+%   3) Given as [x, y, z, R11, R12, R13, R21, R22, R23, R31, R32, R33] where [x,
+%   y, z] is the linear position and [R11, R12, R13, R21, R22, R23, R31, R32,
+%   R33] is the rotation matrix.
 % 
 %   PULLEYPOSITIONS: Matrix of pulley positions w.r.t. the world frame. Each
 %   pulley has its own column and the rows are the x, y, and z-value, respective
@@ -84,8 +91,10 @@ function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = alg
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-20
+% Date: 2016-05-23
 % Changelog:
+%   2016-05-23
+%       * Update help doc to reflect introduced paramterization option for pose
 %   2016-05-20
 %       * Allow rotation to be given with Euler Angles ZYX, Quaternion, or a
 %       rotation matrix
@@ -166,7 +175,7 @@ if numel(Pose) == 6
     aPlatformRotation = eul2rotm(fliplr(asrow(Pose(4:6))), 'ZYX');
 % Extract rotation given as Quaternion from Posae
 elseif numel(Pose) == 7
-    aPlatformRotation = quat2rotm(asrow(Pose(4:7)));
+    aPlatformRotation = quat2rotm(quatnormalize(asrow(Pose(4:7))));
 % Extract rotation given as row'ed Rotation matrix from Pose
 else
     aPlatformRotation = rotrow2m(Pose(4:12));
