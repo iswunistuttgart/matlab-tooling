@@ -1,27 +1,78 @@
-function plot_markers(varargin)
+function varargout = plot_markers(varargin)
 % PLOT_MARKERS Plot some markers on the lines given in Axes
 % 
-%   PLOT_MARKERS() plots 25 markers along all of the lines of the current axes
+%   PLOT_MARKERS() plots 25 markers along all of the lines of the current axes.
+%
+%   PLOT_MARKERS(COUNT) plots COUNT markers along all of the lines of the
+%   current axes. If count is given as a vector, then the values will be used
+%   according to the lines found in the current axes. For example, if there are
+%   4 lines in the current plot, PLOT_MARKERS([25, 50, 30, 60]) will add 25
+%   markers on the first line, 50 on the second, 30 on the third, and 60 on the
+%   fourth/last. If the number of markers is smaller than the number of child
+%   charts found in the given axes, the markers will cyclically repeat.
+% 
+%   PLOT_MARKERS(COUNT, ORDER) uses the given order of marker styles to plot
+%   into the given axes. Defaults to 'o|+|*|x'. Markers will be applied in order
+%   of found child objects in the current axis. If the number of markers is
+%   smaller than the number of valid charts then markers will be cyclically
+%   repeated.
+%
+%   PLOT_MARKERS(COUNT, ORDER, SPACING) does spacing according to the value
+%   chosen. Possible options for SPACING are
+%       x       equidistant spacing along the x-axis (primary axis).
+%       curve   equidistant along curve y
+%       logx    used with logarithmix x-scale
+%
+%   PLOT_MARKERS(COUNT, ORDER, SPACING, 'PropertyName', 'PropertyValue', ...)
+%   plots markers for the given axis.
+%
+%   PLOT_MARKERS(AX, ...) plots into the given axes handle.
+%
+%   MARKERHANDLES = PLOT_MARKERS(...) returns a vector of N handles of markers
+%   having been placed for each of the N children of the given axes.
+%
+%   [MARKERHANDLES, LEGENDMARKERHANDLES] = PLOT_MARKERS(...) also returns vector
+%   of N handles representing the legend markers which will be set into the
+%   legend.
 %   
 %   Inputs:
-%   
-%   TIME: Column vector of increasing values representing the timestamps at wich
-%   the poses are gathered. Only needed in any '2D' mode.
-%   
-%   POSES: Matrix of poses of the platform center of gravity where each row is
-%   the [x, y, z] tuple of platform center of gravity positon at the time
-%   corresponding to that value
 %
-%   See also: VIEW, PLOT, PLOT3, LINESPEC, GRID, TITLE, XLABEL, YLABEL, ZLABEL,
-%   DATESTR
+%   Outputs:
 %
+%   MARKERHANDLES: Vector of N handles (one for each child of axes) to all the
+%   plotted marker lines.
+%
+%   LEGENDMARKERHANDLES: Vector of handles of single item plots (one per child)
+%   that can be used to mark the handles in the legend).
+%
+%   Optional Inputs -- specified as parameter value pairs
+%   Count       - Number of markers per line. Default is 25
+%
+%   Order       - [char] Pipe-separated list of marker order for the lines found
+%               in the given axes. Default is 'o|+|*|x'.
+%
+%   Spacing     - Spacing according to which the markers should be spaced. Valid
+%               values are:
+%               x     - equidistant spacing along the x-axis (primary axis)
+%               curve - equidistant along curve y
+%               logx  - equidistant along a log-x axis
+%
+%   See also: PLOT
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-04-01
+% Date: 2016-05-23
 % Changelog:
+%   2016-05-23
+%       * Update help doc
+%       * Fix bug when plotting more markers than actual data points caused an
+%       'subscript indices' error
+%       * Remove diff and add gradient into determining the arc length of the
+%       given curve
+%       * Fix bug that caused script to always open a new axes to plot into
+%       instead of plotting into the current one
 %   2016-04-01
 %       * Initial release
 
@@ -66,7 +117,9 @@ parse(ip, varargin{:});
 
 %% Process arguments
 % If we don't have an axes handle we will grab the current one
-haAxes = gca;
+if ~ishandle(haAxes)
+    haAxes = gca;
+end
 % Get the number of markers
 vMarkersCount = ip.Results.Count;
 % The default order style
@@ -141,6 +194,13 @@ for iChild = 1:nValidChildren
             vSelector = floor(interp1(vXData, 1:length(vXData), logspace(log10(vXData(2)), log10(vXData(end-1)), vMarkersCount(iChild))));
         % Uniform along the curve
         case 'curve'
+            % Make sure we do not want to plot more markers than there are
+            % actual data points
+            if vMarkersCount(iChild) > numel(vXData)
+                vMarkersCount(iChild) = numel(vXData);
+            end
+            
+            % @TODO Determine this value automatically from the axes dimensions
             dFigureScale = 3/4;
             vNormalizedYData = (vYData - min(vYData))./(max(vYData) - min(vYData))*dFigureScale;             %NORMALIZE y scale in [0 1], height of display is prop to max(abs(y))        
             vNormalizedXData = (vXData - min(vXData))./(max(vXData) - min(vXData));                    %NORMALIZE x scale in [0 1]   
@@ -149,12 +209,13 @@ for iChild = 1:nValidChildren
             if any(isinf(vNormalizedYData)) || any(isinf(vXData))
                 vSelector = round(linspace(1,length(x),num_Markers)); 
             else
-                vXIndex = 1:length(vXData);                                
+                vXIndex = 1:length(vXData);
                 % Measure length along curve
-                vArcLength = [0 cumsum(sqrt(diff(vNormalizedXData).^2 + diff(vNormalizedYData).^2))];
+                vArcLength = cumsum(sqrt(gradient(vNormalizedXData).^2 + gradient(vNormalizedYData).^2));
                 % Vector equally spaced along s
-                vArcSpaced = (0:vMarkersCount(iChild) - 1)*vArcLength(end)/(vMarkersCount(iChild) - 1);
-                % Make sure last point is on the curve
+                vArcSpaced = (0:vMarkersCount(iChild) - 1).*vArcLength(end)./(vMarkersCount(iChild) - 1);
+                % Make sure first and last point are on the curve
+                vArcSpaced(1) = vArcLength(1);
                 vArcSpaced(end) = vArcLength(end);
                 % And get the x-indices of these values of y
                 vSelector = round(interp1(vArcLength, vXIndex, vArcSpaced));
@@ -194,7 +255,27 @@ for iChild = 1:nValidChildren
     end
 end
 
-
+% Update the figure
 drawnow
 
+
+
+%% Assign output quantities
+% First optional return argument is the handles of markers
+if nargout > 0
+    varargout{1} = hMarkers;
 end
+
+% Second optional return argument is the handles of the start markers
+if nargout > 1
+    varargout{2} = hMarkerStart;
+end
+
+
+end
+
+%------------- END OF CODE --------------
+% Please send suggestions for improvement of this file to the original
+% author as can be found in the header
+% Your contribution towards improving this function will be acknowledged in
+% the "Changes" section of the header
