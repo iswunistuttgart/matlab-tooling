@@ -2,6 +2,21 @@ function [varargout] = plotRobotWorkspace(XData, YData, ZData, varargin)
 
 
 
+%% Preprocess inputs (allows to have the axis defined as first argument)
+% By default we don't have any axes handle
+hAxes = false;
+% Check if the first argument is an axes handle, then we just have to shift all
+% other arguments by one
+if ~isempty(varargin) && isallaxes(XData)
+    hAxes = XData;
+    XData = YData;
+    YData = ZData;
+    ZData = varargin{1};
+    varargin = varargin(2:end);
+end
+
+
+
 %% Define the input parser
 ip = inputParser;
 
@@ -43,24 +58,18 @@ parse(ip, XData, YData, ZData, varargin{:});
 
 
 %% Parse Variables
-mXData = ip.Results.XData;
-mYData = ip.Results.YData;
-mZData = ip.Results.ZData;
+mxXData = ip.Results.XData;
+mxYData = ip.Results.YData;
+mxZData = ip.Results.ZData;
 hAxes = ip.Results.Axes;
-cPatchProperties = ip.Results.PatchProperties;
+cePatchProperties = ip.Results.PatchProperties;
 vViewport = ip.Results.Viewport;
-chGrid = ip.Results.Grid;
-if islogical(chGrid) && isequal(chGrid, true)
-    chGrid = 'on';
-end
 
 % Ensure the handle hAxes is a valid handle. If none given, create a new
 % figure handle, otherwise select the given one to be the active axes
 % handle
 if ~ishandle(hAxes)
-    hAxes = gca();
-else
-    axes(hAxes);
+    hAxes = gca;
 end
 
 
@@ -70,23 +79,14 @@ end
 % If an axes was given, we want to make sure we won't overwrite its content
 hold(hAxes, 'on');
 % Plot the patch of X, Y, Z data with solid color
-hPatch = patch(mXData, mYData, mZData, 1);
+hPatch = patch(mxXData, mxYData, mxZData, 1);
 % Set properties on the patch?
-if ~isempty(cPatchProperties)
-    set(hpatch, cPatchProperties);
+if ~isempty(cePatchProperties)
+    set(hpatch, cePatchProperties);
 end
 
 % Set the viewport
 view(vViewport);
-
-% Set a grid?
-if chGrid
-    % Set grid to given value
-    grid(hAxes, chGrid);
-    if strcmpi(chGrid, 'minor')
-        grid(chGrid, 'on');
-    end
-end
 
 % Make sure the figure is being drawn before anything else is done
 drawnow;
@@ -94,10 +94,14 @@ drawnow;
 
 
 %% Assign output quantities
+% Return the axes handle as the first output
 if nargout > 0
-    if nargout >= 1
-        varargout{1} = hAxes;
-    end
+    varargout{1} = hAxes;
+end
+
+% Return the patch object as the second output argument
+if nargout > 1
+    varargout{2} = hPatch;
 end
 
 
