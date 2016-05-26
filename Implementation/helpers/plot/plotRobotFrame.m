@@ -73,30 +73,33 @@ function [varargout] = plotRobotFrame(winchPositions, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-30
+% Date: 2016-05-25
 % Changelog:
+%   2016-05-25
+%       * Cleanup old change log format
 %   2016-03-30
 %       * Code cleanup
-%   2015-04-26: Introduce options 'XLabel', 'YLabel', 'ZLabel', 'Title'. Also
-%               fix the logic behind {'WinchLabels', true} so we won't have
-%               duplicate code for doing basically the same thing in a different
-%               way.
-%               Change all inputs to have column major i.e., one column is a
-%               logical unit whereas between columns, the "thing" might change.
-%               That means, given the winches, if we look at one column, we see
-%               the data of one winch, whereas if we looked at the first row, we
-%               can read info on the x-values of all winches
-%   2015-04-24: Initial release
+%   2015-04-26
+%       * Introduce options 'XLabel', 'YLabel', 'ZLabel', 'Title'. Also fix the
+%       logic behind {'WinchLabels', true} so we won't have duplicate code for
+%       doing basically the same thing in a different way.
+%       * Change all inputs to have column major i.e., one column is a logical
+%       unit whereas between columns, the "thing" might change. That means,
+%       given the winches, if we look at one column, we see the data of one
+%       winch, whereas if we looked at the first row, we can read info on the
+%       x-values of all winches
+%   2015-04-24
+%       * Initial release
 
 
 
 %% Preprocess inputs (allows to have the axis defined as first argument)
 % By default we don't have any axes handle
-hAxes = false;
+haAxes = false;
 % Check if the first argument is an axes handle, then we just have to shift all
 % other arguments by one
 if ~isempty(varargin) && isallaxes(winchPositions)
-    hAxes = winchPositions;
+    haAxes = winchPositions;
     winchPositions = varargin{1};
     varargin = varargin(2:end);
 end
@@ -176,11 +179,11 @@ parse(ip, winchPositions, varargin{:});
 %% Parse variables of the input parser to local parser
 % Ensure the handle for the axes is a valid handle. If none given, we will
 % create our own figure with handle
-if ~ishandle(hAxes)
-    hAxes = gca;
+if ~ishandle(haAxes)
+    haAxes = gca;
 % Check we are looking at a 3D plot, if a plot is given
 else
-    [az, el] = view(hAxes);
+    [az, el] = view(haAxes);
     assert(~isequaln([az, el], [0, 90]), 'Cannot plot a 3D plot into an existing 2D plot.');
 end
 
@@ -219,17 +222,17 @@ chZLabel = ip.Results.ZLabel;
 % If this is a single plot i.e., the given axes does not have any children, then
 % we are completely free at plotting stuff like labels, etc., Otherwise, we will
 % really just plot the robot frame
-bOwnPlot = isempty(get(hAxes, 'Children'));
+bOwnPlot = isempty(get(haAxes, 'Children'));
 
 
 
 %% Plot the damn thing now!
 % Select the given axes as target
-axes(hAxes);
+axes(haAxes);
 
 % Ensure we have the axes on hold so we don't accidentaly overwrite its
 % content
-hold(hAxes, 'on');
+hold(haAxes, 'on');
 
 % First, plot the winch positions as circles
 hPlotWinchPositions = plot3(aWinchPositions(1, :), aWinchPositions(2, :), aWinchPositions(3, :), 'o');
@@ -276,35 +279,35 @@ if strcmp(chBoundingBox, 'on')
 end
 
 % This is stuff we are only going to do if we're in our own plot
-if bOwnPlot
+% if bOwnPlot
     % Set x-axis label, if provided
     if ~isempty(strtrim(chXLabel))
-        xlabel(hAxes, chXLabel);
+        xlabel(haAxes, chXLabel);
     end
     % Set y-axis label, if provided
     if ~isempty(strtrim(chYLabel))
-        ylabel(hAxes, chYLabel);
+        ylabel(haAxes, chYLabel);
     end
     % Set z-axis label, if provided
     if ~isempty(strtrim(chZLabel))
-        zlabel(hAxes, chZLabel);
+        zlabel(haAxes, chZLabel);
     end
     
     % Set a figure title?
     if ~isempty(strtrim(chTitle))
-        title(hAxes, chTitle);
+        title(haAxes, chTitle);
     end
     
     % Set the viewport
-    view(hAxes, mxdViewport);
+    view(haAxes, mxdViewport);
     
     % Set a grid?
     if any(strcmp(chGrid, {'on', 'minor'}))
         % Set grid on
-        grid(hAxes, chGrid);
+        grid(haAxes, chGrid);
         % For minor grids we will also enable the "major" grid
         if strcmpi(chGrid, 'minor')
-            grid(hAxes, 'on');
+            grid(haAxes, 'on');
         end
     end
 
@@ -313,26 +316,26 @@ if bOwnPlot
 %     xlim(hAxes, xlim().*1.05);
 %     ylim(hAxes, ylim().*1.05);
 %     zlim(hAxes, zlim().*1.05);
-end
+% end
 
 % Make sure the figure is being drawn before anything else is done
 drawnow
 
 % Finally, set the active axes handle to be the first most axes handle we
 % have created or were given a parameter to this function
-axes(hAxes);
+axes(haAxes);
 
 % Enforce drawing of the image before returning anything
 drawnow
 
 % Clear the hold off the current axes
-hold(hAxes, 'off');
+hold(haAxes, 'off');
 
 
 
 %% Assign output quantities
-if nargout >= 1
-    varargout{1} = hAxes;
+if nargout > 0
+    varargout{1} = haAxes;
 end
 
 
