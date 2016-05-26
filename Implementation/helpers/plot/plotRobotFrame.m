@@ -73,9 +73,10 @@ function [varargout] = plotRobotFrame(winchPositions, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-25
+% Date: 2016-05-26
 % Changelog:
-%   2016-05-25
+%   2016-05-26
+%       * Add two optional return arguments HAxes, HWinchPositions
 %       * Cleanup old change log format
 %   2016-03-30
 %       * Code cleanup
@@ -219,12 +220,6 @@ chYLabel = ip.Results.YLabel;
 chZLabel = ip.Results.ZLabel;
 
 
-% If this is a single plot i.e., the given axes does not have any children, then
-% we are completely free at plotting stuff like labels, etc., Otherwise, we will
-% really just plot the robot frame
-bOwnPlot = isempty(get(haAxes, 'Children'));
-
-
 
 %% Plot the damn thing now!
 % Select the given axes as target
@@ -235,19 +230,20 @@ axes(haAxes);
 hold(haAxes, 'on');
 
 % First, plot the winch positions as circles
-hPlotWinchPositions = plot3(aWinchPositions(1, :), aWinchPositions(2, :), aWinchPositions(3, :), 'o');
+hpWinchPositions = plot3(aWinchPositions(1, :), aWinchPositions(2, :), aWinchPositions(3, :), 'o');
 % If the plot spec were given, we need to set them on the plot
 if ~isempty(cePlotSpec)
-    set(hPlotWinchPositions, cePlotSpec{:});
+    set(hpWinchPositions, cePlotSpec{:});
 end
 
 % Label the winches (either as given by the user or as pre-defined values)
 if bWinchLabels
+    htWinchLabels = zeros(size(ceWinchLabels, 2));
     for iUnit = 1:size(ceWinchLabels, 2)
-        hText = text(aWinchPositions(1, iUnit), aWinchPositions(2, iUnit), aWinchPositions(3, iUnit), ...
+        htWinchLabels(iUnit) = text(aWinchPositions(1, iUnit), aWinchPositions(2, iUnit), aWinchPositions(3, iUnit), ...
             num2str(ceWinchLabels{iUnit}), 'VerticalAlignment', 'bottom', 'FontSize', 10);
         if ~isempty(ceWinchLabelSpec)
-            set(hText, ceWinchLabelSpec{:});
+            set(htWinchLabels, ceWinchLabelSpec{:});
         end
     end
 end
@@ -255,11 +251,11 @@ end
 % Plot the home position?
 if bHomePosition
     % Plot the home position as a black marker
-    hPlotHomePosition = plot3(vHomePosition(1), vHomePosition(2), vHomePosition(3), 'Color', 'k', 'Marker', 'd');
+    hpHomePosition = plot3(vHomePosition(1), vHomePosition(2), vHomePosition(3), 'Color', 'k', 'Marker', 'd');
     
     % Set spec on the home positon?
     if ~isempty(ceHomePositionSpec)
-        set(hPlotHomePosition, ceHomePositionSpec{:});
+        set(hpHomePosition, ceHomePositionSpec{:});
     end
 end
 
@@ -270,53 +266,44 @@ if strcmp(chBoundingBox, 'on')
     [mWinchPositionsBoundingBox, mWinchPositionsBoundingBoxFaces] = boundingbox3(aWinchPositions(1, :), aWinchPositions(2, :), aWinchPositions(3, :));
     
     % And create a hollow patch from the bounding box
-    hPatch = patch('Vertices', mWinchPositionsBoundingBox, 'Faces', mWinchPositionsBoundingBoxFaces, 'FaceColor', 'none');
+    hpBoundingBox = patch('Vertices', mWinchPositionsBoundingBox, 'Faces', mWinchPositionsBoundingBoxFaces, 'FaceColor', 'none');
     
     % Spec to set on the bounding box? No problemo!
     if ~isempty(ceBoundingBoxSpec)
-        set(hPatch, ceBoundingBoxSpec{:});
+        set(hpBoundingBox, ceBoundingBoxSpec{:});
     end
 end
 
-% This is stuff we are only going to do if we're in our own plot
-% if bOwnPlot
-    % Set x-axis label, if provided
-    if ~isempty(strtrim(chXLabel))
-        xlabel(haAxes, chXLabel);
-    end
-    % Set y-axis label, if provided
-    if ~isempty(strtrim(chYLabel))
-        ylabel(haAxes, chYLabel);
-    end
-    % Set z-axis label, if provided
-    if ~isempty(strtrim(chZLabel))
-        zlabel(haAxes, chZLabel);
-    end
-    
-    % Set a figure title?
-    if ~isempty(strtrim(chTitle))
-        title(haAxes, chTitle);
-    end
-    
-    % Set the viewport
-    view(haAxes, mxdViewport);
-    
-    % Set a grid?
-    if any(strcmp(chGrid, {'on', 'minor'}))
-        % Set grid on
-        grid(haAxes, chGrid);
-        % For minor grids we will also enable the "major" grid
-        if strcmpi(chGrid, 'minor')
-            grid(haAxes, 'on');
-        end
-    end
+% Set x-axis label, if provided
+if ~isempty(strtrim(chXLabel))
+    xlabel(haAxes, chXLabel);
+end
+% Set y-axis label, if provided
+if ~isempty(strtrim(chYLabel))
+    ylabel(haAxes, chYLabel);
+end
+% Set z-axis label, if provided
+if ~isempty(strtrim(chZLabel))
+    zlabel(haAxes, chZLabel);
+end
 
-    % And adjust the axes limits so we don't waste too much space but won't be
-    % too narrow on the frame/bounding box, either
-%     xlim(hAxes, xlim().*1.05);
-%     ylim(hAxes, ylim().*1.05);
-%     zlim(hAxes, zlim().*1.05);
-% end
+% Set a figure title?
+if ~isempty(strtrim(chTitle))
+    title(haAxes, chTitle);
+end
+
+% Set the viewport
+view(haAxes, mxdViewport);
+
+% Set a grid?
+if any(strcmp(chGrid, {'on', 'minor'}))
+    % Set grid on
+    grid(haAxes, chGrid);
+    % For minor grids we will also enable the "major" grid
+    if strcmpi(chGrid, 'minor')
+        grid(haAxes, 'on');
+    end
+end
 
 % Make sure the figure is being drawn before anything else is done
 drawnow
@@ -334,8 +321,14 @@ hold(haAxes, 'off');
 
 
 %% Assign output quantities
+% First optional return argument: handle to axes we printed into
 if nargout > 0
     varargout{1} = haAxes;
+end
+
+% Second optional return argument: winch positions
+if nargout > 1
+    varargout{2} = hpWinchPositions;
 end
 
 
