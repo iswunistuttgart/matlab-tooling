@@ -1,7 +1,7 @@
 function [Box, Traversal] = bbox3(X, Y, Z, varargin)
 % BBOX3 Calculates the 3D bounding box for the given points
 %  
-%   Box = BBOX3(X, Y, Z) calculates the bounding box for the given points in X,
+%   BOX = BBOX3(X, Y, Z) calculates the bounding box for the given points in X,
 %   Y, Z position and returns a matrix of size 3x8 where each column is one of
 %   the bounding box' corners.
 %   Basically, what BBOX3 does is take all the mins and max' from the values of
@@ -10,7 +10,7 @@ function [Box, Traversal] = bbox3(X, Y, Z, varargin)
 %   BOX = BBOX3(MATRIX) extracts the X, Y, and Z data from the Nx3 matrix MATRIX
 %   and then gets the bounding box on these values.
 %
-%   [Box, Traversal] = BBOX3(X, Y, Z) also returns the array of traversals which
+%   [BOX, TRAVERSAL] = BBOX3(X, Y, Z) also returns the array of traversals which
 %   relates to the corners of BOX to get a full patch.
 %
 %   
@@ -35,8 +35,10 @@ function [Box, Traversal] = bbox3(X, Y, Z, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-10
+% Date: 2016-05-30
 % Changelog:
+%   2016-05-30
+%       * Update matrix argument processing to column major i.e., [X, Y, Z]
 %   2016-05-10
 %       * Rename to bbox3
 %       * Add possibility to pass a 3xN or Nx3 matrix as only argument
@@ -52,14 +54,14 @@ function [Box, Traversal] = bbox3(X, Y, Z, varargin)
 
 
 %% Pre-process input
-% If there's only one argument and it is a matrix of 3 columns ...
-if ismatrix(X) && size(X,2) == 3
+% If there's only one argument and it is a matrix ...
+if ismatrix(X)
     % ... grab Z from X
-    Z = X(3,:);
+    Z = X(:,3);
     % ... grab Y from X
-    Y = X(2,:);
+    Y = X(:,2);
     % ... and grab X from X
-    X = X(1,:);
+    X = X(:,1);
 end
 
 

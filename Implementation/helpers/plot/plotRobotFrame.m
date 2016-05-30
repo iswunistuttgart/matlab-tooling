@@ -263,7 +263,7 @@ end
 % Plot the bounding box?
 if strcmp(chBoundingBox, 'on')
     % Get the bounding box for the winch positions
-    [mWinchPositionsBoundingBox, mWinchPositionsBoundingBoxFaces] = boundingbox3(aWinchPositions(1, :), aWinchPositions(2, :), aWinchPositions(3, :));
+    [mWinchPositionsBoundingBox, mWinchPositionsBoundingBoxFaces] = bbox3(aWinchPositions(1,:), aWinchPositions(2,:), aWinchPositions(3,:));
     
     % And create a hollow patch from the bounding box
     hpBoundingBox = patch('Vertices', mWinchPositionsBoundingBox, 'Faces', mWinchPositionsBoundingBoxFaces, 'FaceColor', 'none');

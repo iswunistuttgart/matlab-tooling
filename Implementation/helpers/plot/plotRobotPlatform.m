@@ -269,7 +269,7 @@ end
 % Plot the bounding box?
 if strcmp(chBoundingBox, 'on')
     % Get the bounding box for the cable attachments
-    [mCableAttachmentsBoundingBox, mCableAttachmentsBoundingBoxFaces] = boundingbox3(mxdCableAttachments(1, :), mxdCableAttachments(2, :), mxdCableAttachments(3, :));
+    [mCableAttachmentsBoundingBox, mCableAttachmentsBoundingBoxFaces] = bbox3(mxdCableAttachments(1,:), mxdCableAttachments(2,:), mxdCableAttachments(3,:));
     
     % And create a hollow patch from the bounding box
     hpBoundingBox = patch('Vertices', mCableAttachmentsBoundingBox, 'Faces', mCableAttachmentsBoundingBoxFaces, 'FaceColor', 'none');

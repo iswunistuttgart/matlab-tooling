@@ -30,8 +30,10 @@ function [Box, Traversal] = bbox(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-10
+% Date: 2016-05-30
 % Changelog:
+%   2016-05-30
+%       * Update matrix argument processing to column major i.e., [X, Y]
 %   2016-05-10
 %       * Add END OF CODE block
 %       * Rename to bbox
@@ -44,11 +46,11 @@ function [Box, Traversal] = bbox(X, Y, varargin)
 
 
 %% Pre-process input
-% If there's only one argument and it is a matrix of one dimension equal to 3
+% If there's only one argument and it is a matrix ...
 if ismatrix(X) && size(X, 2) == 2
-    % Grab Y from X
+    % ... grab Y from X
     Y = X(:,2);
-    % And grab X from X
+    % ... and grab X from X
     X = X(:,1);
 end
 

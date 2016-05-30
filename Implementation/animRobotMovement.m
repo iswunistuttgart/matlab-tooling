@@ -293,7 +293,7 @@ end
 % Plot for the trajectory trace
 hTargetPlotTrajectory = plot3(NaN, NaN, NaN);
 % Calculate the platform bounding box
-[aInitialAttachmentPointsBoundingBox, aInitialAttachmentPointsBoundingBoxFaces] = boundingbox3(aAttachmentPoints(1,:), aAttachmentPoints(2,:), aAttachmentPoints(3,:));
+[aInitialAttachmentPointsBoundingBox, aInitialAttachmentPointsBoundingBoxFaces] = bbox3(aAttachmentPoints(1,:), aAttachmentPoints(2,:), aAttachmentPoints(3,:));
 % Patch of the platform
 hTargetPlotPlatform = patch('Faces', aInitialAttachmentPointsBoundingBoxFaces, 'Vertices', aInitialAttachmentPointsBoundingBox, 'FaceColor', 'none');
 % Create the title handle
