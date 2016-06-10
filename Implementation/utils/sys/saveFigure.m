@@ -21,17 +21,9 @@ function saveFigure(Filename, varargin)
 %
 %   For example, SAVEFIGURE(FILENAME, {'fig', 'eps', 'png'}) saves the current
 %   figure as fig, eps, and png.
-% 
-%   SAVEFIGURE(FILENAME, 'InDir', INDIR) ensures that each figure save is stored
-%   inside its own directory depending on the filetype i.e., 'tikz' files will
-%   be stored under 'tikz/FILENAME' whereas 'eps' files will be stored under
-%   'eps/FILENAME'. The directory level will be the last level before the actual
-%   file name. Usage options are
 %
-%       'on', 'yes'     enable storing per file type
-%       'off', 'no'     disable storing per file type
-%
-%   Defaults to 'no'. Also works with attribute-value key 'InDir'
+%   SAVEFIGURE(FILENAME, 'ParameterName', 'ParameterValue') allows passing
+%   additional supported parameter name-value pairs.
 %
 %   SAVEFIGURE(FIG, ...) stores the given figure instead of the currently active
 %   figure
@@ -44,9 +36,27 @@ function saveFigure(Filename, varargin)
 %   extensions will be appended nevertheless
 %
 %   TYPES: Cell array of file types to store figure under. Defaults to {'fig'}.
+%
+%   Optional Inputs -- specified as parameter value pairs
+%   InDir       - Ensures that each figure save is stored inside its own
+%               directory depending on the filetype i.e., 'tikz' files will be
+%               saved under 'tikz/FILENAME' whereas 'eps' files will be saved
+%               under 'eps/FILENAME'. The directory level will be the last level
+%               before the actual file name. Usage options are
+%                   'on', 'yes'     enable storing per file type
+%                   'off', 'no'     disable storing per file type (default)
 %   
-%   INDIR: Textual switch whether to store the figures in a per-type directory
-%   or not. Can be any value from {'on', 'off', 'no', 'yes'}
+%   EpsPrint    - Pass custom print options to eps print command. Default
+%               command configuration is
+%               '-depsc', '-tiff', '-zbuffer', '-r200'
+%               '-dpng', '-loose', '-zbuffer', '-r200'
+%
+%   PngPrint    - Pass custom print options to tikz print command. Default
+%               command configuration is
+%               '-dpng', '-loose', '-zbuffer', '-r200'
+%   
+%   TikzPrint   - Pass custom print options to tikz print command.
+%
 %
 %   See also: SAVEAS, PRINT
 %
@@ -55,8 +65,11 @@ function saveFigure(Filename, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-30
+% Date: 2016-06-10
 % Changelog:
+%   2016-06-10
+%       * Fix check of function for a valid figure handle
+%       * Update docs to reflect proper Name-Value pair arguments
 %   2016-03-30
 %       * Initial release
 
@@ -65,7 +78,7 @@ function saveFigure(Filename, varargin)
 %% Pre-process inputs
 haFig = false;
 
-if ~isempty(varargin) && isallaxes(Filename)
+if ~isempty(varargin) && ishandle(Filename) && strcmpi(get(Filename, 'type'), 'figure')
     haFig = Filename;
     Filename = varargin{1};
     varargin = varargin(2:end);
