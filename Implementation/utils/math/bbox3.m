@@ -54,8 +54,8 @@ function [Box, Traversal] = bbox3(X, Y, Z, varargin)
 
 
 %% Pre-process input
-% If there's only one argument and it is a matrix ...
-if ismatrix(X)
+% If there's only one argument and it is a matrix of size Mx3
+if ismatrix(X) && size(X, 2) == 3
     % ... grab Z from X
     Z = X(:,3);
     % ... grab Y from X
