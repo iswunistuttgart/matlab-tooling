@@ -16,8 +16,10 @@ function fig = gpf(h)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-06-10
+% Date: 2016-06-15
 % Changelog:
+%   2016-06-15
+%       * Minor adjustments to error function message
 %   2016-06-10
 %       * Initial release
 
@@ -32,7 +34,7 @@ end
 
 
 %% Assertion
-assert(ishandle(h), 'Argument [fig] must be at least a valid handle');
+assert(ishandle(h), 'Argument [h] must be a valid handle.');
 
 
 
