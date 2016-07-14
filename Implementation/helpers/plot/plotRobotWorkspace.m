@@ -53,7 +53,11 @@ ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
-parse(ip, XData, YData, ZData, varargin{:});
+try
+    parse(ip, XData, YData, ZData, varargin{:});
+catch me
+    throw(MException(me.identifier, me.message));
+end
 
 
 

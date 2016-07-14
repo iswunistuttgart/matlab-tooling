@@ -4,22 +4,17 @@ function varargout = plotrange(RangeSelector, varargin)
 %   RANGE = PLOTRANGE() gets the 'min+max' range of plotted data for the current
 %   axis.
 % 
-%   RANGE = PLOTRANGE(RANGESLECTOR) gets the desired range ('min', 'max', or
-%   'min+max' [default]) for the current axis.
+%   RANGE = PLOTRANGE(SELECTOR) gets the range minimum of the current axis.
 %   
-%   RANGE = PLOTRANGE(AXIS) gets the 'min+max' range of plotted data for the
-%   given axis.
-%   
-%   RANGE = PLOTRANGE(AXIS, RANGESELECTOR) gets the desire range ('min', 'max',
-%   or 'min+max' [default]) for the given axis.
+%   RANGE = PLOTRANGE(AXIS, ...) gets the desired range of the given axis.
 %
-%   [MIN, MAX] = PLOTRANGE(...) returns the minimum and maximum plotranges
-%   separately
+%   [MIN, MAX] = PLOTRANGE(SELECTOR) returns the minimum and maximum plotranges
+%   separately (only works for 'min+max' SELECTOR).
 %   
 %   Inputs:
 %   
-%   RANGESELECTOR: A string which must be any of the following set {'min',
-%   'max', 'min+max'}. If none is given, 'min+max' is assumed
+%   SELECTOR: A string which must be any of the following set {'min', 'max',
+%   'min+max'}. If none is given, 'min+max' is assumed.
 %
 %   AXIS: A valid axis handle to get the range for.
 %
@@ -33,13 +28,20 @@ function varargout = plotrange(RangeSelector, varargin)
 %   
 %   MAX: Vector of [maxX, maxY] or [maxX, maxY, maxZ] plot ranges for 2D plots
 %   or 3D plots, respectively.
-%
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-25
+% Date: 2016-07-14
 % Changelog:
-%   2016-03-25: Add possibility to remove two return values [min, max] if
-%               requested
-%   2016-03-23: Initial release
+%   2016-07-14
+%       * Wrap IP-parse in try-catch to have nicer error display
+%       * Extend docs and update to new doc file layout
+%   2016-03-25
+%       * Add possibility to remove two return values [min, max] if requested
+%   2016-03-23
+%       * Initial release
 
 
 
@@ -72,7 +74,11 @@ ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
-parse(ip, RangeSelector, varargin{:});
+try
+    parse(ip, RangeSelector, varargin{:});
+catch me
+    throw(MException(me.identifier, me.message));
+end
 
 
 

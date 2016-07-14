@@ -110,8 +110,10 @@ function varargout = plotRobotPoses(Time, Poses, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-04-01
+% Date: 2016-07-14
 % Changelog:
+%   2016-07-14
+%       * Wrap IP-parse in try-catch to have nicer error display
 %   2016-04-01
 %       * More code cleanup
 %   2016-03-30
@@ -252,7 +254,11 @@ ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
-parse(ip, Time, Poses, varargin{:});
+try
+    parse(ip, Time, Poses, varargin{:});
+catch me
+    throw(MException(me.identifier, me.message));
+end
 
 
 

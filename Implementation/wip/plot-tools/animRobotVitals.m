@@ -50,7 +50,11 @@ ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
-parse(ip, Time, Poses, CableForces, varargin{:});
+try
+    parse(ip, Time, Poses, CableForces, varargin{:});
+catch me
+    throw(MException(me.identifier, me.message));
+end
 
 
 

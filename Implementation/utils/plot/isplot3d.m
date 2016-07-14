@@ -13,8 +13,10 @@ function res = isplot3d(Axis, varargin)
 %   AXES: Use axes AXES instead of current axes to check
 %
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-04-01
+% Date: 2016-07-14
 % Changelog:
+%   2016-07-14
+%       * Wrap IP-parse in try-catch to have nicer error display
 %   2016-04-01
 %       * Update checking for proper plot types. This should be a more fail-safe
 %       code now
@@ -39,7 +41,11 @@ valFcn_Axis = @(x) validateattributes(x, {'matlab.graphics.axis.Axes'}, {'vector
 addRequired(ip, 'Axis', valFcn_Axis);
 
 % Parse the provided inputs
-parse(ip, Axis, varargin{:});
+try
+    parse(ip, Axis, varargin{:});
+catch me
+    throw(MException(me.identifier, me.message));
+end
 
 
 

@@ -19,14 +19,15 @@ function saveWorkspace(varargin)
 %   given with the 'Suffix' key.
 %
 %   See also: save
-%
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-03
+% Date: 2016-07-14
 % Changelog:
+%   2016-07-14
+%       * Wrap IP-parse in try-catch to have nicer error display
 %   2016-05-03
 %       * Fix bug in input parser's ```parse```
 %       * Fix bug resulting from different variable types (```char``` vs. ```cell```)
@@ -58,7 +59,11 @@ ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
-parse(ip, varargin{:});
+try
+    parse(ip, varargin{:});
+catch me
+    throw(MException(me.identifier, me.message));
+end
 
 
 

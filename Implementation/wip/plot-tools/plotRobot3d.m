@@ -99,7 +99,11 @@ ip.KeepUnmatched = true;
 ip.FunctionName = 'plotRobot3d';
 
 % Parse the provided inputs
-parse(ip, Pose, WinchPositions, CableAttachments, varargin{:});
+try
+    parse(ip, Pose, WinchPositions, CableAttachments, varargin{:});
+catch me
+    throw(MException(me.identifier, me.message));
+end
 
 
 %% Extract the input variables so we can use them locally

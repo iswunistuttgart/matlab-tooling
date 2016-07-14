@@ -19,8 +19,10 @@ function TimeseriesData = structtime2ts(StructWithTime, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-30
+% Date: 2016-07-14
 % Changelog:
+%   2016-07-14
+%       * Wrap IP-parse in try-catch to have nicer error display
 %   2016-03-30
 %       * Initial release
 
@@ -39,8 +41,11 @@ ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
-parse(ip, StructWithTime, varargin{:});
-
+try
+    parse(ip, StructWithTime, varargin{:});
+catch me
+    throw(MException(me.identifier, me.message));
+end
 
 
 %% Local variables

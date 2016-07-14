@@ -65,8 +65,10 @@ function saveFigure(Filename, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-06-10
+% Date: 2016-07-14
 % Changelog:
+%   2016-07-14
+%       * Wrap IP-parse in try-catch to have nicer error display
 %   2016-06-10
 %       * Fix check of function for a valid figure handle
 %       * Update docs to reflect proper Name-Value pair arguments
@@ -118,7 +120,11 @@ ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
-parse(ip, Filename, varargin{:});
+try
+    parse(ip, Filename, varargin{:});
+catch me
+    throw(MException(me.identifier, me.message));
+end
 
 
 

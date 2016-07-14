@@ -28,8 +28,10 @@ function [varargout] = animRobotMovement(Time, Position, Rotation, AttachmentPoi
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-01
+% Date: 2016-07-14
 % Changelog:
+%   2016-07-14
+%       * Wrap IP-parse in try-catch to have nicer error display
 %   2016-05-01
 %       * Update function ```inferCurrentRotation``` to use EUL2ROTM and
 %       QUAT2ROTM instead of manually typed code
@@ -138,6 +140,11 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 parse(ip, Time, Position, Rotation, AttachmentPoints, varargin{:});
+try
+    parse(ip, Time, Position, Rotation, AttachmentPoints, varargin{:});
+catch me
+    throw(MException(me.identifier, me.message));
+end
 
 
 

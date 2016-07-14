@@ -73,8 +73,10 @@ function [varargout] = plotRobotFrame(winchPositions, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-26
+% Date: 2016-07-14
 % Changelog:
+%   2016-07-14
+%       * Wrap IP-parse in try-catch to have nicer error display
 %   2016-05-26
 %       * Add two optional return arguments HAxes, HWinchPositions
 %       * Cleanup old change log format
@@ -173,7 +175,11 @@ ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
-parse(ip, winchPositions, varargin{:});
+try
+    parse(ip, winchPositions, varargin{:});
+catch me
+    throw(MException(me.identifier, me.message));
+end
 
 
 

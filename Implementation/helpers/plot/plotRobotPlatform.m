@@ -22,7 +22,8 @@ function [varargout] = plotRobotPlatform(CableAttachments, varargin)
 %   Optional Inputs -- specified as parameter value pairs
 %   PlotSpec            - allows to adjust the plot spec for the cable
 %                       attachment markers. By default, the 'o' markers are
-%                       plotted as markers for the winches in the first default axis color.
+%                       plotted as markers for the winches in the first default
+%                       axis color
 %
 %   BoundingBox         - will also print the bounding box of the cable
 %                       attachments.
@@ -70,12 +71,14 @@ function [varargout] = plotRobotPlatform(CableAttachments, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-23
+% Date: 2016-07-14
 % TODO:
 %   Add ability to plot platform at a random point/pose e.g, 'PlaceAt', [0,0,0,
 %   0,0,0] where this is [x,y,z, a,b,c]. Then all other plots respective the
 %   platform are relative to that position
 % Changelog:
+%   2016-07-14
+%       * Wrap IP-parse in try-catch to have nicer error display
 %   2016-05-24
 %       * Remove standalone mode. Now everything is "global"
 %       * Update help doc to properly include info on name/value pairs
@@ -179,7 +182,11 @@ ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
-parse(ip, CableAttachments, varargin{:});
+try
+    parse(ip, CableAttachments, varargin{:});
+catch me
+    throw(MException(me.identifier, me.message));
+end
 
 
 

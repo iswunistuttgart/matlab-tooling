@@ -126,8 +126,10 @@ function [length, varargout] = inverseKinematics(Pose, PulleyPositions, CableAtt
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-29
+% Date: 2016-07-14
 % Changelog:
+%   2016-07-14
+%       * Wrap IP-parse in try-catch to have nicer error display
 %   2016-03-29
 %       * Code cleanup
 %   2015-12-15
@@ -201,7 +203,11 @@ ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
-parse(ip, Pose, PulleyPositions, CableAttachments, varargin{:});
+try
+    parse(ip, Pose, PulleyPositions, CableAttachments, varargin{:});
+catch me
+    throw(MException(me.identifier, me.message));
+end
 
 
 
