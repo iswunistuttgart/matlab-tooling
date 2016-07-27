@@ -1,4 +1,4 @@
-function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = algoInverseKinematics_PulleyClosedForm(Pose, PulleyPositions, CableAttachments, PulleyRadius, PulleyOrientations)%#codegen
+function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = algoInverseKinematics_PulleyClosedFormNew(Pose, PulleyPositions, CableAttachments, PulleyRadius, PulleyOrientations)%#codegen
 % ALGOINVERSEKINEMATICS_PULLEYCLOSEDFORM Determine cable lengths based on pulley
 % kinematics
 %   
@@ -84,8 +84,10 @@ function [Length, CableUnitVectors, PulleyAngles, PulleyPositionCorrected] = alg
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-20
+% Date: 2016-07-27
 % Changelog:
+%   2016-07-27
+%       * Algorithm revision and code adjustments
 %   2016-05-20
 %       * Allow rotation to be given with Euler Angles ZYX, Quaternion, or a
 %       rotation matrix
@@ -166,59 +168,48 @@ for iUnit = 1:nNumberOfCables
     vEuler = fliplr(asrow(aPulleyOrientations(:,iUnit)))./180.*pi;
     aRotation_kW2kO = eul2rotm(vEuler, 'ZYX');
     aRotation_kW2kO(abs(aRotation_kW2kO) < 2*eps) = 0;
-
-    % Vector from contact point of cable on pulley A to cable attachment point
-    % on the platform B given in coordinates of system A
-    v_W2B_in_kW = transpose(aRotation_kW2kO)*(vPlatformPosition + aPlatformRotation*aCableAttachments(:,iUnit) - aPulleyPositions(:,iUnit));
-
+    
+    % Vector from contact point A of cable on pulley to cable attachment point
+    % on the platform B given in coordinates W of the winch
+    vAi2Bi_in_kW = transpose(aRotation_kW2kO)*(vPlatformPosition + aPlatformRotation*aCableAttachments(:,iUnit) - aPulleyPositions(:,iUnit));
+    
     % Determine the angle of rotation of the pulley to have the pulley's x-axis
     % point in the direction of the cable which points towards B
-    aPulleyAngles(1,iUnit) = atan2d(v_W2B_in_kW(2), v_W2B_in_kW(1));
+    aPulleyAngles(1,iUnit) = atan2d(vAi2Bi_in_kW(2), vAi2Bi_in_kW(1));
 
     % Rotation matrix from winch coordinate system K_W to roller coordinate 
     % system K_R
     aRotation_kR2kW = rotz(aPulleyAngles(1,iUnit));
     aRotation_kR2kW(abs(aRotation_kR2kW) < 2*eps) = 0;
 
-    % Vector from point P (center of coordinate system K_R) to the cable
-    % attachment point B given in the coordinate system of the pulley (easily
-    % transferable from the same vector given in K_W by simply rotating it about
-    % the local z-axis of K_W)
-    v_W2B_in_kR = transpose(aRotation_kR2kW)*v_W2B_in_kW;
+    % Vector from contact point A of cable on pulley to cable attachment point
+    % on the platform given in coordinates R of the roller (should make the
+    % y-component equal to zero)
+    v_Ai2Bi_in_kR = transpose(aRotation_kR2kW)*vAi2Bi_in_kW;
 
-    % Vector from W to the pulley center given in the pulley coordinate system
-    % K_P
-    v_W2M_in_kR = vPulleyRadius(iUnit)*[1; 0; 0];
+    % Vector from contact point A of the cable on pulley to the pulley center in
+    % the pulley coordinate system K_R of the pulley
+    v_Ai2M_in_kR = vPulleyRadius(iUnit)*[1; 0; 0];
 
-    % Closed vector loop to determine the vector from M to B in coordinate
-    % system K_P: P2M + M2B = P2B. This basically also transforms our coordinate
-    % system K_P to K_M
-    v_M2B_in_kR = v_W2B_in_kR - v_W2M_in_kR;
-
-    % Preliminarily determine the cable length (this helps us to determine the
-    % angle beta_3 to later on determine the angle of the vector from M to C in
-    % the coordinate system of M. It is quite simple to do so using Pythagoras:
-    % l^2 + radius^2 = M2B^2
-    dCableLength_C2B = sqrt(norm(v_M2B_in_kR)^2 - vPulleyRadius(iUnit)^2);
-    dScalingTangentVector = -dCableLength_C2B;
+    % Vector from the pulley center to the cable attachment point on the
+    % platform in coordinates system K_R of the pulley
+    v_M2Bi_in_kR = v_Ai2Bi_in_kR - v_Ai2M_in_kR;
     
-    % Angle between the x-axis of K_M/K_R and the corrected cable attachment
-    % point can be easily inferred from solving the algebraic equation given in
-    % PTT's lab notebook
-    dAngleBetween_xM_and_M2Ac_Degree = 180 + atan2d(dScalingTangentVector*v_M2B_in_kR(1) - vPulleyRadius(iUnit)*v_M2B_in_kR(3), -vPulleyRadius(iUnit)*v_M2B_in_kR(1) - dScalingTangentVector*v_M2B_in_kR(3));
-
-    % Vector from pulley center M to adjusted cable release point Ac in nothing
-    % but the x-axis rotated by the angle beta about the y-axis of K_M
-    v_M2Ac_in_kR = transpose(roty(dAngleBetween_xM_and_M2Ac_Degree))*(vPulleyRadius(iUnit).*[1; 0; 0]);
-
-    % Wrapping angle is nothing but the negativeof the angle between xM and M2Ac
-    % (it has to be the negative because we are doing all above calculations in
-    % 3D where a positive rotation about the y-axis 
-    dAngleWrap_Degree = 180 - dAngleBetween_xM_and_M2Ac_Degree;
+    % Determine the cable length in the workspace i.e., from when the cable
+    % leaves the pulley at A_ic and goes to B_i
+    dCableLength_Aic2B = sqrt(norm(v_M2Bi_in_kR).^2 - vPulleyRadius(iUnit).^2);
+    
+    % Wrapping angle of the cable on the pulley i.e., from A_i to A_ic can be
+    % determined right from here
+    dAngleWrap_Degree = atan2d(...
+          -dCableLength_Aic2B*v_M2Bi_in_kR(1) + vPulleyRadius(iUnit)*v_M2Bi_in_kR(3) ...
+        , -vPulleyRadius(iUnit)*v_M2Bi_in_kR(1) - dCableLength_Aic2B*v_M2Bi_in_kR(3) ...
+    ) + 180;
     aPulleyAngles(2,iUnit) = dAngleWrap_Degree;
 
     % Adjust the pulley position given the coordinates to point C
-    aPulleyPositionsCorrected(:,iUnit) = aPulleyPositions(:,iUnit) + aRotation_kW2kO*(aRotation_kR2kW*(v_W2M_in_kR + v_M2Ac_in_kR));
+    v_M2Aic_in_kR = -vPulleyRadius(iUnit)*roty(dAngleWrap_Degree)*[1; 0; 0];
+    aPulleyPositionsCorrected(:,iUnit) = aPulleyPositions(:,iUnit) + aRotation_kW2kO*(aRotation_kR2kW*(v_Ai2M_in_kR + v_M2Aic_in_kR));
     vCableLengthOffset(iUnit) = dAngleWrap_Degree*pi/180*vPulleyRadius(iUnit);
     
     % Finally, calculate the cable vector (from corrected pulley position to the
