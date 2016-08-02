@@ -54,7 +54,6 @@ function plot_addReferenceFrame(varargin)
 %   if given as a vector of equal length as CENTER.
 %
 %   See also: QUIVER, QUIVER3
-%
 
 
 

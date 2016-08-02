@@ -88,15 +88,15 @@ ip = inputParser;
 % Let user decide on the plot style
 % Plot style can be chosen anything from the list below
 valFcn_Count = @(x) validateattributes(x, {'numeric'}, {'row', '>=', 1}, mfilename, 'Count');
-addOptional(ip, 'Count', '25', valFcn_Count);
+addParameter(ip, 'Count', '25', valFcn_Count);
 
 % Optional 2: Markers to set or order of markers
 valFcn_Order = @(x) assert(all(ismember(strsplit(x, '|'), {'o', '+', '*', '.', 'x', 's', 'd', '^', 'v', '>', '<', 'p', 'h'})));
-addOptional(ip, 'Order', 'o|+|*|x', valFcn_Order);
+addParameter(ip, 'Order', 'o|+|*|x', valFcn_Order);
 
 % Optional 3: Spacing between the markers
 valFcn_Spacing = @(x) assert(any(validatestring(x, {'x', 'curve', 'logx'}, mfilename, 'Spacing')));
-addOptional(ip, 'Spacing', 'x', valFcn_Spacing);
+addParameter(ip, 'Spacing', 'x', valFcn_Spacing);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
