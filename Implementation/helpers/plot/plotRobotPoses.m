@@ -110,8 +110,10 @@ function varargout = plotRobotPoses(Time, Poses, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-07-14
+% Date: 2016-08-02
 % Changelog:
+%   2016-08-02
+%       * Change to using ```axescheck``` and ```newplot```
 %   2016-07-14
 %       * Wrap IP-parse in try-catch to have nicer error display
 %   2016-04-01
@@ -133,17 +135,6 @@ function varargout = plotRobotPoses(Time, Poses, varargin)
 
 
 %% Preprocess inputs (allows to have the axis defined as first argument)
-% By default we don't have any axes handle
-hAxes = false;
-% Check if the first argument is an axes handle, then we just have to shift all
-% other arguments by one
-if ~isempty(varargin) && isallaxes(Time)
-    hAxes = Time;
-    Time = Poses;
-    Poses = varargin{1};
-    varargin = varargin(2:end);
-end
-
 % Check if Time is of type timeseries, then we will extract information from
 % there
 if isa(Time, 'timeseries')
@@ -255,7 +246,10 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
-    parse(ip, Time, Poses, varargin{:});
+    varargin = [{Anchors}, varargin];
+    [haAxes, args, ~] = axescheck(varargin{:});
+    
+    parse(ip, args{:});
 catch me
     throw(MException(me.identifier, me.message));
 end
@@ -263,14 +257,16 @@ end
 
 
 %% Parse and prepare variables locally
+% Get a valid axes handle
+haAxes = newplot(haAxes);
+% Old hold state
+lOldHold = ishold(haAxes);
+% Tell figure to add next plots
+hold(haAxes, 'on');
 % Vector of time
 vTime = ip.Results.Time;
 % Vector of poses
 mPoses = ip.Results.Poses;
-% Axes handle
-if ~ishandle(hAxes)
-    hAxes = gca;
-end
 % General plot style
 chPlotStyle = upper(ip.Results.PlotStyle);
 % Ensure we have the right given axes for the given plot style i.e., no 2D plot
@@ -568,15 +564,13 @@ switch chPlotStyle
         error('Requested unsupported plot style. Exiting!');
 end
 
-% Finally, set the active axes handle to be the first most axes handle we
-% have created or were given a parameter to this function
-axes(hAxes);
-
 % Enforce drawing of the image before returning anything
 drawnow
 
-% Clear the hold off the axes
-hold(hAxes, 'off');
+% Reset the old hold state if it wasn't set
+if ~lOldHold
+    hold(haAxes, 'off');
+end
 
 
 

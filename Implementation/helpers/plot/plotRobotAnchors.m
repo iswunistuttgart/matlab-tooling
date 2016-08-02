@@ -39,27 +39,16 @@ function plotRobotAnchors(Anchors, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-07-14
+% Date: 2016-08-02
 % Changelog:
+%   2016-08-02
+%       * Change to using ```axescheck``` and ```newplot```
 %   2016-07-14
 %       * Wrap IP-parse in try-catch to have nicer error display
 %       * Wedge out param-value pairs to only the needed ones
 %       * Introduce option 'LabelSpec'
 %   2016-06-23
 %       * Initial release (from plotRobotFrame and plotRobotPlatform)
-
-
-
-%% Preprocess inputs (allows to have the axis defined as first argument)
-% By default we don't have any axes handle
-haTarget = false;
-% Check if the first argument is an axes handle, then we just have to shift all
-% other arguments by one
-if ~isempty(varargin) && isallaxes(Anchors)
-    haTarget = Anchors;
-    Anchors = varargin{1};
-    varargin = varargin(2:end);
-end
 
 
 
@@ -95,21 +84,16 @@ addParameter(ip, 'BoundingBox', 'off', valFcn_BoundBox);
 valFcn_BoudBoxSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'BoundBoxSpec');
 addParameter(ip, 'BoundingBoxSpec', {}, valFcn_BoudBoxSpec);
 
-% The 3d view may be defined, too. Viewport may be 2, 3, [az, el], or [x, y, z]
-% valFcn_Viewport = @(x) validateattributes(x, {'logical', 'numeric'}, {'2d'}, mfilename, 'Viewport');
-% addParameter(ip, 'Viewport', [-19, 18], valFcn_Viewport);
-
-% Allow user to choose grid style (either 'on', 'off', or 'minor')
-% valFcn_Grid = @(x) any(validatestring(x, {'on', 'off', 'minor'}, mfilename, 'Grid'));
-% addParameter(ip, 'Grid', 'off', valFcn_Grid);
-
 % Configuration of input parser
 ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
-    parse(ip, Anchors, varargin{:});
+    varargin = [{Anchors}, varargin];
+    [haTarget, args, ~] = axescheck(varargin{:});
+    
+    parse(ip, args{:});
 catch me
     throwAsCaller(MException(me.identifier, me.message));
 end
@@ -117,6 +101,12 @@ end
 
 
 %% Parse variables of the input parser to local parser
+% Get a valid axes handle
+haTarget = newplot(haTarget);
+% Old hold state
+lOldHold = ishold(haTarget);
+% Tell figure to add next plots
+hold(haTarget, 'on');
 % Anchors
 aAnchors = ip.Results.Anchors;
 % Number of anchors
@@ -145,18 +135,9 @@ assert(strcmpi(chPlotStyle, '2D') || size(aAnchors, 1) == 3, 'Insufficient numbe
 
 
 %% Processing
-% If no valid axis handle exists ...
-if ~ishandle(haTarget)
-    % ... get the current axis
-    haTarget = gca;
-    % If the current axis is a new i.e., blank axis i.e., has no children, we
-    % will rotate it into the default 3D viewport (if plot style is 3D)
-    if isempty(haTarget.Children) && strcmpi(chPlotStyle, '3d')
-        view([-37.5, 30]);
-    end
+if isempty(haTarget.Children) && strcmpi(chPlotStyle, '3d')
+    view([-37.5, 30]);
 end
-% Hold the current axes so we do not overwrite anything
-hold(haTarget, 'on');
 
 % Cell array to collect plot anchor handles
 hpAnchorers = cell(nAnchors, 1);
@@ -225,6 +206,12 @@ end
 % Finally, make sure the figure is drawn
 drawnow
 
+% Reset the old hold state if it wasn't set
+if ~lOldHold
+    hold(haTarget, 'off');
+end
+
+
 
 %% Assign output quantities
 
@@ -250,7 +237,7 @@ end
 
 
 
-function ceValue = in_getCyclicValue(ceSource, iAnchor)
+function ceValue = in_getCyclicValue(ceSource, iCount)
 
 % If the source is not emtpy
 if ~isempty(ceSource)
@@ -265,7 +252,7 @@ if ~isempty(ceSource)
         % Index of the anchor spec we will be using is just the remainder of the
         % division of what anchor number we are processing and how many anchors are
         % available
-        iAnchorSelect = mod(iAnchor - 1, nBases) + 1;
+        iAnchorSelect = mod(iCount - 1, nBases) + 1;
         % Assign this as reutrn value
         ceValue = ceSource{iAnchorSelect};
     end

@@ -4,29 +4,16 @@ function [varargout] = plotRobotWorkspace(XData, YData, ZData, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-07-14
+% Date: 2016-08-02
 % Changelog:
+%   2016-08-02
+%       * Change to using ```axescheck``` and ```newplot```
 %   2016-07-14
 %       * Update IP with more experience
 %       * Wedge out param-value pairs to only the needed ones
 %       * Introduce option 'LabelSpec'
 %   2016-04-01
 %       * Initial release
-
-
-
-%% Preprocess inputs (allows to have the axis defined as first argument)
-% By default we don't have any axes handle
-haTarget = false;
-% Check if the first argument is an axes handle, then we just have to shift all
-% other arguments by one
-if ~isempty(varargin) && isallaxes(XData)
-    haTarget = XData;
-    XData = YData;
-    YData = ZData;
-    ZData = varargin{1};
-    varargin = varargin(2:end);
-end
 
 
 
@@ -55,7 +42,10 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
-    parse(ip, XData, YData, ZData, varargin{:});
+    varargin = [{XData, YData, ZData}, varargin];
+    [haTarget, args, ~] = axescheck(varargin{:});
+    
+    parse(ip, args{:});
 catch me
     throw(MException(me.identifier, me.message));
 end
@@ -63,6 +53,12 @@ end
 
 
 %% Parse Variables
+% Get a valid axes handle
+haTarget = newplot(haTarget);
+% Old hold state
+lOldHold = ishold(haTarget);
+% Tell figure to add next plots
+hold(haTarget, 'on');
 % XData of patch
 aXData = ip.Results.XData;
 % YData of patch
@@ -71,25 +67,15 @@ aYData = ip.Results.YData;
 aZData = ip.Results.ZData;
 % Patch specifications
 ceHullSpec = ip.Results.HullSpec;
-
-% Ensure the handle hAxes is a valid handle. If none given, create a new
-% figure handle, otherwise select the given one to be the active axes
-% handle
-if ~ishandle(haTarget)
-    haTarget = gca;
-    % If the current axis is a new i.e., blank axis i.e., has no children, we
-    % will rotate it into the default 3D viewport
-    if isempty(haTarget.Children)
-        view([-37.5, 30]);
-    end
+% If the current axis is a new i.e., blank axis i.e., has no children, we
+% will rotate it into the default 3D viewport
+if isempty(haTarget.Children)
+    view([-37.5, 30]);
 end
 
 
 
 %% Plotting it all
-
-% Do not overwrite the current axis content but append
-hold(haTarget, 'on');
 % Plot the patch of X, Y, Z data with solid color
 hpHull = patch(aXData, aYData, aZData, 1);
 
@@ -97,8 +83,14 @@ hpHull = patch(aXData, aYData, aZData, 1);
 if ~isempty(ceHullSpec)
     set(hpHull, ceHullSpec{:});
 end
-% Make sure the figure is being drawn before anything else is done
-drawnow;
+
+% Finally, make sure the figure is drawn
+drawnow
+
+% Reset the old hold state if it wasn't set
+if ~lOldHold
+    hold(haTarget, 'off');
+end
 
 
 
