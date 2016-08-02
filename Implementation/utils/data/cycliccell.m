@@ -50,7 +50,7 @@ try
     
     parse(ip, args{:});
 catch me
-    throw(MException(me.identifier, me.message));
+    throwAsCaller(MException(me.identifier, me.message));
 end
 
 
