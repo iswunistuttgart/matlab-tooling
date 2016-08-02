@@ -13,8 +13,10 @@ function plot_addPointPlaneIntersection(Point, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-25
+% Date: 2016-08-02
 % Changelog:
+%   2016-08-02
+%       * Change to using ```axescheck``` and ```newplot```
 %   2016-07-14
 %       * Wrap IP-parse in try-catch to have nicer error display
 %       * Wedge out param-value pairs to only the needed ones
