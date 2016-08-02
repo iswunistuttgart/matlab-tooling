@@ -60,7 +60,7 @@ valFcn_Anchors = @(x) validateattributes(x, {'numeric'}, {'2d'}, mfilename, 'Anc
 addRequired(ip, 'Anchors', valFcn_Anchors);
 
 % Optional 1: AnchorSpec. One-dimensional or two-dimensional cell-array
-valFcn_AnchorSpec = @(x) validateattributes(x, {'cell'}, {'nonempty', 'row'}, mfilename, 'AnchorSpec');
+valFcn_AnchorSpec = @(x) validateattributes(x, {'cell', 'numeric'}, {'nonempty'}, mfilename, 'AnchorSpec');
 addParameter(ip, 'AnchorSpec', {}, valFcn_AnchorSpec);
 
 % Maybe also display the winch labels? Or custom labels?
@@ -68,7 +68,7 @@ valFcn_WinchLabels = @(x) validateattributes(x, {'numeric', 'cell'}, {'nonempty'
 addParameter(ip, 'Labels', {}, valFcn_WinchLabels);
 
 % Parameter 2: LabelSpec. One-dimensional or two-dimensional cell-array
-valFcn_LabelSpec = @(x) validateattributes(x, {'cell'}, {'nonempty', 'row'}, mfilename, 'LabelSpec');
+valFcn_LabelSpec = @(x) validateattributes(x, {'cell', 'numeric'}, {'nonempty'}, mfilename, 'LabelSpec');
 addParameter(ip, 'LabelSpec', {}, valFcn_LabelSpec);
 
 % Let user decide on the plot style
@@ -112,11 +112,11 @@ aAnchors = ip.Results.Anchors;
 % Number of anchors
 nAnchors = size(aAnchors, 2);
 % Anchor specs: cell array
-ceAnchorSpecs = ip.Results.AnchorSpec;
+ceAnchorSpecs = cycliccell(ip.Results.AnchorSpec, nAnchors);
 % Labels: cell array
 ceLabels = ip.Results.Labels;
 % Label specs: cell array
-ceLabelSpecs = ip.Results.LabelSpec;
+ceLabelSpecs = cycliccell(ip.Results.LabelSpec, nAnchors);
 % Plot style: char
 chPlotStyle = ip.Results.PlotStyle;
 % Box switch: 'on' or 'off'
@@ -155,12 +155,9 @@ for iAnchor = 1:nAnchors
         hpAnchorers{iAnchor} = plot(aAnchors(1,iAnchor), aAnchors(2,iAnchor), 'o');
     end
 
-    % Get the current anchors plot specifications
-    ceAnchorSpec = in_getCyclicValue(ceAnchorSpecs, iAnchor);
-    % If they're not empty...
-    if ~isempty(ceAnchorSpec)
-        % ... set them
-        set(hpAnchorers{iAnchor}, ceAnchorSpec{:});
+    % Set custom anchor drawing specs?
+    if ~isempty(ceAnchorSpecs)
+        set(hpAnchorers{iAnchor}, ceAnchorSpecs{iAnchor,:});
     end
 
     % If we shall plot a label, too
@@ -174,13 +171,10 @@ for iAnchor = 1:nAnchors
             htLabels{iAnchor} = text(aAnchors(1,iAnchor), aAnchors(2,iAnchor), ...
                 num2str(ceLabels{iAnchor}));
         end
-        % Get the current label specifications
-        ceLabelSpec = in_getCyclicValue(ceLabelSpecs, iAnchor);
-
-        % If they're not empty...
-        if ~isempty(ceLabelSpec)
-            % ... set them
-            set(htLabels{iAnchor}, ceLabelSpec{:});
+        
+        % Custom label drawing specifications
+        if ~isempty(ceLabelSpecs)
+            set(htLabels{iAnchor}, ceLabelSpecs{iAnchor,:});
         end
     end
 end
