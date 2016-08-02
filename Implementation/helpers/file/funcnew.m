@@ -1,13 +1,13 @@
-function newFunction(Name, varargin)
-% NEWFUNCTION creates a new function file based on a template
+function funcnew(Name, varargin)
+% FUNCNEW creates a new function file based on a template
 %
-%   NEWFUNCTION(NAME) creates function NAME into a new file at the specified
+%   FUNCNEW(NAME) creates function NAME into a new file at the specified
 %   target. It will not have any input or return arguments pre-defined.
 %
-%   NEWFUNCTION(NAME, ARGIN) also adds the list of input arguments defined in
+%   FUNCNEW(NAME, ARGIN) also adds the list of input arguments defined in
 %   ARGIN to the function declaration.
 %
-%   NEWFUNCTION(NAME, ARGIN, ARGOUT) creates function NAME into a new file at
+%   FUNCNEW(NAME, ARGIN, ARGOUT) creates function NAME into a new file at
 %   the specified target. The cell array ARGIN and ARGOUT define the argument
 %   input and argument output names.
 %
@@ -130,7 +130,7 @@ assert(2 == exist(chTemplateFilepath, 'file'), 'Function template cannot be foun
 % Read the file template
 try
     fidSource = fopen(chTemplateFilepath);
-    ceFunction_Contents = textscan(fidSource, '%s', 'Delimiter', '\n'); ceFunction_Contents = ceFunction_Contents{1};
+    ceFunction_Contents = textscan(fidSource, '%s', 'Delimiter', '\n', 'Whitespace', ''); ceFunction_Contents = ceFunction_Contents{1};
     fclose(fidSource);
 catch me
     if strcmp(me.identifier, 'MATLAB:FileIO:InvalidFid')
