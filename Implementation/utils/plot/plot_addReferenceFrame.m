@@ -75,19 +75,6 @@ function plot_addReferenceFrame(varargin)
 
 
 
-%% Process arguments
-% By default we don't have any axes to plot to
-haAxes = false;
-
-% Check if the first argument is an axes handle, then we just have to shift all
-% other arguments by one
-if ~isempty(varargin) && isallaxes(varargin{1})
-    haAxes = varargin{1};
-    varargin = varargin(2:end);
-end
-
-
-
 %% Define the input parser
 ip = inputParser;
 
@@ -123,7 +110,9 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
-    parse(ip, varargin{:});
+    [haAxes, args, ~] = axescheck(varargin{:});
+    
+    parse(ip, args{:});
 catch me
     throw(MException(me.identifier, me.message));
 end
@@ -131,6 +120,12 @@ end
 
 
 %% Process inputs
+% Get a valid new plot handle
+haAxes = newplot(haAxes);
+% Get old hold state
+lOldHold = ishold(haAxes);
+% Set axes to hold
+hold(haAxes, 'on');
 % Point at which to plot
 vCenter = ip.Results.Center;
 % Length of each axis
@@ -141,11 +136,6 @@ ceLineSpecX = ip.Results.LineSpecX;
 ceLineSpecY = ip.Results.LineSpecY;
 ceLineSpecZ = ip.Results.LineSpecZ;
 
-% Check we have a valid handle
-if ~ishandle(haAxes)
-    haAxes = gca;
-end
-
 % Defaults to a 2D plot
 bThreeDimPlot = false;
 
@@ -155,33 +145,6 @@ bThreeDimPlot = false;
 if ~isequaln([az, el], [0, 90])
     bThreeDimPlot = true;
 end
-
-% If there is no axis length given, we will guess it from the maximum plot range
-% and just plot 5% of that total
-% if vAxisLength == 0
-%     [vMinRange, vMaxRange] = plotrange(haAxes, 'min+max');
-%     
-%     dLengthX = vMaxRange(1) - vMinRange(1);
-%     dLengthY = vMaxRange(2) - vMinRange(2);
-%     dLengthZ = vMaxRange(3) - vMinRange(3);
-%     
-%     % Fallback if x length is 0 (i.e., flat y-z 3D-plot)
-%     if dLengthX == 0
-%         dLengthX = mean([dLengthY, dLengthZ]);
-%     end
-%     
-%     % Fallback if x length is 0 (i.e., flat x-z 3D-plot)
-%     if dLengthY == 0
-%         dLengthY = mean([dLengthX, dLengthZ]);
-%     end
-%     
-%     % Fallback if x length is 0 (i.e., flat x-y 3D-plot)
-%     if dLengthZ == 0
-%         dLengthZ = mean([dLengthX, dLengthY]);
-%     end
-%     
-%     vAxisLength = [dLengthX; dLengthY; dLengthZ].*0.15;
-% end
 
 % Ensure the axis length is a vector in case it's just a scalar
 if isscalar(vAxisLength)
@@ -204,13 +167,6 @@ end
 
 
 %% Plot the damn thing now
-% Select the given axes as target
-axes(haAxes);
-
-% Ensure we have the axes on hold so we don't accidentaly overwrite its
-% content
-hold(haAxes, 'on');
-
 % Holds our quiver handles
 if bThreeDimPlot
     hQuiver = zeros(3, 1);
@@ -251,17 +207,12 @@ if ~isempty(ceLineSpecZ) && bThreeDimPlot
     set(hQuiver(3), ceLineSpecZ{:});
 end
 
+% Restore old hold value
+if ~lOldHold
+    hold(haAxes, 'off');
+end
+
 % Make sure the figure is being drawn before anything else is done
-drawnow
-
-% Finally, set the active axes handle to be the first most axes handle we
-% have created or were given a parameter to this function
-axes(haAxes);
-
-% Clear the hold off the current axes
-hold(haAxes, 'off');
-
-% Enforce drawing of the image before returning anything
 drawnow
 
 

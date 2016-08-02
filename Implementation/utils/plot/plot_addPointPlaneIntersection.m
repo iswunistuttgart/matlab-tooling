@@ -8,23 +8,20 @@ function plot_addPointPlaneIntersection(Point, varargin)
 %   Inputs:
 %   
 %   POINT: Point to intersect with the axes or planes
-%
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
 % Date: 2016-03-25
 % Changelog:
-%   2016-03-25: Initial release
+%   2016-07-14
+%       * Wrap IP-parse in try-catch to have nicer error display
+%       * Wedge out param-value pairs to only the needed ones
+%       * Introduce option 'LabelSpec'
+%   2016-03-25
+%       * Initial release
 
-
-
-%% ------------- BEGIN OF CODE -------------- 
-
-%% Pre-Process inputs
-haAxes = false;
-if ~isempty(varargin) && isallaxes(Point)
-    haAxes = Point;
-    Point = varargin{1};
-    varargin = varargin(2:end);
-end
 
 
 
@@ -61,11 +58,24 @@ ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
-parse(ip, Point, varargin{:});
+try
+    varargin = [{Point}, varargin];
+    [haAxes, args, ~] = axescheck(varargin{:});
+    
+    parse(ip, args{:});
+catch me
+    throwAsCaller(MException(me.identifier, me.message));
+end
 
 
 
 %% Assign local variables
+% Axes handle
+haAxes = newplot(haAxes);
+% What's the old hold status?
+lOldHold = ishold(haAxes);
+% Make sure we don't overwrite anything
+hold(haAxes, 'on');
 % Point
 vPoint = ip.Results.Point;
 % Line specs
@@ -76,13 +86,6 @@ ceLineSpecZ = ip.Results.LineSpecZ;
 % Display point, too?
 chDisplayPoint = inCharToValidArgument(ip.Results.DisplayPoint);
 
-% Check we have a valid handle
-if ~ishandle(haAxes)
-    haAxes = gca;
-end
-
-% Make sure we don't overwrite anything
-hold(haAxes, 'on');
 
 % Determine whether we will be plotting into a 2D or 3D plot by looking at the
 % view option of haAxes
@@ -131,7 +134,6 @@ set(hIntersects(:), 'Color', [200, 200, 200]./255, 'LineStyle', '--');
 
 
 
-
 %% Post-processing
 % Apply styles to all axes
 if ~isempty(ceLineSpecXYZ)
@@ -150,18 +152,17 @@ if ~isempty(ceLineSpecZ) && bThreeDimPlot
     set(hIntersects(3), ceLineSpecZ{:});
 end
 
-% Make sure the figure is being drawn before anything else is done
-drawnow
-
 % Finally, set the active axes handle to be the first most axes handle we
 % have created or were given a parameter to this function
 axes(haAxes);
 
-% Enforce drawing of the image before returning anything
+% Make sure the figure is being drawn before anything else is done
 drawnow
 
 % Clear the hold off the current axes
-hold(haAxes, 'off');
+if ~lOldHold
+    hold(haAxes, 'off');
+end
 
 
 end

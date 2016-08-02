@@ -80,18 +80,6 @@ function varargout = plot_markers(varargin)
 
 
 
-%% Pre-process inputs
-% By default we don't have any axes handle
-haAxes = false;
-% Check if the first argument is an axes handle, then we just have to shift all
-% other arguments by one
-if ~isempty(varargin) && isallaxes(varargin{1})
-    haAxes = varargin{1};
-    varargin = varargin(2:end);
-end
-
-
-
 %% Define the input parser
 ip = inputParser;
 
@@ -114,7 +102,9 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
-    parse(ip, varargin{:});
+    [haAxes, args, ~] = axescheck(varargin{:});
+    
+    parse(ip, args{:});
 catch me
     throw(MException(me.identifier, me.message));
 end
@@ -122,10 +112,12 @@ end
 
 
 %% Process arguments
-% If we don't have an axes handle we will grab the current one
-if ~ishandle(haAxes)
-    haAxes = gca;
-end
+% Get a valid new plot handle
+haAxes = newplot(haAxes);
+% Get old hold state
+lOldHold = ishold(haAxes);
+% Set axes to hold
+hold(haAxes, 'on');
 % Get the number of markers
 vMarkersCount = ip.Results.Count;
 % The default order style
@@ -259,6 +251,11 @@ for iChild = 1:nValidChildren
     if ~isempty(vZData)
         set(hMarkerStart(iChild), 'ZData', vZData(1));
     end
+end
+
+% Restore old hold value
+if ~lOldHold
+    hold(haAxes, 'off');
 end
 
 % Update the figure
