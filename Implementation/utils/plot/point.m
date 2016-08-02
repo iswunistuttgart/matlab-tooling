@@ -1,28 +1,5 @@
 function point(X, Y, varargin)
 
-%% Pre-Process inputs
-haTarget = false;
-if ~isempty(varargin) && isallaxes(X)
-    haTarget = X;
-    X = Y;
-    Y = varargin{1};
-    varargin = varargin(2:end);
-end
-
-% if ismatrix(X)
-%     if size(X, 1) == 2
-%         varargin = [{Y}; varargin];
-%         Y = X(2,:);
-%         X = X(1,:);
-%     elseif size(X, 2) == 2
-%         varargin = [{Y}; varargin];
-%         Y = X(:,2);
-%         X = X(:,1);
-%     else
-%         error('PHILIPPTEMPEL:point:invalidDataArgument', 'Invalid value for Points given. Can only accept 2xN or Nx2 matrices');
-%     end
-% end
-
 
 
 %% Define the input parser
@@ -62,10 +39,14 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
-    parse(ip, X, Y, varargin{:});
+    varargin = [{X}, {Y}, varargin];
+    [haTarget, args, ~] = axescheck(varargin{:});
+    
+    parse(ip, args{:});
 catch me
     throw(MException(me.identifier, me.message));
 end
+
 
 
 %% Process inputs
@@ -75,10 +56,12 @@ vCoordsX = ip.Results.X;
 vCoordsY = ip.Results.Y;
 % Parse the points into an array of [x, y]
 aPoints = [vCoordsX(:), vCoordsY(:)];
-% If we don't have a valid axes handle, we will grab the active one
-if ~ishandle(haTarget)
-    haTarget = gca;
-end
+% Axes handle
+haTarget = newplot(haTarget);
+% What's the old hold status?
+lOldHold = ishold(haTarget);
+% Make sure we don't overwrite anything
+hold(haTarget, 'on');
 % Also plot intersection lines?
 chPlotIntersections = inCharToValidArgument(ip.Results.Intersections);
 % Point Specs
@@ -94,8 +77,6 @@ nPoints = size(aPoints, 1);
 
 
 %% And draw it
-% Make sure we don't overwrite previous plot data
-hold(haTarget, 'on');
 
 % Since we allow for drawing many points
 % for iPoint = 1:nPoints
@@ -139,18 +120,10 @@ if ~isempty(ceIntersectYSpec) && strcmp('on', chPlotIntersections)
     set(hIntersectionsY(:), ceIntersectYSpec{:});
 end
 
-% Make sure the figure is being drawn before anything else is done
-drawnow
-
-% Finally, set the active axes handle to be the first most axes handle we
-% have created or were given a parameter to this function
-axes(haTarget);
-
-% Enforce drawing of the image before returning anything
-drawnow
-
 % Clear the hold off the current axes
-hold(haTarget, 'off');
+if ~lOldHold
+    hold(haTarget, 'off');
+end
 
 
 end

@@ -42,6 +42,7 @@ function plotRobotAnchors(Anchors, varargin)
 % Date: 2016-08-02
 % Changelog:
 %   2016-08-02
+%       * Change to using gobjects for holding returned graphic handles
 %       * Change to using ```axescheck``` and ```newplot```
 %   2016-07-14
 %       * Wrap IP-parse in try-catch to have nicer error display
@@ -140,11 +141,11 @@ if isempty(haTarget.Children) && strcmpi(chPlotStyle, '3d')
 end
 
 % Cell array to collect plot anchor handles
-hpAnchorers = cell(nAnchors, 1);
+hpAnchorers = gobjects(nAnchors, 1);
 % Cell array to hold text labels
-htLabels = cell(nAnchors, 1);
+htLabels = gobjects(nAnchors, 1);
 % Holds the bounding box patch handle
-hpBoundingBox = [];
+hpBoundingBox = gobjects(0);
 
 % Plot the anchors
 for iAnchor = 1:nAnchors

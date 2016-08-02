@@ -71,12 +71,14 @@ function [varargout] = plotRobotPlatform(CableAttachments, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-23
+% Date: 2016-08-02
 % TODO:
 %   Add ability to plot platform at a random point/pose e.g, 'PlaceAt', [0,0,0,
 %   0,0,0] where this is [x,y,z, a,b,c]. Then all other plots respective the
 %   platform are relative to that position
 % Changelog:
+%   2016-08-02
+%       * Change to using gobjects for holding returned graphic handles
 %   2016-05-24
 %       * Remove standalone mode. Now everything is "global"
 %       * Update help doc to properly include info on name/value pairs
@@ -245,7 +247,7 @@ end
 
 % Label the winches (either as given by the user or as pre-defined values)
 if bAnchorLabels
-    htAnchorLabels = zeros(size(ceAnchorLabels, 2));
+    htAnchorLabels = gobjects(size(ceAnchorLabels, 2), 1);
     for iUnit = 1:size(ceAnchorLabels, 2)
         htAnchorLabels(iUnit) = text(mxdCableAttachments(1, iUnit), mxdCableAttachments(2, iUnit), mxdCableAttachments(3, iUnit), ...
             num2str(ceAnchorLabels{iUnit}), 'VerticalAlignment', 'bottom', 'FontSize', 10);

@@ -16,6 +16,7 @@ function plot_addPointPlaneIntersection(Point, varargin)
 % Date: 2016-08-02
 % Changelog:
 %   2016-08-02
+%       * Change to using gobjects for holding returned graphic handles
 %       * Change to using ```axescheck``` and ```newplot```
 %   2016-07-14
 %       * Wrap IP-parse in try-catch to have nicer error display
@@ -98,9 +99,9 @@ if ~isequaln([az, el], [0, 90])
 end
 
 if bThreeDimPlot
-    hIntersects = zeros(3, 1);
+    hIntersects = gobjects(3, 1);
 else
-    hIntersects = zeros(1, 1); 
+    hIntersects = gobjects(1, 1); 
 end
 
 
@@ -153,10 +154,6 @@ end
 if ~isempty(ceLineSpecZ) && bThreeDimPlot
     set(hIntersects(3), ceLineSpecZ{:});
 end
-
-% Finally, set the active axes handle to be the first most axes handle we
-% have created or were given a parameter to this function
-axes(haTarget);
 
 % Make sure the figure is being drawn before anything else is done
 drawnow

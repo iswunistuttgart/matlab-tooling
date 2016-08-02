@@ -66,6 +66,7 @@ function varargout = plot_markers(varargin)
 % Date: 2016-08-02
 % Changelog:
 %   2016-08-02
+%       * Change to using gobjects for holding returned graphic handles
 %       * Change to using ```axescheck``` and ```newplot```
 %   2016-07-14
 %       * Wrap IP-parse in try-catch to have nicer error display
@@ -152,8 +153,8 @@ if numel(ceMarkerOrder) < nValidChildren
 end
 
 % Holds the handles to the generated plots
-hMarkers = zeros(nValidChildren, 1);
-hMarkerStart = zeros(nValidChildren, 1);
+hMarkers = gobjects(nValidChildren, 1);
+hMarkerStart = gobjects(nValidChildren, 1);
 
 
 
