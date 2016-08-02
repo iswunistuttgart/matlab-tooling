@@ -86,11 +86,11 @@ function [varargout] = plotRobotCableShapes(PulleyPositions, PulleyAngles, Cable
 
 %% Preprocess inputs (allows to have the axis defined as first argument)
 % By default we don't have any axes handle
-hAxes = false;
+haTarget = false;
 % Check if the first argument is an axes handle, then we just have to shift all
 % other arguments by one
 if ~isempty(varargin) && isallaxes(PulleyPositions)
-    hAxes = PulleyPositions;
+    haTarget = PulleyPositions;
     PulleyPositions = PulleyAngles;
     PulleyAngles = CableShapes;
     CableShapes = varargin{1};
@@ -178,11 +178,11 @@ end
 %% Parse variables of the input parser to local parser
 % Ensure the handle for the axes is a valid handle. If none given, we will
 % create our own figure with handle
-if ~ishandle(hAxes)
-    hAxes = gca;
+if ~ishandle(haTarget)
+    haTarget = gca;
 % Check we are looking at a 3D plot, if a plot is given
 else
-    [az, el] = view(hAxes);
+    [az, el] = view(haTarget);
     assert(~isequaln([az, el], [0, 90]), 'Cannot plot a 3D plot into an existing 2D plot.');
 end
 
@@ -223,17 +223,17 @@ chZLabel = ip.Results.ZLabel;
 % If this is a single plot i.e., the given axes does not have any children, then
 % we are completely free at plotting stuff like labels, etc., Otherwise, we will
 % really just plot the robot frame
-bOwnPlot = isempty(get(hAxes, 'Children'));
+bOwnPlot = isempty(get(haTarget, 'Children'));
 
 
 
 %% Plot the damn thing now!
 % Select the given axes as target
-axes(hAxes);
+axes(haTarget);
 
 % Ensure we have the axes on hold so we don't accidentaly overwrite its
 % content
-hold(hAxes, 'on');
+hold(haTarget, 'on');
 
 hPlotShapes = zeros(size(aPulleyPositions, 2), 1);
 
@@ -289,40 +289,40 @@ end
 if bOwnPlot
     % Set x-axis label, if provided
     if ~isempty(strtrim(chXLabel))
-        xlabel(hAxes, chXLabel);
+        xlabel(haTarget, chXLabel);
     end
     % Set y-axis label, if provided
     if ~isempty(strtrim(chYLabel))
-        ylabel(hAxes, chYLabel);
+        ylabel(haTarget, chYLabel);
     end
     % Set z-axis label, if provided
     if ~isempty(strtrim(chZLabel))
-        zlabel(hAxes, chZLabel);
+        zlabel(haTarget, chZLabel);
     end
     
     % Set a figure title?
     if ~isempty(strtrim(chTitle))
-        title(hAxes, chTitle);
+        title(haTarget, chTitle);
     end
     
     % Set the viewport
-    view(hAxes, mxdViewport);
+    view(haTarget, mxdViewport);
     
     % Set a grid?
     if any(strcmp(chGrid, {'on', 'minor'}))
         % Set grid on
-        grid(hAxes, chGrid);
+        grid(haTarget, chGrid);
         % For minor grids we will also enable the "major" grid
         if strcmpi(chGrid, 'minor')
-            grid(hAxes, 'on');
+            grid(haTarget, 'on');
         end
     end
 
     % And adjust the axes limits so we don't waste too much space but won't be
     % too narrow on the frame/bounding box, either
-%     xlim(hAxes, xlim().*1.05);
-%     ylim(hAxes, ylim().*1.05);
-%     zlim(hAxes, zlim().*1.05);
+%     xlim(haTarget, xlim().*1.05);
+%     ylim(haTarget, ylim().*1.05);
+%     zlim(haTarget, zlim().*1.05);
 end
 
 % Make sure the figure is being drawn before anything else is done
@@ -330,13 +330,13 @@ drawnow
 
 % Finally, set the active axes handle to be the first most axes handle we
 % have created or were given a parameter to this function
-axes(hAxes);
+axes(haTarget);
 
 % Enforce drawing of the image before returning anything
 drawnow
 
 % Clear the hold off the current axes
-hold(hAxes, 'off');
+hold(haTarget, 'off');
 
 
 

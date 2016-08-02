@@ -247,7 +247,7 @@ ip.FunctionName = mfilename;
 % Parse the provided inputs
 try
     varargin = [{Anchors}, varargin];
-    [haAxes, args, ~] = axescheck(varargin{:});
+    [haTarget, args, ~] = axescheck(varargin{:});
     
     parse(ip, args{:});
 catch me
@@ -258,11 +258,11 @@ end
 
 %% Parse and prepare variables locally
 % Get a valid axes handle
-haAxes = newplot(haAxes);
+haTarget = newplot(haTarget);
 % Old hold state
-lOldHold = ishold(haAxes);
+lOldHold = ishold(haTarget);
 % Tell figure to add next plots
-hold(haAxes, 'on');
+hold(haTarget, 'on');
 % Vector of time
 vTime = ip.Results.Time;
 % Vector of poses
@@ -271,7 +271,7 @@ mPoses = ip.Results.Poses;
 chPlotStyle = upper(ip.Results.PlotStyle);
 % Ensure we have the right given axes for the given plot style i.e., no 2D plot
 % into a 3D axes, nor a 3D plot into a 2D axis
-[az, el] = view(hAxes);
+[az, el] = view(haTarget);
 if ~ ( isempty(regexp(chPlotStyle, '^2.*$', 'once')) || isequaln([az, el], [0, 90]) )
     error('PHILIPPTEMPEL:plotRobotPoses:invalidAxesType', 'Given plot styles does not match provided axes type. Cannot plot a 2D image into a 3D plot.');
 end
@@ -324,16 +324,16 @@ if strcmp('on', chVideoSave) && isempty(chVideoFilename)
 end
 
 % Is this our own plot?
-bOwnPlot = isempty(get(hAxes, 'Children'));
+bOwnPlot = isempty(get(haTarget, 'Children'));
 
 
 
 %% Do the magic
 % Select the given axes to be active
-axes(hAxes);
+axes(haTarget);
 
 % Hold on so we don't overwrite anything existing
-hold(hAxes, 'on');
+hold(haTarget, 'on');
 
 % Switch the plot style
 switch chPlotStyle
@@ -349,14 +349,14 @@ switch chPlotStyle
         % In our own plot? Then we're free to add stuff as we want
         if bOwnPlot
             % Adjust the limits
-%             axis(hAxes, 'tight');
-%             xlim(hAxes, xlim().*1.05);
-%             ylim(hAxes, ylim().*1.05);
-%             zlim(hAxes, zlim().*1.05);
+%             axis(haTarget, 'tight');
+%             xlim(haTarget, xlim().*1.05);
+%             ylim(haTarget, ylim().*1.05);
+%             zlim(haTarget, zlim().*1.05);
             
             % Set x-axis label, if provided
             if ~isempty(strtrim(chXLabel))
-                hXLabel = xlabel(hAxes, chXLabel);
+                hXLabel = xlabel(haTarget, chXLabel);
                 
                 if ~isempty(ceXLabelSpec)
                     set(hXLabel, ceXLabelSpec{:});
@@ -364,7 +364,7 @@ switch chPlotStyle
             end
             % Set y-axis label, if provided
             if ~isempty(strtrim(chYLabel))
-                hYLabel = ylabel(hAxes, chYLabel);
+                hYLabel = ylabel(haTarget, chYLabel);
                 
                 if ~isempty(ceYLabelSpec)
                     set(hYLabel, ceYLabelSpec{:});
@@ -372,7 +372,7 @@ switch chPlotStyle
             end
             % Set z-axis label, if provided
             if ~isempty(strtrim(chZLabel))
-                hZLabel = zlabel(hAxes, chZLabel);
+                hZLabel = zlabel(haTarget, chZLabel);
                 
                 if ~isempty(ceZLabelSpec)
                     set(hZLabel, ceZLabelSpec{:});
@@ -381,7 +381,7 @@ switch chPlotStyle
             
             % Set a figure title?
             if ~isempty(strtrim(chTitle))
-                hTitle = title(hAxes, chTitle);
+                hTitle = title(haTarget, chTitle);
                 
                 if ~isempty(ceTitleSpecs)
                     set(hTitle, ceTitleSpec{:});
@@ -394,10 +394,10 @@ switch chPlotStyle
             % Set a grid?
             if any(strcmp(chGrid, {'on', 'minor'}))
                 % Set grid on
-                grid(hAxes, chGrid);
+                grid(haTarget, chGrid);
                 % For minor grids we will also enable the "major" grid
                 if strcmpi(chGrid, 'minor')
-                    grid(hAxes, 'on');
+                    grid(haTarget, 'on');
                 end
             end
             
@@ -432,12 +432,12 @@ switch chPlotStyle
         % In our own plot? Then we're free to add stuff as we want
         if bOwnPlot
             % Adjust the limits
-%             axis(hAxes, 'tight');
-%             ylim(hAxes, ylim().*1.05);
+%             axis(haTarget, 'tight');
+%             ylim(haTarget, ylim().*1.05);
             
             % Set x-axis label, if provided
             if ~isempty(strtrim(chXLabel))
-                hXLabel = xlabel(hAxes, chXLabel);
+                hXLabel = xlabel(haTarget, chXLabel);
                 
                 if ~isempty(ceXLabelSpec)
                     set(hXLabel, ceXLabelSpec{:});
@@ -445,7 +445,7 @@ switch chPlotStyle
             end
             % Set y-axis label, if provided
             if ~isempty(strtrim(chYLabel))
-                hYLabel = ylabel(hAxes, chYLabel);
+                hYLabel = ylabel(haTarget, chYLabel);
                 
                 if ~isempty(ceYLabelSpec)
                     set(hYLabel, ceYLabelSpec{:});
@@ -453,7 +453,7 @@ switch chPlotStyle
             end
             % Set z-axis label, if provided
             if ~isempty(strtrim(chZLabel))
-                hZLabel = zlabel(hAxes, chZLabel);
+                hZLabel = zlabel(haTarget, chZLabel);
                 
                 if ~isempty(ceZLabelSpec)
                     set(hZLabel, ceZLabelSpec{:});
@@ -462,7 +462,7 @@ switch chPlotStyle
             
             % Set a figure title?
             if ~isempty(strtrim(chTitle))
-                hTitle = title(hAxes, chTitle);
+                hTitle = title(haTarget, chTitle);
                 
                 if ~isempty(ceTitleSpecs)
                     set(hTitle, ceTitleSpec{:});
@@ -472,10 +472,10 @@ switch chPlotStyle
             % Set a grid?
             if any(strcmp(chGrid, {'on', 'minor'}))
                 % Set grid on
-                grid(hAxes, chGrid);
+                grid(haTarget, chGrid);
                 % For minor grids we will also enable the "major" grid
                 if strcmpi(chGrid, 'minor')
-                    grid(hAxes, 'on');
+                    grid(haTarget, 'on');
                 end
             end
             
@@ -507,12 +507,12 @@ switch chPlotStyle
         % In our own plot? Then we're free to add stuff as we want
         if bOwnPlot
             % Adjust the limits
-%             axis(hAxes, 'tight');
-%             ylim(hAxes, ylim().*1.05);
+%             axis(haTarget, 'tight');
+%             ylim(haTarget, ylim().*1.05);
             
             % Set x-axis label, if provided
             if ~isempty(strtrim(chXLabel))
-                hXLabel = xlabel(hAxes, chXLabel);
+                hXLabel = xlabel(haTarget, chXLabel);
                 
                 if ~isempty(ceXLabelSpec)
                     set(hXLabel, ceXLabelSpec{:});
@@ -520,7 +520,7 @@ switch chPlotStyle
             end
             % Set y-axis label, if provided
             if ~isempty(strtrim(chYLabel))
-                hYLabel = ylabel(hAxes, chYLabel);
+                hYLabel = ylabel(haTarget, chYLabel);
                 
                 if ~isempty(ceYLabelSpec)
                     set(hYLabel, ceYLabelSpec{:});
@@ -528,7 +528,7 @@ switch chPlotStyle
             end
             % Set z-axis label, if provided
             if ~isempty(strtrim(chZLabel))
-                hZLabel = zlabel(hAxes, chZLabel);
+                hZLabel = zlabel(haTarget, chZLabel);
                 
                 if ~isempty(ceZLabelSpec)
                     set(hZLabel, ceZLabelSpec{:});
@@ -537,7 +537,7 @@ switch chPlotStyle
             
             % Set a figure title?
             if ~isempty(strtrim(chTitle))
-                hTitle = title(hAxes, chTitle);
+                hTitle = title(haTarget, chTitle);
                 
                 if ~isempty(ceTitleSpecs)
                     set(hTitle, ceTitleSpec{:});
@@ -547,12 +547,12 @@ switch chPlotStyle
             % Set a grid?
             if any(strcmp(chGrid, {'on', 'minor'}))
                 % Set grid on
-                grid(hAxes, 'on');
+                grid(haTarget, 'on');
             end
             
             % For minor grids we will also enable the "minor" grid
             if strcmpi(chGrid, 'minor')
-                grid(hAxes, 'minor');
+                grid(haTarget, 'minor');
             end
             
             % Print a box?
@@ -569,14 +569,14 @@ drawnow
 
 % Reset the old hold state if it wasn't set
 if ~lOldHold
-    hold(haAxes, 'off');
+    hold(haTarget, 'off');
 end
 
 
 
 %% Assign output quantities
 if nargout >= 1
-    varargout{1} = hAxes;
+    varargout{1} = haTarget;
 end
 
 

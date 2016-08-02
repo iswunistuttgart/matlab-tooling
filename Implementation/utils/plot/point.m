@@ -1,9 +1,9 @@
 function point(X, Y, varargin)
 
 %% Pre-Process inputs
-haAxes = false;
+haTarget = false;
 if ~isempty(varargin) && isallaxes(X)
-    haAxes = X;
+    haTarget = X;
     X = Y;
     Y = varargin{1};
     varargin = varargin(2:end);
@@ -76,8 +76,8 @@ vCoordsY = ip.Results.Y;
 % Parse the points into an array of [x, y]
 aPoints = [vCoordsX(:), vCoordsY(:)];
 % If we don't have a valid axes handle, we will grab the active one
-if ~ishandle(haAxes)
-    haAxes = gca;
+if ~ishandle(haTarget)
+    haTarget = gca;
 end
 % Also plot intersection lines?
 chPlotIntersections = inCharToValidArgument(ip.Results.Intersections);
@@ -95,7 +95,7 @@ nPoints = size(aPoints, 1);
 
 %% And draw it
 % Make sure we don't overwrite previous plot data
-hold(haAxes, 'on');
+hold(haTarget, 'on');
 
 % Since we allow for drawing many points
 % for iPoint = 1:nPoints
@@ -144,13 +144,13 @@ drawnow
 
 % Finally, set the active axes handle to be the first most axes handle we
 % have created or were given a parameter to this function
-axes(haAxes);
+axes(haTarget);
 
 % Enforce drawing of the image before returning anything
 drawnow
 
 % Clear the hold off the current axes
-hold(haAxes, 'off');
+hold(haTarget, 'off');
 
 
 end

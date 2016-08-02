@@ -62,7 +62,7 @@ ip.FunctionName = mfilename;
 % Parse the provided inputs
 try
     varargin = [{Point}, varargin];
-    [haAxes, args, ~] = axescheck(varargin{:});
+    [haTarget, args, ~] = axescheck(varargin{:});
     
     parse(ip, args{:});
 catch me
@@ -73,11 +73,11 @@ end
 
 %% Assign local variables
 % Axes handle
-haAxes = newplot(haAxes);
+haTarget = newplot(haTarget);
 % What's the old hold status?
-lOldHold = ishold(haAxes);
+lOldHold = ishold(haTarget);
 % Make sure we don't overwrite anything
-hold(haAxes, 'on');
+hold(haTarget, 'on');
 % Point
 vPoint = ip.Results.Point;
 % Line specs
@@ -90,9 +90,9 @@ chDisplayPoint = inCharToValidArgument(ip.Results.DisplayPoint);
 
 
 % Determine whether we will be plotting into a 2D or 3D plot by looking at the
-% view option of haAxes
+% view option of haTarget
 bThreeDimPlot = false;
-[az, el] = view(haAxes);
+[az, el] = view(haTarget);
 if ~isequaln([az, el], [0, 90])
     bThreeDimPlot = true;
 end
@@ -156,14 +156,14 @@ end
 
 % Finally, set the active axes handle to be the first most axes handle we
 % have created or were given a parameter to this function
-axes(haAxes);
+axes(haTarget);
 
 % Make sure the figure is being drawn before anything else is done
 drawnow
 
 % Clear the hold off the current axes
 if ~lOldHold
-    hold(haAxes, 'off');
+    hold(haTarget, 'off');
 end
 
 

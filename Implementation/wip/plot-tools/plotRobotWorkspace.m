@@ -49,7 +49,7 @@ end
 mXData = ip.Results.XData;
 mYData = ip.Results.YData;
 mZData = ip.Results.ZData;
-hAxes = ip.Results.Axes;
+haTarget = ip.Results.Axes;
 cPatchProperties = ip.Results.PatchProperties;
 vViewport = ip.Results.Viewport;
 chGrid = ip.Results.Grid;
@@ -57,14 +57,14 @@ if islogical(chGrid) && isequal(chGrid, true)
     chGrid = 'on';
 end
 
-% Ensure the handle hAxes is a valid handle. If none given, create a new
+% Ensure the handle haTarget is a valid handle. If none given, create a new
 % figure handle, otherwise select the given one to be the active axes
 % handle
-if ~ishandle(hAxes)
+if ~ishandle(haTarget)
     hFig = figure();
-    hAxes = gca();
+    haTarget = gca();
 else
-    axes(hAxes);
+    axes(haTarget);
 end
 
 
@@ -72,7 +72,7 @@ end
 %% Do the magic plotting
 
 % If an axes was given, we want to make sure we won't overwrite its content
-hold(hAxes, 'on');
+hold(haTarget, 'on');
 % Plot the patch of X, Y, Z data with solid color
 hPatch = patch(mXData, mYData, mZData, 1);
 % Set properties on the patch?
@@ -86,7 +86,7 @@ view(vViewport);
 % Set a grid?
 if chGrid
     % Set grid to given value
-    grid(hAxes, chGrid);
+    grid(haTarget, chGrid);
     if strcmpi(chGrid, 'minor')
         grid(chGrid, 'on');
     end
@@ -100,7 +100,7 @@ drawnow;
 %% Assign output quantities
 if nargout > 0
     if nargout >= 1
-        varargout{1} = hAxes;
+        varargout{1} = haTarget;
     end
 end
 

@@ -4,12 +4,12 @@ function varargout = plotRobotForces(Time, Forces, varargin)
 
 %% Preprocess inputs (allows to have the axis defined as first argument)
 % By default we don't have any axes handle
-hAxes = false;
+haTarget = false;
 % Check if the first argument is an axes handle, then we just have to shift all
 % other arguments by one
 if ~isempty(varargin) && isallaxes(Time)
     narginchk(3, Inf)
-    hAxes = Time;
+    haTarget = Time;
     Time = Forces;
     Forces = varargin{1};
     varargin = varargin(2:end);
@@ -71,14 +71,14 @@ end
 %% Parse variables of the input parser to local parser
 % Ensure the handle for the axes is a valid handle. If none given, we will
 % create our own figure with handle
-if ~ishandle(hAxes)
-    hAxes = gca;
+if ~ishandle(haTarget)
+    haTarget = gca;
 % Check we are not looking a 3D plot, if a plot is given
 else
-    [az, el] = view(hAxes);
+    [az, el] = view(haTarget);
     assert(isequaln([az, el], [0, 90]), 'Cannot plot a 2D plot into an existing 3D plot.');
 end
-bOwnPlot = ~isempty(get(hAxes, 'Children'));
+bOwnPlot = ~isempty(get(haTarget, 'Children'));
 % Column vector time
 vcTime = ip.Results.Time;
 % Matrix of cable forces
@@ -105,10 +105,10 @@ chYLabel = ip.Results.YLabel;
 
 %% Do the magic
 % Select the given axes as target axes
-axes(hAxes);
+axes(haTarget);
 
 % Ensure we are not overwriting anything
-hold(hAxes, 'on');
+hold(haTarget, 'on');
 
 % First, plot the winch positions as circles
 hPlotForces = plot(vcTime, maForces);
@@ -121,25 +121,25 @@ end
 if bOwnPlot
     % Set x-axis label, if provided
     if chXLabel
-        xlabel(hAxes, chXLabel);
+        xlabel(haTarget, chXLabel);
     end
     % Set y-axis label, if provided
     if chYLabel
-        ylabel(hAxes, chYLabel);
+        ylabel(haTarget, chYLabel);
     end
     
     % Set a figure title?
     if chTitle
-        title(hAxes, chTitle);
+        title(haTarget, chTitle);
     end
     
     % Set a grid?
     if chGrid
         % Set grid on
-        grid(hAxes, chGrid);
+        grid(haTarget, chGrid);
         % For minor grids we will also enable the "major" grid
         if strcmpi(chGrid, 'minor')
-            grid(hAxes, 'on');
+            grid(haTarget, 'on');
         end
     end
 end
@@ -149,13 +149,13 @@ drawnow
 
 % Finally, set the active axes handle to be the first most axes handle we
 % have created or were given a parameter to this function
-axes(hAxes);
+axes(haTarget);
 
 % Enforce drawing of the image before returning anything
 drawnow
 
 % Clear the hold off the current axes
-hold(hAxes, 'off');
+hold(haTarget, 'off');
 
 
 
@@ -163,7 +163,7 @@ hold(hAxes, 'off');
 
 % First output argument is the axes handle
 if nargout >= 1
-    varargout{1} = hAxes;
+    varargout{1} = haTarget;
 end
 
 

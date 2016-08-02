@@ -51,7 +51,7 @@ end
 
 %% Process inputs
 % Get the axes handle
-haAxes = ip.Results.Axis;
+haTarget = ip.Results.Axis;
 
 
 
@@ -73,7 +73,7 @@ cePlotTypes3D = {...
 %% Magic
 % Try getting all children' types from the axes
 try
-    ceTypes = get(get(haAxes, 'Children'), 'Type');
+    ceTypes = get(get(haTarget, 'Children'), 'Type');
     
     bIsPlot3d = any(ismember(ceTypes, cePlotTypes3D));
 catch ME

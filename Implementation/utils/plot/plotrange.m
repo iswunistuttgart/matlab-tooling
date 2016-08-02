@@ -47,12 +47,12 @@ function varargout = plotrange(RangeSelector, varargin)
 
 %% Preprocess inputs (allows to have the axis defined as first argument)
 % By default we don't have any axes handle
-haAxes = false;
+haTarget = false;
 % Check if the first argument is an axes handle, then we just have to shift all
 % other arguments by one
 if ~isempty(varargin) && isallaxes(RangeSelector)
     narginchk(2, Inf)
-    haAxes = RangeSelector;
+    haTarget = RangeSelector;
     RangeSelector = varargin{1};
     varargin = varargin(2:end);
 end
@@ -84,8 +84,8 @@ end
 
 %% Parse local variables
 % Check we have an axes handle
-if ~ishandle(haAxes)
-    haAxes = gca;
+if ~ishandle(haTarget)
+    haTarget = gca;
 end
 
 % Range selector can be 'min', 'max', 'min+max'
@@ -107,9 +107,9 @@ switch dRangeSelector
 end
 
 % Get XData, YData and ZData of the current axis
-ceXData = get(findobj(haAxes, 'Type', 'Line'), 'XData');
-ceYData = get(findobj(haAxes, 'Type', 'Line'), 'YData');
-ceZData = get(findobj(haAxes, 'Type', 'Line'), 'ZData');
+ceXData = get(findobj(haTarget, 'Type', 'Line'), 'XData');
+ceYData = get(findobj(haTarget, 'Type', 'Line'), 'YData');
+ceZData = get(findobj(haTarget, 'Type', 'Line'), 'ZData');
 
 % Convert axes with only single lines to cell matrices because otherwise our
 % algorithms won't function well in the end

@@ -2,11 +2,11 @@ function autosetlims(Axis, varargin)
 
 %% Preprocess inputs (allows to have the axis defined as first argument)
 % By default we don't have any axes handle
-hAxes = false;
+haTarget = false;
 % Check if the first argument is an axes handle, then we just have to shift all
 % other arguments by one
 if ~isempty(varargin) && isallaxes(Axis)
-    hAxes = Axis;
+    haTarget = Axis;
     Axis = varargin{1};
     varargin = varargin(2:end);
 end
@@ -55,9 +55,9 @@ bGetMin = dMin == -Inf;
 bGetMax = dMax == Inf;
 % Check the given axis handle is an axis handle. If not, we will use the current
 % axis' handle
-if ~ishandle(hAxes)
+if ~ishandle(haTarget)
 %     hFig = figure;
-    hAxes = gca;
+    haTarget = gca;
 end
 
 dExtend = ip.Results.Extend;
@@ -67,9 +67,9 @@ dExtend = ip.Results.Extend;
 vLims = zeros(6, 1);
 % Get the min axis values from the provided axis
 if bGetMin
-    vLims(1) = min(xlim(hAxes));
-    vLims(3) = min(ylim(hAxes));
-    vLims(5) = min(zlim(hAxes));
+    vLims(1) = min(xlim(haTarget));
+    vLims(3) = min(ylim(haTarget));
+    vLims(5) = min(zlim(haTarget));
 % Get the min axis values from the provided value
 else
     vLims(1) = dMin;
@@ -78,9 +78,9 @@ else
 end
 % Get the max axis values from the provided axis
 if bGetMax
-    vLims(2) = max(xlim(hAxes));
-    vLims(4) = max(ylim(hAxes));
-    vLims(6) = max(zlim(hAxes));
+    vLims(2) = max(xlim(haTarget));
+    vLims(4) = max(ylim(haTarget));
+    vLims(6) = max(zlim(haTarget));
 % Get the max axis values from the provided value
 else
     vLims(2) = dMax;
@@ -97,30 +97,30 @@ dZSpan = vLims(6) - vLims(5);
 %% Do the magic
 switch chAxis
     case 'x'
-        xlim(hAxes, [vLims(1), vLims(2)] + dExtend.*[-dXSpan, dXSpan]);
+        xlim(haTarget, [vLims(1), vLims(2)] + dExtend.*[-dXSpan, dXSpan]);
     case 'y'
-        ylim(hAxes, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
+        ylim(haTarget, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
     case 'z'
-        zlim(hAxes, [vLims(5), vLims(6)] + dExtend.*[-dZSpan, dzSpan]);
+        zlim(haTarget, [vLims(5), vLims(6)] + dExtend.*[-dZSpan, dzSpan]);
     case 'xy'
-        xlim(hAxes, [vLims(1), vLims(2)] + dExtend.*[-dXSpan, dXSpan]);
-        ylim(hAxes, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
+        xlim(haTarget, [vLims(1), vLims(2)] + dExtend.*[-dXSpan, dXSpan]);
+        ylim(haTarget, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
     case 'yz'
-        ylim(hAxes, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
-        zlim(hAxes, [vLims(5), vLims(6)] + dExtend.*[-dZSpan, dZSpan]);
+        ylim(haTarget, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
+        zlim(haTarget, [vLims(5), vLims(6)] + dExtend.*[-dZSpan, dZSpan]);
     case 'xz'
-        xlim(hAxes, [vLims(1), vLims(2)] + dExtend.*[-dXSpan, dXSpan]);
-        zlim(hAxes, [vLims(5), vLims(6)] + dExtend.*[-dZSpan, dZSpan]);
+        xlim(haTarget, [vLims(1), vLims(2)] + dExtend.*[-dXSpan, dXSpan]);
+        zlim(haTarget, [vLims(5), vLims(6)] + dExtend.*[-dZSpan, dZSpan]);
     case 'xyz'
-        xlim(hAxes, [vLims(1), vLims(2)] + dExtend.*[-dXSpan, dXSpan]);
-        ylim(hAxes, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
-        zlim(hAxes, [vLims(5), vLims(6)] + dExtend.*[-dZSpan, dZSpan]);
+        xlim(haTarget, [vLims(1), vLims(2)] + dExtend.*[-dXSpan, dXSpan]);
+        ylim(haTarget, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
+        zlim(haTarget, [vLims(5), vLims(6)] + dExtend.*[-dZSpan, dZSpan]);
     case 'all'
-        xlim(hAxes, [vLims(1), vLims(2)] + dExtend.*[-dXSpan, dXSpan]);
-        ylim(hAxes, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
-        zlim(hAxes, [vLims(5), vLims(6)] + dExtend.*[-dZSpan, dZSpan]);
+        xlim(haTarget, [vLims(1), vLims(2)] + dExtend.*[-dXSpan, dXSpan]);
+        ylim(haTarget, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
+        zlim(haTarget, [vLims(5), vLims(6)] + dExtend.*[-dZSpan, dZSpan]);
     otherwise;
-        ylim(hAxes, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
+        ylim(haTarget, [vLims(3), vLims(4)] + dExtend.*[-dYSpan, dYSpan]);
 end
 
 

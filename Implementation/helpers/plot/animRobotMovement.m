@@ -57,11 +57,11 @@ function [varargout] = animRobotMovement(Time, Position, Rotation, AttachmentPoi
 
 %% Preprocess inputs (allows to have the axis defined as first argument)
 % By default we don't have any axes handle
-haAxes = false;
+haTarget = false;
 % Check if the first argument is an axes handle, then we just have to shift all
 % other arguments by one
 if ~isempty(varargin) && isallaxes(Time)
-    haAxes = Time;
+    haTarget = Time;
     Time = Position;
     Position = Rotation;
     Rotation = AttachmentPoints;
@@ -158,17 +158,17 @@ aRotations = ip.Results.Rotation;
 % Get the cable attachment points
 aAttachmentPoints = ip.Results.AttachmentPoints;
 % New figure handle
-if ~ishandle(haAxes)
+if ~ishandle(haTarget)
     hFig = figure;
-    haAxes = gca;
+    haTarget = gca;
 end
 % New axes handle
-haAxes = gca;
+haTarget = gca;
 % Is this our own plot?
-bOwnPlot = isempty(get(haAxes, 'Children'));
+bOwnPlot = isempty(get(haTarget, 'Children'));
 % Ensure we have the right given axes for the given plot style i.e., no 2D plot
 % into a 3D axes, nor a 3D plot into a 2D axis
-% [az, el] = view(haAxes);
+% [az, el] = view(haTarget);
 % if ~ ( isempty(regexp(chPlotStyle, '^2.*$', 'once')) || isequaln([az, el], [0, 90]) )
 %     error('PHILIPPTEMPEL:plotRobotPoses:invalidAxesType', 'Given plot styles does not match provided axes type. Cannot plot a 2D image into a 3D plot.');
 % end
@@ -203,7 +203,7 @@ nNumberOfWires = size(aAttachmentPoints, 2);
 % Only if its a seaprate plot and not a subplot
 if bOwnPlot
     % Set viewport
-    view(haAxes, mxdViewport)
+    view(haTarget, mxdViewport)
     
     % Set the axis
     if ~isempty(strtrim(chAxis))
@@ -219,36 +219,36 @@ if bOwnPlot
     dMaxZ = 1.1*(max(aPositions(:, 3)) + abs(max(max(aAttachmentPoints))));
     
     % Set the axes limits
-    set(haAxes, 'XLimMode', 'manual');
-    set(haAxes, 'XLim', [dMinX dMaxX]);
-    set(haAxes, 'YLimMode', 'manual');
-    set(haAxes, 'YLim', [dMinY dMaxY]);
-    set(haAxes, 'ZLimMode', 'manual');
-    set(haAxes, 'ZLim', [dMinZ dMaxZ]);
-    axes(haAxes, 'equal');
+    set(haTarget, 'XLimMode', 'manual');
+    set(haTarget, 'XLim', [dMinX dMaxX]);
+    set(haTarget, 'YLimMode', 'manual');
+    set(haTarget, 'YLim', [dMinY dMaxY]);
+    set(haTarget, 'ZLimMode', 'manual');
+    set(haTarget, 'ZLim', [dMinZ dMaxZ]);
+    axes(haTarget, 'equal');
 
     % Set a grid?
     if any(strcmp(chGrid, {'on', 'minor'}))
         % Set grid on
-        grid(haAxes, 'on');
+        grid(haTarget, 'on');
     end
     
     % For minor grids we will also enable the "major" grid
     if strcmpi(chGrid, 'minor')
-        grid(haAxes, 'on');
+        grid(haTarget, 'on');
     end
     
     % Set x-axis label, if provided
     if ~isempty(strtrim(chXLabel))
-        xlabel(haAxes, chXLabel);
+        xlabel(haTarget, chXLabel);
     end
     % Set y-axis label, if provided
     if ~isempty(strtrim(chYLabel))
-        ylabel(haAxes, chYLabel);
+        ylabel(haTarget, chYLabel);
     end
     % Set z-axis label, if provided
     if ~isempty(strtrim(chZLabel))
-        zlabel(haAxes, chZLabel);
+        zlabel(haTarget, chZLabel);
     end
 end
 
@@ -304,7 +304,7 @@ hTargetPlotTrajectory = plot3(NaN, NaN, NaN);
 % Patch of the platform
 hTargetPlotPlatform = patch('Faces', aInitialAttachmentPointsBoundingBoxFaces, 'Vertices', aInitialAttachmentPointsBoundingBox, 'FaceColor', 'none');
 % Create the title handle
-hTitle = title(haAxes, 'Initializing...');
+hTitle = title(haTarget, 'Initializing...');
 set(hTitle, 'Interpreter', 'latex');
 
 % Code optimization because we need this lateron in form [b1, b2, ...]

@@ -104,7 +104,7 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
-    [haAxes, args, ~] = axescheck(varargin{:});
+    [haTarget, args, ~] = axescheck(varargin{:});
     
     parse(ip, args{:});
 catch me
@@ -115,11 +115,11 @@ end
 
 %% Process arguments
 % Get a valid new plot handle
-haAxes = newplot(haAxes);
+haTarget = newplot(haTarget);
 % Get old hold state
-lOldHold = ishold(haAxes);
+lOldHold = ishold(haTarget);
 % Set axes to hold
-hold(haAxes, 'on');
+hold(haTarget, 'on');
 % Get the number of markers
 vMarkersCount = ip.Results.Count;
 % The default order style
@@ -136,7 +136,7 @@ ceSupportedPlotTypesSelector = {'Type', 'line'};
 
 %% Pre-process data
 % Get all children of the axes
-ceChildren = get(haAxes, 'Children');
+ceChildren = get(haTarget, 'Children');
 % Grab only the valid children from the current axes' children
 ceValidChildren = findobj(ceChildren, ceSupportedPlotTypesSelector{:});
 nValidChildren = numel(ceValidChildren);
@@ -164,10 +164,10 @@ for iChild = 1:nValidChildren
     
     %%% Create two copies of the current graphics type
     % First copy will be used to display only the markers
-    hMarkers(iChild) = copyobj(mxChild, haAxes);
+    hMarkers(iChild) = copyobj(mxChild, haTarget);
     % Second copy will be only the first item so that we can have it set
     % properly into the legends
-    hMarkerStart(iChild) = copyobj(mxChild, haAxes);
+    hMarkerStart(iChild) = copyobj(mxChild, haTarget);
     
     %%% Work on the original object
     set(mxChild, 'HandleVisibility', 'off');
@@ -257,7 +257,7 @@ end
 
 % Restore old hold value
 if ~lOldHold
-    hold(haAxes, 'off');
+    hold(haTarget, 'off');
 end
 
 % Update the figure

@@ -10,10 +10,10 @@ end
 
 %% Magic
 % Get the local axis
-haAxes = Axis;
+haTarget = Axis;
 
 % Get the view port
-[dAzimut, dElevation] = view(haAxes);
+[dAzimut, dElevation] = view(haTarget);
 
 % We need to this because the viewport is a ring of 360 degree ```view()``` does
 % not care if the view is something like [0, 90] or [0, 450] (it's the freaking

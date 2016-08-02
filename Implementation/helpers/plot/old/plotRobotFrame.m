@@ -78,7 +78,7 @@ function [varargout] = plotRobotFrame(winchPositions, varargin)
 %   2016-07-14
 %       * Wrap IP-parse in try-catch to have nicer error display
 %   2016-05-26
-%       * Add two optional return arguments HAxes, HWinchPositions
+%       * Add two optional return arguments haTarget, HWinchPositions
 %       * Cleanup old change log format
 %   2016-03-30
 %       * Code cleanup
@@ -98,11 +98,11 @@ function [varargout] = plotRobotFrame(winchPositions, varargin)
 
 %% Preprocess inputs (allows to have the axis defined as first argument)
 % By default we don't have any axes handle
-haAxes = false;
+haTarget = false;
 % Check if the first argument is an axes handle, then we just have to shift all
 % other arguments by one
 if ~isempty(varargin) && isallaxes(winchPositions)
-    haAxes = winchPositions;
+    haTarget = winchPositions;
     winchPositions = varargin{1};
     varargin = varargin(2:end);
 end
@@ -186,11 +186,11 @@ end
 %% Parse variables of the input parser to local parser
 % Ensure the handle for the axes is a valid handle. If none given, we will
 % create our own figure with handle
-if ~ishandle(haAxes)
-    haAxes = gca;
+if ~ishandle(haTarget)
+    haTarget = gca;
 % Check we are looking at a 3D plot, if a plot is given
 else
-    [az, el] = view(haAxes);
+    [az, el] = view(haTarget);
     assert(~isequaln([az, el], [0, 90]), 'Cannot plot a 3D plot into an existing 2D plot.');
 end
 
@@ -229,11 +229,11 @@ chZLabel = ip.Results.ZLabel;
 
 %% Plot the damn thing now!
 % Select the given axes as target
-axes(haAxes);
+axes(haTarget);
 
 % Ensure we have the axes on hold so we don't accidentaly overwrite its
 % content
-hold(haAxes, 'on');
+hold(haTarget, 'on');
 
 % First, plot the winch positions as circles
 hpWinchPositions = plot3(aWinchPositions(1, :), aWinchPositions(2, :), aWinchPositions(3, :), 'o');
@@ -282,32 +282,32 @@ end
 
 % Set x-axis label, if provided
 if ~isempty(strtrim(chXLabel))
-    xlabel(haAxes, chXLabel);
+    xlabel(haTarget, chXLabel);
 end
 % Set y-axis label, if provided
 if ~isempty(strtrim(chYLabel))
-    ylabel(haAxes, chYLabel);
+    ylabel(haTarget, chYLabel);
 end
 % Set z-axis label, if provided
 if ~isempty(strtrim(chZLabel))
-    zlabel(haAxes, chZLabel);
+    zlabel(haTarget, chZLabel);
 end
 
 % Set a figure title?
 if ~isempty(strtrim(chTitle))
-    title(haAxes, chTitle);
+    title(haTarget, chTitle);
 end
 
 % Set the viewport
-view(haAxes, mxdViewport);
+view(haTarget, mxdViewport);
 
 % Set a grid?
 if any(strcmp(chGrid, {'on', 'minor'}))
     % Set grid on
-    grid(haAxes, chGrid);
+    grid(haTarget, chGrid);
     % For minor grids we will also enable the "major" grid
     if strcmpi(chGrid, 'minor')
-        grid(haAxes, 'on');
+        grid(haTarget, 'on');
     end
 end
 
@@ -316,20 +316,20 @@ drawnow
 
 % Finally, set the active axes handle to be the first most axes handle we
 % have created or were given a parameter to this function
-axes(haAxes);
+axes(haTarget);
 
 % Enforce drawing of the image before returning anything
 drawnow
 
 % Clear the hold off the current axes
-hold(haAxes, 'off');
+hold(haTarget, 'off');
 
 
 
 %% Assign output quantities
 % First optional return argument: handle to axes we printed into
 if nargout > 0
-    varargout{1} = haAxes;
+    varargout{1} = haTarget;
 end
 
 % Second optional return argument: winch positions

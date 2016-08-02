@@ -112,7 +112,7 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
-    [haAxes, args, ~] = axescheck(varargin{:});
+    [haTarget, args, ~] = axescheck(varargin{:});
     
     parse(ip, args{:});
 catch me
@@ -123,11 +123,11 @@ end
 
 %% Process inputs
 % Get a valid new plot handle
-haAxes = newplot(haAxes);
+haTarget = newplot(haTarget);
 % Get old hold state
-lOldHold = ishold(haAxes);
+lOldHold = ishold(haTarget);
 % Set axes to hold
-hold(haAxes, 'on');
+hold(haTarget, 'on');
 % Point at which to plot
 vCenter = ip.Results.Center;
 % Length of each axis
@@ -142,8 +142,8 @@ ceLineSpecZ = ip.Results.LineSpecZ;
 bThreeDimPlot = false;
 
 % Determine whether we will be plotting into a 2D or 3D plot by looking at the
-% view option of haAxes
-[az, el] = view(haAxes);
+% view option of haTarget
+[az, el] = view(haTarget);
 if ~isequaln([az, el], [0, 90])
     bThreeDimPlot = true;
 end
@@ -211,7 +211,7 @@ end
 
 % Restore old hold value
 if ~lOldHold
-    hold(haAxes, 'off');
+    hold(haTarget, 'off');
 end
 
 % Make sure the figure is being drawn before anything else is done
