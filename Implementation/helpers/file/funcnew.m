@@ -37,8 +37,10 @@ function funcnew(Name, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-02
+% Date: 2016-08-04
 % Changelog:
+%    2016-08-04
+%       * Change default value of option 'Open' to 'on'
 %   2016-08-02
 %       * Initial release
 
@@ -68,8 +70,8 @@ valFcn_Author = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'A
 addParameter(ip, 'Author', 'Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>', valFcn_Author);
 
 % Open afterwards
-valFcn_Open = @(x) any(validatestring(x, {'on', 'off'}, mfilename, 'Open'));
-addParameter(ip, 'Open', 'off', valFcn_Open);
+valFcn_Open = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no', 'please', 'never'}, mfilename, 'Open'));
+addParameter(ip, 'Open', 'on', valFcn_Open);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
