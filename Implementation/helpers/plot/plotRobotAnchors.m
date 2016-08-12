@@ -39,8 +39,11 @@ function plotRobotAnchors(Anchors, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-02
+% Date: 2016-08-12
 % Changelog:
+%   2016-08-12
+%       * Remove no longer needed inline function in_getCyclicValue in favor of
+%       cycliccell
 %   2016-08-02
 %       * Change to using gobjects for holding returned graphic handles
 %       * Change to using ```axescheck``` and ```newplot```
@@ -226,34 +229,6 @@ switch lower(in)
         out = 'off';
     otherwise
         out = 'off';
-end
-
-end
-
-
-
-function ceValue = in_getCyclicValue(ceSource, iCount)
-
-% If the source is not emtpy
-if ~isempty(ceSource)
-    % Check its not a multi-dim cell aray
-    if ~iscell(ceSource{1})
-        % Then we will just return the given anchor specs
-        ceValue = ceSource;
-    % Multi-dim cell array
-    else
-        % Number of available anchor specs
-        nBases = numel(ceSource);
-        % Index of the anchor spec we will be using is just the remainder of the
-        % division of what anchor number we are processing and how many anchors are
-        % available
-        iAnchorSelect = mod(iCount - 1, nBases) + 1;
-        % Assign this as reutrn value
-        ceValue = ceSource{iAnchorSelect};
-    end
-% Source is empty: extracted value is empty
-else
-    ceValue = {};
 end
 
 end
