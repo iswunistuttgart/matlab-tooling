@@ -257,7 +257,7 @@ for iCable = 1:nNumberOfCables
     aLinearEqualityConstraints(1:3,(1:3) + dOffsetColumn) = aRotation_kC2k0*aSelectForcesFromOptimVectorAndTransformTo3D;
     
     % Torques are b_i(in 0) \times R_z(gamma) * Selector-from-x * x
-    aLinearEqualityConstraints(4:6,(1:3) + dOffsetColumn) = vec2skew(aPlatformRotation*aCableAttachments(:,iCable))*aRotation_kC2k0*aSelectForcesFromOptimVectorAndTransformTo3D;
+    aLinearEqualityConstraints(4:6,(1:3) + dOffsetColumn) = vec2skew(asrow(aPlatformRotation*aCableAttachments(:,iCable)))*aRotation_kC2k0*aSelectForcesFromOptimVectorAndTransformTo3D;
     
     % From the initial guess, get the forces of the cables on the anchor points
     % in the cable local frame
