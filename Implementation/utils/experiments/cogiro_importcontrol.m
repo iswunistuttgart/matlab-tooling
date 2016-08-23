@@ -63,7 +63,7 @@ addRequired(ip, 'Filename', valFcn_Filename);
 
 % Optional 1: SamplingTime. Real. Positive
 valFcn_SamplingTime = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'SamplingTime');
-addParameter(ip, 'SamplingTime', 100*1e-3, valFcn_SamplingTime);
+addParameter(ip, 'SamplingTime', 0, valFcn_SamplingTime);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -104,24 +104,31 @@ catch me
 end
 
 % Rename the loaded data
-ceFieldames = fieldnames(stLoadedData);
+ceFieldnames = fieldnames(stLoadedData);
 
 % Loop over the fieldnames and rename them
-for iFieldname = 1:numel(ceFieldames)
-    if ~regexp(ceFieldames{iFieldname}, '^TARGET_DATA____')
+for iFieldname = 1:numel(ceFieldnames)
+    if ~regexp(ceFieldnames{iFieldname}, '^TARGET_DATA____')
         continue
     end
     
     % Remove unnecessary 'TARGET_DATA___' prefix from variable names
-    stLoadedData.(strrep(ceFieldames{iFieldname}, 'TARGET_DATA____', '')) = stLoadedData.(ceFieldames{iFieldname});
-    stLoadedData = rmfield(stLoadedData, ceFieldames{iFieldname});
+    stLoadedData.(strrep(ceFieldnames{iFieldname}, 'TARGET_DATA____', '')) = stLoadedData.(ceFieldnames{iFieldname});
+    stLoadedData = rmfield(stLoadedData, ceFieldnames{iFieldname});
 end
+% Get the new fieldnames
+ceFieldnames = fieldnames(stLoadedData);
 
 
 
 %% Pre-process data
 % Get the time from the experiment
-nTimeSamples = max(size(stLoadedData.MainControl_Command_StartNewMove));
+nTimeSamples = max(size(stLoadedData.(ceFieldnames{iFieldname})));
+% If no sampling time was provided, we will take the data from the first row of
+% the first entry of the imported data
+if dSamplingTime == 0
+    dSamplingTime = round(mean(diff(stLoadedData.(ceFieldnames{1})(1,:))), 4);
+end
 vExp_Time = (0:1:(nTimeSamples-1)).*dSamplingTime;
 
 % Determine the number of measurements

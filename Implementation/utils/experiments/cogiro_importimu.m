@@ -14,6 +14,8 @@ function Collection = cogiro_importimu(Filename, varargin)
 %               MATLAB path or in the local working directory. Can basically be
 %               anything that qualifies as a valid file. File must be created by
 %               export from the IMU and its extension must be .lirmm
+%
+%   Outputs:
 %   
 %   C           Timeseries collection of timeseries with fields
 %               - Position: timeseries of position data as acquired by the

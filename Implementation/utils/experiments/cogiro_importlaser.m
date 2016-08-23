@@ -10,6 +10,18 @@ function LTData = cogiro_importlaser(Filename, varargin)
 %   tracker data from file FILENAME with additional options specified by one or
 %   more Name,Value pair arguments.
 %
+%   Inputs:
+%
+%   FILENAME        Path to file with laser tracker data. Must be a valid excel
+%                   spreadsheet. Function assumes the absolute spatial laser
+%                   tracker data to be present in sheet number 2 if not
+%                   specified differently. Column range F:H from spreadsheet
+%                   will be imported
+%
+%   Outputs:
+%
+%   LTDATA          Timeseries of the spatial position data in order of [X,Y,Z].
+%
 %   Optional Inputs -- specified as parameter value pairs
 %   SamplingTime    Sampling to use for generating the time vector. Defaults to
 %                   7.2 [ms].
@@ -41,7 +53,7 @@ addRequired(ip, 'Filename', valFcn_Filename);
 
 % Optional 1: SamplingTime. Real. Positive
 valFcn_SamplingTime = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'SamplingTime');
-addParameter(ip, 'SamplingTime', 7.2*1e-3, valFcn_SamplingTime);
+addParameter(ip, 'SamplingTime', 0, valFcn_SamplingTime);
 
 % Optional 2: Sheet Number. Real. Not zero. Positive.
 valFcn_SheetNo = @(x) validateattributes(x, {'numeric', 'cell'}, {'nonempty', 'real', 'nonzero', 'positive'}, mfilename, 'SheetNo');
@@ -109,6 +121,11 @@ vSelector = 1:1:nLastVal;
 % Number of time samples equals the number of rows we select
 nTimeSamples = numel(vSelector);
 
+% If no sampling time was given, we will guess so from the first column of
+% taData which is Time_Step
+if dSamplingTime == 0
+    dSamplingTime = round(mean(diff(taData{vSelector(2:end),1}))./1000, 4);
+end
 % Create time vector
 vTime = (0:nTimeSamples - 1).*dSamplingTime;
 
