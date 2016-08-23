@@ -1,67 +1,111 @@
-function LTData = cogiro_importlaser(Filename, SamplingTime)
+function LTData = cogiro_importlaser(Filename, varargin)
+% COGIRO_IMPORTLASER imports processed laser tracker data
+%
+%   LTDATA = COGIRO_IMPORTLASER(FILENAME) imports processed laser tracker data
+%   from the file FILENAME. Must be a valid excel spreadsheet. Function assumes
+%   the absolute spatial laser tracker data to be in sheet number 2 and the
+%   column range to be F to H.
+%
+%   LTDATA = COGIRO_IMPORTLASER(FILENAME, 'Name', 'Value') reads processed laser
+%   tracker data from file FILENAME with additional options specified by one or
+%   more Name,Value pair arguments.
+%
+%   Optional Inputs -- specified as parameter value pairs
+%   SamplingTime    Sampling to use for generating the time vector. Defaults to
+%                   7.2 [ms].
+%
+%   SheetNo         Which sheet to select form the spreadsheet. Defaults to 2.
+%
+%   Columns         In which columns the to-be-extracted data is contained.
+%                   Defaults to [6, 7, 8].
+%
+%   See also: readtable
 
-%% Default arguments
-if nargin < 2
-    SamplingTime = 7.2*1e-3;
+
+
+%% File information
+% Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
+% Date: 2016-08-23
+% Changelog:
+%   2016-08-23
+%       * Initial release
+
+
+
+%% Define the input parser
+ip = inputParser;
+
+% Require: Filename. Char. Non-empty
+valFcn_Filename = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Filename');
+addRequired(ip, 'Filename', valFcn_Filename);
+
+% Optional 1: SamplingTime. Real. Positive
+valFcn_SamplingTime = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'SamplingTime');
+addParameter(ip, 'SamplingTime', 7.2*1e-3, valFcn_SamplingTime);
+
+% Optional 2: Sheet Number. Real. Not zero. Positive.
+valFcn_SheetNo = @(x) validateattributes(x, {'numeric', 'cell'}, {'nonempty', 'real', 'nonzero', 'positive'}, mfilename, 'SheetNo');
+addParameter(ip, 'SheetNo', 2, valFcn_SheetNo);
+
+% Optional 3: Columns to extract
+valFcn_Columns = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'nonzero', 'positive'}, mfilename, 'Columns');
+addParameter(ip, 'Columns', [6, 7, 8], valFcn_Columns);
+
+% Configuration of input parser
+ip.KeepUnmatched = true;
+ip.FunctionName = mfilename;
+
+% Parse the provided inputs
+try
+    varargin = [{Filename}, varargin];
+    
+    parse(ip, varargin{:});
+catch me
+    throwAsCaller(MException(me.identifier, me.message));
 end
 
-% if nargin < 3
-%     StartRow = 2;
-% end
-
-% if nargin < 4
-%     EndRow = Inf;
-% end
 
 
-%% Pre-process arguments
-Filename = fullpath(Filename);
+%% Parse variables of the input parser to local parser
+% Filename
+chFilename = fullpath(ip.Results.Filename);
+% Sampling Time
+dSamplingTime = ip.Results.SamplingTime;
+% Sheet number
+dSheetNumber = ip.Results.SheetNo;
+% Columns
+vColumns = ip.Results.Columns;
 
 
 
-%% Assertion
-% Filename: char
-assert(ischar(Filename), 'File name must be char');
-assert(2 == exist(Filename, 'file'), 'File cannot be found');
+%% Data assertion
+assert(2 == exist(chFilename, 'file'), 'File cannot be found');
 [chFile_Path, chFile_Name, chFile_Ext] = fileparts(Filename);
 assert(strcmpi('.xlsx', chFile_Ext), 'Invalid file extension [%s] found. Must be [.xlsx].', chFile_Ext);
-
-% % Ensure we select a valid range of data
-% assert(EndRow > StartRow, 'End row must be larger than start row');
-
-% Sampling time: numeric, scalar, greater than zero
-assert(isnumeric(SamplingTime), 'Sampling time must be numeric');
-assert(isscalar(SamplingTime), 'Sampling time must be scalar');
-assert(SamplingTime > 0, 'Sampling time must be positive');
-
-
-
-%% Initialize variables.
-% Sampling Time
-dSamplingTime = SamplingTime;
-% Filename
-chFilename = Filename;
-% Delimiter char
-chDelimiter = ',';
-% % Start row of import
-% nStartRow = StartRow;
-% % End row of import
-% nEndRow = EndRow;
 
 
 
 %% Read data and process
 % Read file as table
 try
-    taData = readtable(chFilename, 'Sheet', 2);
+    taData = readtable(chFilename, 'Sheet', dSheetNumber, 'FileType', 'spreadsheet');
 catch me
     error('Could not load file with error: %s', me.message);
 end
 
-% Get the first column's name
-chFirstColName = taData(1,1).Properties.VariableNames{1};
+% Identify where data is NaN
+aDataIsNan = isnan(taData{:,:});
+% Determine row number of last non-NaN value
+nLastVal = size(aDataIsNan,1);
+for iCol = 1:size(aDataIsNan,2)
+    % Skip columns that are ONLY NaN or not a single NaN
+    if all(aDataIsNan(:,iCol)) || all(~aDataIsNan(:,iCol))
+        continue
+    end
+    nLastVal = min(nLastVal, find(aDataIsNan(:,iCol), 1, 'first') - 1);
+end
 % Select only the rows that have values other than NaN
-vSelector = find(~isnan(taData.(chFirstColName)));
+vSelector = 1:1:nLastVal;
 % Number of time samples equals the number of rows we select
 nTimeSamples = numel(vSelector);
 
@@ -70,18 +114,9 @@ vTime = (0:nTimeSamples - 1).*dSamplingTime;
 
 % Stores the measured poses [x, y, z, r, p, y]
 aPoses = zeros(nTimeSamples, 6);
-% Push in X-data
-if ismember('X_axis_mm__1', taData.Properties.VariableNames)
-    aPoses(:,1) = taData.X_axis_mm__1(vSelector);
-end
-% Push in Y-Data
-if ismember('Y_axis_mm__1', taData.Properties.VariableNames)
-    aPoses(:,2) = taData.Y_axis_mm__1(vSelector);
-end
-% Push in Z-Data
-if ismember('Z_axis_mm__1', taData.Properties.VariableNames)
-    aPoses(:,3) = taData.Z_axis_mm__1(vSelector);
-end
+aPoses(:,1) = taData(vSelector,vColumns(1)).(taData(vSelector,vColumns(1)).Properties.VariableNames{1});
+aPoses(:,2) = taData(vSelector,vColumns(2)).(taData(vSelector,vColumns(2)).Properties.VariableNames{1});
+aPoses(:,3) = taData(vSelector,vColumns(3)).(taData(vSelector,vColumns(3)).Properties.VariableNames{1});
 
 
 

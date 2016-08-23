@@ -1,11 +1,12 @@
-function Collection = cogiro_importcontrol(Filename, SamplingTime)
+function Collection = cogiro_importcontrol(Filename, varargin)
 % COGIRO_IMPORTCONTROL imports the control command from the provided file
 %
 %   C = COGIRO_IMPORTCONTROL(FILENAME) imports control command information
 %   stored in FILENAME and puts it into timeseries collection C.
 %
-%   C = COGIRO_IMPORTCONTROL(FILENAME, SAMPLING) reads file with the specified
-%   sampling time if different to the default 1.2 ms (milliseconds).
+%   C = COGIRO_IMPORTCONTROL(FILENAME, 'Name', 'Value') imports control command
+%   information in FILENAME with additional options specified by one or more
+%   Name,Value pair arguments.
 %
 %   Inputs:
 %   
@@ -13,9 +14,6 @@ function Collection = cogiro_importcontrol(Filename, SamplingTime)
 %               MATLAB path or in the local working directory. Can basically be
 %               anything that qualifies as a valid file. File must be generated
 %               by B&R control system and stored as a .MAT-file.
-%
-%   SAMPLING    Sampling time rate of the IMU system for creation of proper time
-%               information.
 %
 %   Outputs:
 %   
@@ -34,13 +32,20 @@ function Collection = cogiro_importcontrol(Filename, SamplingTime)
 %               acceleration as obtained from numeric differentiation by the
 %               control system of SetPose_Velocity. Columns are sorted same as
 %               for SetPos_Position.
+%
+%   Optional Inputs -- specified as parameter value pairs
+%
+%   SAMPLING    Sampling time rate of the IMU system for creation of proper time
+%               information. Defaults to 1.2 ms.
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-06-15
+% Date: 2016-08-23
 % Changelog:
+%   2016-08-23
+%       * Introduce inputParser to function
 %   2016-06-15
 %       * Add help doc
 %       * Transform return value into a timseries collection
@@ -49,34 +54,44 @@ function Collection = cogiro_importcontrol(Filename, SamplingTime)
 
 
 
-%% Default arguments
-if nargin < 2
-    SamplingTime = 1.2*1e-3;
+%% Define the input parser
+ip = inputParser;
+
+% Require: Filename. Char. Non-empty
+valFcn_Filename = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Filename');
+addRequired(ip, 'Filename', valFcn_Filename);
+
+% Optional 1: SamplingTime. Real. Positive
+valFcn_SamplingTime = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'SamplingTime');
+addParameter(ip, 'SamplingTime', 100*1e-3, valFcn_SamplingTime);
+
+% Configuration of input parser
+ip.KeepUnmatched = true;
+ip.FunctionName = mfilename;
+
+% Parse the provided inputs
+try
+    varargin = [{Filename}, varargin];
+    
+    parse(ip, varargin{:});
+catch me
+    throwAsCaller(MException(me.identifier, me.message));
 end
 
 
-%% Pre-process arguments
-Filename = fullpath(Filename);
+
+%% Parse variables of the input parser to local parser
+% Filename
+chFilename = fullpath(ip.Results.Filename);
+% Sampling Time
+dSamplingTime = ip.Results.SamplingTime;
 
 
 
-%% Assert arguments
-% Filename: char
-assert(ischar(Filename), 'File name must be char');
-assert(2 == exist(Filename, 'file'), 'File cannot be found');
+%% Data assertion
+assert(2 == exist(chFilename, 'file'), 'File cannot be found');
 [chFile_Path, chFile_Name, chFile_Ext] = fileparts(Filename);
 assert(strcmpi('.mat', chFile_Ext), 'Invalid file extension [%s] found. Must be [.mat].', chFile_Ext);
-
-% Sampling time: numeric, scalar, greater than zero
-assert(isnumeric(SamplingTime), 'Sampling time must be numeric');
-assert(isscalar(SamplingTime), 'Sampling time must be scalar');
-assert(SamplingTime > 0, 'Sampling time must be positive');
-
-
-
-%% Process argumets
-chFilename = Filename;
-dSamplingTime = SamplingTime;
 
 
 
@@ -204,22 +219,22 @@ end
 
 %% Turn into timeseries
 % Position data
-tsSetPose_Pos = timeseries(aSetPose_Pos, vTime, 'Name', 'SetPose_Position');
-tsSetPose_Pos.UserData.Name = chFile_Name;
-tsSetPose_Pos.UserData.Source = chFilename;
+tsPosition = timeseries(aSetPose_Pos, vTime, 'Name', 'Position');
+tsPosition.UserData.Name = chFile_Name;
+tsPosition.UserData.Source = chFilename;
 % Velocity data
-tsSetPose_Vel = timeseries(aSetPose_Vel, vTime, 'Name', 'SetPose_Velocity');
-tsSetPose_Vel.UserData.Name = chFile_Name;
-tsSetPose_Vel.UserData.Source = chFilename;
+tsVelocity = timeseries(aSetPose_Vel, vTime, 'Name', 'Velocity');
+tsVelocity.UserData.Name = chFile_Name;
+tsVelocity.UserData.Source = chFilename;
 % Acceleratio data
-tsSetPose_Acc = timeseries(aSetPose_Acc, vTime, 'Name', 'SetPose_Acceleration');
-tsSetPose_Acc.UserData.Name = chFile_Name;
-tsSetPose_Acc.UserData.Source = chFilename;
+tsAcceleration = timeseries(aSetPose_Acc, vTime, 'Name', 'Acceleration');
+tsAcceleration.UserData.Name = chFile_Name;
+tsAcceleration.UserData.Source = chFilename;
 
 
 
 %% Create a collection of timeseries
-Collection = tscollection({tsSetPose_Pos, tsSetPose_Vel, tsSetPose_Acc}, 'Name', chFile_Name);
+Collection = tscollection({tsPosition, tsVelocity, tsAcceleration}, 'Name', chFile_Name);
 
 
 end

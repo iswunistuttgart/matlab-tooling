@@ -1,13 +1,12 @@
-function Collection = cogiro_importimu(Filename, SamplingTime)
+function Collection = cogiro_importimu(Filename, varargin)
 % COGIRO_IMPORTIMU imports IMU data for the CoGiRo cable robot
 %
 %   C = COGIRO_IMPORTIMU(FILENAME) reads file given by FILENAME, proccesses data,
-%   and returns it in a timeseries-collection C. By default, sampling time is
-%   assumed to be 100 ms (milliseconds)
+%   and returns it in a timeseries-collection C.
 %
-%   C = COGIRO_IMPORTIMU(FILENAME, SAMPLING) reads file at FILENAME with
-%   specified sampling time SAMPLING. SAMPLING must be a numeric value greater
-%   to zero
+%   C = COGIRO_IMPORTIMU(FILENAME, 'Name', 'Value') reads file given by
+%   FILENAME with additional options specified by one or more Name,Value pair
+%   arguments.
 %
 %   Inputs:
 %   
@@ -15,11 +14,6 @@ function Collection = cogiro_importimu(Filename, SamplingTime)
 %               MATLAB path or in the local working directory. Can basically be
 %               anything that qualifies as a valid file. File must be created by
 %               export from the IMU and its extension must be .lirmm
-%
-%   SAMPLING    Sampling time rate of the IMU system for creation of proper time
-%               information.
-%
-%   Outputs:
 %   
 %   C           Timeseries collection of timeseries with fields
 %               - Position: timeseries of position data as acquired by the
@@ -38,13 +32,20 @@ function Collection = cogiro_importimu(Filename, SamplingTime)
 %                   [can0, can1, can2, can3, can4, can5, can6, can7]
 %               or in cable forces
 %                   [f1, f2, f3, f4, f5, f6, f7, f8]
+%
+%   Optional Inputs -- specified as parameter value pairs
+%
+%   SamplingTime    Sampling time rate of the IMU system for creation of proper
+%                   time information. Defaults to 100 ms.
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-06-15
+% Date: 2016-08-23
 % Changelog:
+%   2016-08-23
+%       * Introduce inputParser to function
 %   2016-06-15
 %       * Add help doc
 %       * Transform return value into a timseries collection
@@ -53,37 +54,44 @@ function Collection = cogiro_importimu(Filename, SamplingTime)
 
 
 
+%% Define the input parser
+ip = inputParser;
 
-%% Default arguments
-if nargin < 2
-    SamplingTime = 100*1e-3; % [ ms ]
+% Require: Filename. Char. Non-empty
+valFcn_Filename = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Filename');
+addRequired(ip, 'Filename', valFcn_Filename);
+
+% Optional 1: SamplingTime. Real. Positive
+valFcn_SamplingTime = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'SamplingTime');
+addParameter(ip, 'SamplingTime', 100*1e-3, valFcn_SamplingTime);
+
+% Configuration of input parser
+ip.KeepUnmatched = true;
+ip.FunctionName = mfilename;
+
+% Parse the provided inputs
+try
+    varargin = [{Filename}, varargin];
+    
+    parse(ip, varargin{:});
+catch me
+    throwAsCaller(MException(me.identifier, me.message));
 end
 
 
-%% Pre-process arguments
-Filename = fullpath(Filename);
+
+%% Parse variables of the input parser to local parser
+% Filename
+chFilename = fullpath(ip.Results.Filename);
+% Sampling Time
+dSamplingTime = ip.Results.SamplingTime;
 
 
 
-%% Assert arguments
-% Filename: char
-assert(ischar(Filename), 'File name must be char');
-assert(2 == exist(Filename, 'file'), 'File cannot be found');
+%% Data assertion
+assert(2 == exist(chFilename, 'file'), 'File cannot be found');
 [chFile_Path, chFile_Name, chFile_Ext] = fileparts(Filename);
 assert(strcmpi('.lirmm', chFile_Ext), 'Invalid file extension [%s] found. Must be [.lirmm].', chFile_Ext);
-
-% Sampling time: numeric, scalar, greater than zero
-assert(isnumeric(SamplingTime), 'Sampling time must be numeric');
-assert(isscalar(SamplingTime), 'Sampling time must be scalar');
-assert(SamplingTime > 0, 'Sampling time must be positive');
-
-
-
-%% Process Arguments
-% Get the char of filename
-chFilename = Filename;
-% Get the double of sampling time
-dSamplingTime = SamplingTime;
 
 
 
