@@ -80,7 +80,7 @@ function saveFigure(Filename, varargin)
 %% Pre-process inputs
 haFig = false;
 
-if ~isempty(varargin) && ishandle(Filename) && strcmpi(get(Filename, 'type'), 'figure')
+if ~isempty(varargin) && isfig(Filename)
     haFig = Filename;
     Filename = varargin{1};
     varargin = varargin(2:end);
@@ -96,7 +96,8 @@ valFcn_Filename = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 
 addRequired(ip, 'Filename', valFcn_Filename);
 
 % Optional 1: Types of files to save as
-valFcn_Types = @(x) all(cellfun(@(x) any(validatestring(x, {'eps', 'fig', 'tikz', 'png', 'emf'}, mfilename, 'Types'))));
+ceAllowedTypes = {'eps', 'fig', 'tikz', 'png', 'emf'};
+valFcn_Types = @(x) assert(all(ismember(x, ceAllowedTypes)), 'The value of ''Types'' is invalid. It must be a member of:\n\n%s', strjoin(ceAllowedTypes, ', ')); %all(cellfun(@(y) ischar(y), cellfun(@(z) validatestring(z, {'eps', 'fig', 'tikz', 'png', 'emf'}, mfilename, 'Types'), y, 'UniformOutput', false), x));
 addOptional(ip, 'Types', {'fig'}, valFcn_Types);
 
 % Optional 2: Create subdirs for each type
@@ -168,50 +169,50 @@ chFilepath = GetFullPath(chFilepath);
 if ismember('fig', ceOutputTypes)
     if strcmp(chInDir, 'on')
         mkdir(fullfile(chPath, 'fig'));
-        chTargetFolder = fullfile(chPath, 'fig', chFilename);
+        chTargetPath = fullfile(chPath, 'fig', chFilename);
     else
-        chTargetFolder = fullfile(chPath);
+        chTargetPath = fullfile(chPath, chFilename);
     end
     
-    saveas(haFig, [chTargetFolder , '.fig']);   % Matlab .FIG file
+    saveas(haFig, [chTargetPath , '.fig']);   % Matlab .FIG file
 end
 
 % Save as emf
 if ismember('emf', ceOutputTypes)
     if strcmp(chInDir, 'on')
         mkdir(fullfile(chPath, 'emf'));
-        chTargetFolder = fullfile(chPath, 'emf', chFilename);
+        chTargetPath = fullfile(chPath, 'emf', chFilename);
     else
-        chTargetFolder = fullfile(chPath);
+        chTargetPath = fullfile(chPath, chFilename);
     end
     
-    saveas(haFig, [chTargetFolder , '.emf']);   % Windows Enhanced Meta-File (best for powerpoints)
+    saveas(haFig, [chTargetPath , '.emf']);   % Windows Enhanced Meta-File (best for powerpoints)
 end
 
 % Save as png
 if ismember('png', ceOutputTypes)
     if strcmp(chInDir, 'on')
         mkdir(fullfile(chPath, 'png'));
-        chTargetFolder = fullfile(chPath, 'png', chFilename);
+        chTargetPath = fullfile(chPath, 'png', chFilename);
     else
-        chTargetFolder = fullfile(chPath);
+        chTargetPath = fullfile(chPath, chFilename);
     end
     
 %     saveas(haFig, [chTargetFolder, '.png']);   % Standard PNG graphics file (best for web)
-    print('-dpng', '-loose', '-zbuffer', '-r200', [chTargetFolder, '.png'], cePngConfig{:}); 
+    print('-dpng', '-loose', '-zbuffer', '-r200', [chTargetPath, '.png'], cePngConfig{:}); 
 end
 
 % Save as eps
 if ismember('eps', ceOutputTypes)
     if strcmp(chInDir, 'on')
         mkdir(fullfile(chPath, 'eps'));
-        chTargetFolder = fullfile(chPath, 'eps', chFilename);
+        chTargetPath = fullfile(chPath, 'eps', chFilename);
     else
-        chTargetFolder = fullfile(chPath);
+        chTargetPath = fullfile(chPath, chFilename);
     end
     
 %     eval(['print -depsc2 ' , [chTargetFolder, '.eps']]);   % Enhanced Postscript (Level 2 color) (Best for LaTeX documents)
-    print('-depsc', '-tiff', '-zbuffer', '-r200', [chTargetFolder , '.eps'], ceEpsConfig{:});
+    print('-depsc', '-tiff', '-zbuffer', '-r200', [chTargetPath , '.eps'], ceEpsConfig{:});
 end
 
 % Save as tikz
@@ -219,13 +220,13 @@ if ismember('tikz', ceOutputTypes)
     % Save in a subdir? Then make sure we have the subdirectory set
     if strcmp(chInDir, 'on')
         mkdir(fullfile(chPath, 'tikz'));
-        chTargetFolder = fullfile(chPath, 'tikz');
+        chTargetPath = fullfile(chPath, 'tikz', chFilename);
     else
-        chTargetFolder = fullfile(chPath);
+        chTargetPath = fullfile(chPath, chFilename);
     end
     
 %     matlab2tikz([chTargetFolder , '.tikz'], 'Height', '\figureheight', 'Width', '\figurewidth', 'ShowInfo', false);
-    matlab2tikz([chTargetFolder , '.tikz'], ceTikzConfig{:});
+    matlab2tikz('filename', [chTargetPath , '.tikz'], 'figurehandle', haFig, ceTikzConfig{:});
 end
 
 
