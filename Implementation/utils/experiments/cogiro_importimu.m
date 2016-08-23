@@ -22,16 +22,16 @@ function Collection = cogiro_importimu(Filename, SamplingTime)
 %   Outputs:
 %   
 %   C           Timeseries collection of timeseries with fields
-%               - IMU_Position: timeseries of position data as acquired by the
+%               - Position: timeseries of position data as acquired by the
 %               IMU. Data is stored in columns
 %                   [x, y, z, a, b, c]
 %               or
 %                   [x, y, z, roll, pitch, heading(yaw) ]
-%               - IMU_Velocity: timeseries of velocity data as acquired by the
-%               IMU. Data is stored in same columns as for IMU_Position
-%               - IMU_Acceleration: timseries of acceleration data as acquired
+%               - Velocity: timeseries of velocity data as acquired by the
+%               IMU. Data is stored in same columns as for C.POSITION
+%               - Acceleration: timseries of acceleration data as acquired
 %               by the IMU. No transformation is done an ddata is sorted same as
-%               for IMU_Position
+%               for C.Position
 %               - CableForces: timeseries of cable forces as acquired by the
 %               IMU. The columns are sorted in one-based index for the canals of
 %               the IMU data i.e.,
@@ -60,13 +60,17 @@ if nargin < 2
 end
 
 
+%% Pre-process arguments
+Filename = fullpath(Filename);
+
+
 
 %% Assert arguments
 % Filename: char
 assert(ischar(Filename), 'File name must be char');
 assert(2 == exist(Filename, 'file'), 'File cannot be found');
-[~, ~, chExtension] = fileparts(Filename);
-assert(strcmpi('.lirmm', chExtension), 'Invalid file extension [%s] found. Must be [.lirmm].', chExtension);
+[chFile_Path, chFile_Name, chFile_Ext] = fileparts(Filename);
+assert(strcmpi('.lirmm', chFile_Ext), 'Invalid file extension [%s] found. Must be [.lirmm].', chFile_Ext);
 
 % Sampling time: numeric, scalar, greater than zero
 assert(isnumeric(SamplingTime), 'Sampling time must be numeric');
@@ -94,13 +98,13 @@ end
 
 %% Pre-process data
 % How many data points do we have?
-nDatapoints = numel(aLoadedData(:,1));
+nTimeSamples = numel(aLoadedData(:,1));
 
-vTime = ascolumn(0:dSamplingTime:((nDatapoints - 1)*dSamplingTime));
-aIsPose_Pos = zeros(nDatapoints, 6);
-aIsPose_Vel = zeros(nDatapoints, 6);
-aIsPose_Acc = zeros(nDatapoints, 6);
-aForces = zeros(nDatapoints, 8);
+vTime = (0:(nTimeSamples - 1)).*dSamplingTime;
+aIsPose_Pos = zeros(nTimeSamples, 6);
+aIsPose_Vel = zeros(nTimeSamples, 6);
+aIsPose_Acc = zeros(nTimeSamples, 6);
+aForces = zeros(nTimeSamples, 8);
 
 
 
@@ -113,11 +117,11 @@ aForces = zeros(nDatapoints, 8);
 % % Z position (does not exist)
 % aIsPose_Pos(:,3) = ;
 % A position (does not exist)
-aIsPose_Pos(:,4) = ascolumn(aLoadedData(:,5));
+aIsPose_Pos(:,4) = aLoadedData(:,5);
 % B position (does not exist)
-aIsPose_Pos(:,5) = ascolumn(aLoadedData(:,6));
+aIsPose_Pos(:,5) = aLoadedData(:,6);
 % C position (does not exist)
-aIsPose_Pos(:,6) = ascolumn(aLoadedData(:,7));
+aIsPose_Pos(:,6) = aLoadedData(:,7);
 
 
 %%% Velocities
@@ -128,20 +132,20 @@ aIsPose_Pos(:,6) = ascolumn(aLoadedData(:,7));
 % % Z velocity (does not exist)
 % aIsPose_Vel(:,3) = ;
 % A velocity
-aIsPose_Vel(:,4) = ascolumn(aLoadedData(:,8));
+aIsPose_Vel(:,4) = aLoadedData(:,8);
 % B velocity
-aIsPose_Vel(:,5) = ascolumn(aLoadedData(:,9));
+aIsPose_Vel(:,5) = aLoadedData(:,9);
 % C velocity
-aIsPose_Vel(:,6) = ascolumn(aLoadedData(:,10));
+aIsPose_Vel(:,6) = aLoadedData(:,10);
 
 
 %%% Accelerations
 % X acceleration
-aIsPose_Acc(:,1) = ascolumn(aLoadedData(:,2));
+aIsPose_Acc(:,1) = aLoadedData(:,2);
 % Y acceleration
-aIsPose_Acc(:,2) = ascolumn(aLoadedData(:,3));
+aIsPose_Acc(:,2) = aLoadedData(:,3);
 % Z acceleration
-aIsPose_Acc(:,3) = ascolumn(aLoadedData(:,4));
+aIsPose_Acc(:,3) = aLoadedData(:,4);
 % % A acceleration
 % aIsPose_Acc(:,4) = ;
 % % B acceleration
@@ -151,28 +155,40 @@ aIsPose_Acc(:,3) = ascolumn(aLoadedData(:,4));
 
 
 %%% Cable forces
-aForces(:,1) = ascolumn(aLoadedData(:,11));
-aForces(:,2) = ascolumn(aLoadedData(:,12));
-aForces(:,3) = ascolumn(aLoadedData(:,13));
-aForces(:,4) = ascolumn(aLoadedData(:,14));
-aForces(:,5) = ascolumn(aLoadedData(:,15));
-aForces(:,6) = ascolumn(aLoadedData(:,16));
-aForces(:,7) = ascolumn(aLoadedData(:,17));
-aForces(:,8) = ascolumn(aLoadedData(:,18));
+aForces(:,1) = aLoadedData(:,11);
+aForces(:,2) = aLoadedData(:,12);
+aForces(:,3) = aLoadedData(:,13);
+aForces(:,4) = aLoadedData(:,14);
+aForces(:,5) = aLoadedData(:,15);
+aForces(:,6) = aLoadedData(:,16);
+aForces(:,7) = aLoadedData(:,17);
+aForces(:,8) = aLoadedData(:,18);
 
 
 
 %% Create timeseries of data
-tsIsPose_Pos = timeseries(aIsPose_Pos, vTime, 'Name', 'IMU_Position');
-tsIsPose_Vel = timeseries(aIsPose_Vel, vTime, 'Name', 'IMU_Velocity');
-tsIsPose_Acc = timeseries(aIsPose_Acc, vTime, 'Name', 'IMU_Acceleration');
+% Position data
+tsIsPose_Pos = timeseries(aIsPose_Pos, vTime, 'Name', 'Position');
+tsIsPose_Pos.UserData.Name = chFile_Name;
+tsIsPose_Pos.UserData.Source = chFilename;
+% Velocity data
+tsIsPose_Vel = timeseries(aIsPose_Vel, vTime, 'Name', 'Velocity');
+tsIsPose_Vel.UserData.Name = chFile_Name;
+tsIsPose_Vel.UserData.Source = chFilename;
+% Acceleration data
+tsIsPose_Acc = timeseries(aIsPose_Acc, vTime, 'Name', 'Acceleration');
+tsIsPose_Acc.UserData.Name = chFile_Name;
+tsIsPose_Acc.UserData.Source = chFilename;
+% Cable forces
 tsForces = timeseries(aForces, vTime, 'Name', 'CableForces');
+tsForces.UserData.Name = chFile_Name;
+tsForces.UserData.Source = chFilename;
 
 
 
 %% Assign return value
 % Return collection is a collcetion of timeseries data
-Collection = tscollection({tsIsPose_Pos, tsIsPose_Vel, tsIsPose_Acc, tsForces}, 'Name', Filename);
+Collection = tscollection({tsIsPose_Pos, tsIsPose_Vel, tsIsPose_Acc, tsForces}, 'Name', chFile_Name);
 
 
 end
