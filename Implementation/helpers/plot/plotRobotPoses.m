@@ -110,8 +110,11 @@ function varargout = plotRobotPoses(Time, Poses, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-02
+% Date: 2016-08-23
 % Changelog:
+%   2016-08-23
+%       * Fix bug with failing validation when an axes handle is passed as first
+%       argument
 %   2016-08-02
 %       * Change to using ```axescheck``` and ```newplot```
 %   2016-07-14
@@ -159,7 +162,7 @@ addRequired(ip, 'Time', valFcn_Time);
 
 % Require: Matrix of poses
 % List of poses must be a matrix with as many columns as Time has rows
-valFcn_Poses = @(x) validateattributes(x, {'numeric'}, {'2d', 'size', [size(Time, 1), 3]}, mfilename, 'Poses');
+valFcn_Poses = @(x) validateattributes(x, {'numeric'}, {'2d', 'ncols', 3}, mfilename, 'Poses');
 addRequired(ip, 'Poses', valFcn_Poses);
 
 % Let user decide on the plot style
@@ -246,7 +249,7 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
-    varargin = [{Anchors}, varargin];
+    varargin = [{Time}, {Poses}, varargin];
     [haTarget, args, ~] = axescheck(varargin{:});
     
     parse(ip, args{:});
@@ -267,6 +270,8 @@ hold(haTarget, 'on');
 vTime = ip.Results.Time;
 % Vector of poses
 mPoses = ip.Results.Poses;
+% Assert we have one pose per timestep
+assert(size(mPoses, 1) == numel(vTime), 'Length of time does not match length of poses');
 % General plot style
 chPlotStyle = upper(ip.Results.PlotStyle);
 % Ensure we have the right given axes for the given plot style i.e., no 2D plot
