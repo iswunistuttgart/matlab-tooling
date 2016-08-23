@@ -39,8 +39,10 @@ function plotRobotAnchors(Anchors, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-12
+% Date: 2016-08-23
 % Changelog:
+%   2016-08-23
+%       * Fix wrong access to gobjects of label and anchor graphic objects
 %   2016-08-12
 %       * Remove no longer needed inline function in_getCyclicValue in favor of
 %       cycliccell
@@ -144,7 +146,7 @@ if isempty(haTarget.Children) && strcmpi(chPlotStyle, '3d')
 end
 
 % Cell array to collect plot anchor handles
-hpAnchorers = gobjects(nAnchors, 1);
+hpAnchors = gobjects(nAnchors, 1);
 % Cell array to hold text labels
 htLabels = gobjects(nAnchors, 1);
 % Holds the bounding box patch handle
@@ -154,31 +156,31 @@ hpBoundingBox = gobjects(0);
 for iAnchor = 1:nAnchors
     % Plot the current anchor in 3D
     if strcmpi('3d', chPlotStyle)
-        hpAnchorers{iAnchor} = plot3(aAnchors(1,iAnchor), aAnchors(2,iAnchor), aAnchors(3,iAnchor), 'o');
+        hpAnchors(iAnchor) = plot3(aAnchors(1,iAnchor), aAnchors(2,iAnchor), aAnchors(3,iAnchor), 'o');
     else
-        hpAnchorers{iAnchor} = plot(aAnchors(1,iAnchor), aAnchors(2,iAnchor), 'o');
+        hpAnchors(iAnchor) = plot(aAnchors(1,iAnchor), aAnchors(2,iAnchor), 'o');
     end
 
     % Set custom anchor drawing specs?
     if ~isempty(ceAnchorSpecs)
-        set(hpAnchorers{iAnchor}, ceAnchorSpecs{iAnchor,:});
+        set(hpAnchors{iAnchor}, ceAnchorSpecs{iAnchor,:});
     end
 
     % If we shall plot a label, too
     if ~isempty(ceLabels)
         % Place a text anchor in 3D
         if strcmpi('3d', chPlotStyle)
-            htLabels{iAnchor} = text(aAnchors(1,iAnchor), aAnchors(2,iAnchor), aAnchors(3,iAnchor), ...
+            htLabels(iAnchor) = text(aAnchors(1,iAnchor), aAnchors(2,iAnchor), aAnchors(3,iAnchor), ...
                 num2str(ceLabels{iAnchor}));
         % Place a text anchor in 2D
         else
-            htLabels{iAnchor} = text(aAnchors(1,iAnchor), aAnchors(2,iAnchor), ...
+            htLabels(iAnchor) = text(aAnchors(1,iAnchor), aAnchors(2,iAnchor), ...
                 num2str(ceLabels{iAnchor}));
         end
         
         % Custom label drawing specifications
         if ~isempty(ceLabelSpecs)
-            set(htLabels{iAnchor}, ceLabelSpecs{iAnchor,:});
+            set(htLabels(iAnchor), ceLabelSpecs{iAnchor,:});
         end
     end
 end
