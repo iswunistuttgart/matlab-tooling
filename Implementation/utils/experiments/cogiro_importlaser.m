@@ -117,6 +117,8 @@ aPoses = zeros(nTimeSamples, 6);
 aPoses(:,1) = taData(vSelector,vColumns(1)).(taData(vSelector,vColumns(1)).Properties.VariableNames{1});
 aPoses(:,2) = taData(vSelector,vColumns(2)).(taData(vSelector,vColumns(2)).Properties.VariableNames{1});
 aPoses(:,3) = taData(vSelector,vColumns(3)).(taData(vSelector,vColumns(3)).Properties.VariableNames{1});
+% Convert [ mm ] to [ m ]
+aPoses = aPoses./1000;
 
 
 
