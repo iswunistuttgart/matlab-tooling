@@ -1,4 +1,4 @@
-function Collection = cogiro_importcontrol(Filename, varargin)
+function [varargout] = cogiro_importcontrol(Filename, varargin)
 % COGIRO_IMPORTCONTROL imports the control command from the provided file
 %
 %   C = COGIRO_IMPORTCONTROL(FILENAME) imports control command information
@@ -65,6 +65,10 @@ addRequired(ip, 'Filename', valFcn_Filename);
 valFcn_SamplingTime = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'SamplingTime');
 addParameter(ip, 'SamplingTime', 0, valFcn_SamplingTime);
 
+% Optional 2: SplitCommands. Char. {'on', 'off', 'yes', 'no'
+valFcn_SplitCommands = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no'}, mfilename, 'SplitCommands'));
+addParameter(ip, 'SplitCommands', 'off', valFcn_SplitCommands);
+
 % Configuration of input parser
 ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
@@ -85,13 +89,29 @@ end
 chFilename = fullpath(ip.Results.Filename);
 % Sampling Time
 dSamplingTime = ip.Results.SamplingTime;
+% Split commands
+chSplitCommands = in_charToValidArgument(ip.Results.SplitCommands);
+
+
+
+%% Process number of return arguments
+% If the commands shall be split, we allow only one argument to be returned:
+% collection of collection of commands
+if strcmp(chSplitCommands, 'on')
+    nargoutchk(1, 1);
+end
+% If not commands split but more than one output argument requested ...
+if nargout > 1
+    % Make sure it are three or four i.e., [Pos,Vel,Acc] or [Pos,Vel,Acc,Cmd]
+    nargoutchk(3, 4)
+end
 
 
 
 %% Data assertion
-assert(2 == exist(chFilename, 'file'), 'File cannot be found');
-[chFile_Path, chFile_Name, chFile_Ext] = fileparts(Filename);
-assert(strcmpi('.mat', chFile_Ext), 'Invalid file extension [%s] found. Must be [.mat].', chFile_Ext);
+assert(2 == exist(chFilename, 'file'), 'PHILIPPTEMPEL:COGIRO_IMPORTCONTROL:invalidFileName', 'File cannot be found');
+[~, chFile_Name, chFile_Ext] = fileparts(Filename);
+assert(strcmpi('.mat', chFile_Ext), 'PHILIPPTEMPEL:COGIRO_IMPORTCONTROL:invalidFileExt', 'Invalid file extension [%s] found. Must be [.mat].', chFile_Ext);
 
 
 
@@ -100,7 +120,7 @@ assert(strcmpi('.mat', chFile_Ext), 'Invalid file extension [%s] found. Must be 
 try
     stLoadedData = load(chFilename);
 catch me
-    error('Could not load file with error: %s', me.message);
+    error('PHILIPPTEMPEL:COGIRO_IMPORTCONTROL:fileLoadFailure', 'Could not load file with error: %s', me.message);
 end
 
 % Rename the loaded data
@@ -136,6 +156,7 @@ nDatapoints = numel(vExp_Time);
 
 % Initialize variables holding data
 vTime = vExp_Time;
+vCommand = zeros(nDatapoints, 1);
 aSetPose_Pos = zeros(nDatapoints, 6);
 aSetPose_Vel = zeros(nDatapoints, 6);
 aSetPose_Acc = zeros(nDatapoints, 6);
@@ -143,6 +164,11 @@ aSetPose_Acc = zeros(nDatapoints, 6);
 
 
 %% Assign data from imported data
+
+%%% Command data
+if isfield(stLoadedData, 'MainControl_Command_StartNewMove')
+    vCommand = ascolumn(stLoadedData.MainControl_Command_StartNewMove(2,:));
+end
 
 %%% Position data
 % X position
@@ -225,6 +251,10 @@ end
 
 
 %% Turn into timeseries
+% Command data
+tsCommand = timeseries(vCommand, vTime, 'Name', 'Command');
+tsCommand.UserData.Name = chFile_Name;
+tsCommand.Userdata.Source = chFilename;
 % Position data
 tsPosition = timeseries(aSetPose_Pos, vTime, 'Name', 'Position');
 tsPosition.UserData.Name = chFile_Name;
@@ -233,15 +263,108 @@ tsPosition.UserData.Source = chFilename;
 tsVelocity = timeseries(aSetPose_Vel, vTime, 'Name', 'Velocity');
 tsVelocity.UserData.Name = chFile_Name;
 tsVelocity.UserData.Source = chFilename;
-% Acceleratio data
+% Acceleration data
 tsAcceleration = timeseries(aSetPose_Acc, vTime, 'Name', 'Acceleration');
 tsAcceleration.UserData.Name = chFile_Name;
 tsAcceleration.UserData.Source = chFilename;
 
 
 
+%% Split commands?
+if strcmp('on', chSplitCommands)
+    % When commands where changed i.e., from 0 to 1 or from 1 to zero
+    vCommandChange = diff(tsCommand.Data);
+    
+    % Get inices of command "ON"
+    vCommands_On = find(vCommandChange == 1);
+    % Get indices of command "OFF"
+    vCommands_Off = find(vCommandChange == -1);
+    
+    % Ensure we have enough OFFs as ONs
+    if numel(vCommands_Off) < numel(vCommands_On)
+        % Add the last index of the time as the last time a command was turned
+        % off
+        vCommands_Off = [vCommands_Off; numel(tsCommand.Time)];
+    end
+    
+    % How many commands do we have?
+    nCommands = numel(vCommands_On);
+    
+    % Cell array to hold all the collections
+    cCollection = cell(nCommands, 1);
+    
+    % Loop over all commands
+    for iCommand = 1:nCommands
+        % Get the indices selector for the given command
+        vCommand_Selector = vCommands_On(iCommand):1:vCommands_Off(iCommand);
+        
+        % Build a timeseries collection for the commanded position
+        tsCommand_Pos = getsampleusingtime(tsPosition, tsPosition.Time(vCommand_Selector(1)), tsPosition.Time(vCommand_Selector(end)));
+        tsCommand_Pos.Time = tsCommand_Pos.Time - tsPosition.Time(vCommand_Selector(1));
+        tsCommand_Pos.Name = 'Position';
+        tsCommand_Pos.TimeInfo.UserData.RelStartTime = tsPosition.Time(vCommand_Selector(1));
+        
+        % Build a timeseries collection for the commanded velocity
+        tsCommand_Vel = getsampleusingtime(tsVelocity, tsVelocity.Time(vCommand_Selector(1)), tsVelocity.Time(vCommand_Selector(end)));
+        tsCommand_Vel.Time = tsCommand_Vel.Time - tsVelocity.Time(vCommand_Selector(1));
+        tsCommand_Vel.Name = 'Velocity';
+        tsCommand_Vel.TimeInfo.UserData.RelStartTime = tsVelocity.Time(vCommand_Selector(1));
+        
+        % Build a timeseries collection for the commanded acceleration
+        tsCommand_Acc = getsampleusingtime(tsAcceleration, tsAcceleration.Time(vCommand_Selector(1)), tsAcceleration.Time(vCommand_Selector(end)));
+        tsCommand_Acc.Time = tsCommand_Acc.Time - tsAcceleration.Time(vCommand_Selector(1));
+        tsCommand_Acc.Name = 'Acceleration';
+        tsCommand_Acc.TimeInfo.UserData.RelStartTime = tsAcceleration.Time(vCommand_Selector(1));
+        
+        % And push the timeseries collection to the cell
+        cCollection{iCommand} = tscollection({tsCommand_Pos, tsCommand_Vel, tsCommand_Acc}, 'Name', sprintf('%s_cmd%i', chFile_Name, iCommand));
+    end
+end
+
+
+
 %% Create a collection of timeseries
-Collection = tscollection({tsPosition, tsVelocity, tsAcceleration}, 'Name', chFile_Name);
+% One output: collection of all data
+if strcmp('on', chSplitCommands)
+    varargout{1} = cCollection;
+else
+    if nargout == 1
+        varargout{1} = tscollection({tsCommand, tsPosition, tsVelocity, tsAcceleration}, 'Name', chFile_Name);
+    end
+
+    % Three outputs: [tsPosition, tsVelocity, tsAcceleration]
+    if nargout >= 3
+        varargout{1} = tsPosition;
+        varargout{2} = tsVelocity;
+        varargout{3} = tsAcceleration;
+    end
+
+    % Four outputs: [tsPosition, tsVelocity, tsAcceleration, tsCommand]
+    if nargout >= 4
+        varargout{4} = tsCommand;
+    end
+end
 
 
 end
+
+
+
+function out = in_charToValidArgument(in)
+
+switch lower(in)
+    case {'on', 'yes', 'please'}
+        out = 'on';
+    case {'off', 'no', 'never'}
+        out = 'off';
+    otherwise
+        out = 'off';
+end
+
+end
+
+%------------- END OF CODE --------------
+% Please send suggestions for improvement of this file to the original
+% author as can be found in the header
+% Your contribution towards improving this function will be acknowledged in
+% the "Changes" section of the header

@@ -91,9 +91,9 @@ dSamplingTime = ip.Results.SamplingTime;
 
 
 %% Data assertion
-assert(2 == exist(chFilename, 'file'), 'File cannot be found');
-[chFile_Path, chFile_Name, chFile_Ext] = fileparts(Filename);
-assert(strcmpi('.lirmm', chFile_Ext), 'Invalid file extension [%s] found. Must be [.lirmm].', chFile_Ext);
+assert(2 == exist(chFilename, 'file'), 'PHILIPPTEMPEL:COGIRO_IMPORTIMU:invalidFileName', 'File cannot be found');
+[~, chFile_Name, chFile_Ext] = fileparts(Filename);
+assert(strcmpi('.lirmm', chFile_Ext), 'PHILIPPTEMPEL:COGIRO_IMPORTIMU:invalidFileExt', 'Invalid file extension [%s] found. Must be [.lirmm].', chFile_Ext);
 
 
 
@@ -101,7 +101,7 @@ assert(strcmpi('.lirmm', chFile_Ext), 'Invalid file extension [%s] found. Must b
 try
     aLoadedData = if_importImuDataFile(chFilename);
 catch me
-    error('Could not load file with error: %s', me.message);
+    error('PHILIPPTEMPEL:COGIRO_IMPORTIMU:fileLoadFailure', 'Could not load file with error: %s', me.message);
 end
 
 

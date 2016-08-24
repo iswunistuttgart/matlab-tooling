@@ -22,14 +22,18 @@ function LTData = cogiro_importlaser(Filename, varargin)
 %
 %   LTDATA          Timeseries of the spatial position data in order of [X,Y,Z].
 %
-%   Optional Inputs -- specified as parameter value pairs
+%   Optional Inputs -- specified as parameter value pairsx
+%
+%   Columns         In which columns the to-be-extracted data is contained.
+%                   Defaults to [6, 7, 8].
+%
+%   FilterFirst     Whether to automatically filter the first laser tracker
+%                   measurement data against the next three rows ensuring that
+%                   there is no gap/discontinuity
 %   SamplingTime    Sampling to use for generating the time vector. Defaults to
 %                   7.2 [ms].
 %
 %   SheetNo         Which sheet to select form the spreadsheet. Defaults to 2.
-%
-%   Columns         In which columns the to-be-extracted data is contained.
-%                   Defaults to [6, 7, 8].
 %
 %   See also: readtable
 
@@ -37,8 +41,10 @@ function LTData = cogiro_importlaser(Filename, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-23
+% Date: 2016-08-24
 % Changelog:
+%   2016-08-24
+%       * Add option 'FilterFirst'
 %   2016-08-23
 %       * Initial release
 
@@ -62,6 +68,15 @@ addParameter(ip, 'SheetNo', 2, valFcn_SheetNo);
 % Optional 3: Columns to extract
 valFcn_Columns = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'nonzero', 'positive'}, mfilename, 'Columns');
 addParameter(ip, 'Columns', [6, 7, 8], valFcn_Columns);
+
+% Optional 4: Filter start. Char. Matches {'on', 'off', 'yes', 'no'}
+valFcn_FilterFirst = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no'}, mfilename, 'FilterFirst'));
+addParameter(ip, 'FilterFirst', 'off', valFcn_FilterFirst);
+
+% Optional 5: Filter start threshold. Numeric. Real. Positive.
+valFcn_FilterFirstThreshold = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'nonzero', 'positive'}, mfilename, 'FilterFirstThreshold');
+addParameter(ip, 'FilterFirstThreshold', 5*1e-3, valFcn_FilterFirstThreshold);
+
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -87,13 +102,17 @@ dSamplingTime = ip.Results.SamplingTime;
 dSheetNumber = ip.Results.SheetNo;
 % Columns
 vColumns = ip.Results.Columns;
+% Filter first pose measurement
+chFilterFirst = in_charToValidArgument(ip.Results.FilterFirst);
+% Threshold to filtering the first pose measurement
+dFilterFirstThreshold = ip.Results.FilterFirstThreshold;
 
 
 
 %% Data assertion
-assert(2 == exist(chFilename, 'file'), 'File cannot be found');
-[chFile_Path, chFile_Name, chFile_Ext] = fileparts(Filename);
-assert(strcmpi('.xlsx', chFile_Ext), 'Invalid file extension [%s] found. Must be [.xlsx].', chFile_Ext);
+assert(2 == exist(chFilename, 'file'), 'PHILIPPTEMPEL:COGIRO_IMPORTLASER:invalidFileName', 'File cannot be found');
+[~, chFile_Name, chFile_Ext] = fileparts(Filename);
+assert(strcmpi('.xlsx', chFile_Ext), 'PHILIPPTEMPEL:COGIRO_IMPORTLASER:invalidFileExt', 'Invalid file extension [%s] found. Must be [.xlsx].', chFile_Ext);
 
 
 
@@ -102,7 +121,7 @@ assert(strcmpi('.xlsx', chFile_Ext), 'Invalid file extension [%s] found. Must be
 try
     taData = readtable(chFilename, 'Sheet', dSheetNumber, 'FileType', 'spreadsheet');
 catch me
-    error('Could not load file with error: %s', me.message);
+    error('PHILIPPTEMPEL:COGIRO_IMPORTLASER:fileLoadFailure', 'Could not load file with error: %s', me.message);
 end
 
 % Identify where data is NaN
@@ -138,12 +157,45 @@ aPoses(:,3) = taData(vSelector,vColumns(3)).(taData(vSelector,vColumns(3)).Prope
 aPoses = aPoses./1000;
 
 
+% Filter the first row if it is too far away from the average over the next five
+% measurements
+if strcmp('on', chFilterFirst)
+    % Get first pose measurement
+    vFirstPose = aPoses(1,:);
+    
+    % Average over at most the next five measurements
+    vAvgComing = mean(aPoses(1+(1:min(5, nTimeSamples)),:));
+    
+    % If any of the first pose measurements is farther away than the default or
+    % user-specified threshold, we will remove the first pose measurement
+    if any((vAvgComing - vFirstPose) > dFilterFirstThreshold)
+        aPoses(1,:) = [];
+        vTime(end) = [];
+    end
+end
+
+
 
 %% Create output variable
 LTData = timeseries(aPoses, vTime, 'Name', 'Position');
 LTData.UserData.Name = chFile_Name;
 LTData.UserData.Source = chFilename;
 
+
+end
+
+
+
+function out = in_charToValidArgument(in)
+
+switch lower(in)
+    case {'on', 'yes', 'please'}
+        out = 'on';
+    case {'off', 'no', 'never'}
+        out = 'off';
+    otherwise
+        out = 'off';
+end
 
 end
 
