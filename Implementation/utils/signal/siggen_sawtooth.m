@@ -1,4 +1,4 @@
-function [SawtoothValue, varargout] = signalGenerator_Sawtooth(CurrentTime, Period, Amplitude, Offset, Algorithm)
+function [SawtoothValue, varargout] = siggen_sawtooth(CurrentTime, Period, Amplitude, Offset, Algorithm)
 
 if nargin < 2
     Period = 2*pi;
