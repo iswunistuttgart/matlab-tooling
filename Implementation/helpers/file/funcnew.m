@@ -41,6 +41,8 @@ function funcnew(Name, varargin)
 % Date: 2016-08-25
 % Changelog:
 %   2016-08-25
+%       * Add support for input and output arguments appearing in the help part
+%       of the script.
 %       * Change option 'Open' to 'Silent' to have argument make more sense (A
 %       toggle should always be FALSE by default and only TRUE by request.
 %       Previously, that was not the case).
@@ -168,7 +170,7 @@ if ~isempty(ceArgOut)
         ceArgOut(idxVarargout+1:end) = [];
     end
 end
-% Join the input arguments
+% Join the output arguments
 chArgOut = strjoin(ceArgOut, ', ');
 
 % Description string
@@ -224,26 +226,36 @@ end
         
         % First, create a lits of in arguments
         if ~isempty(ceArgIn)
+            ceArgIn_Clean = ceArgIn;
+            % Remove 'varargin' from list of in arguments
+            if ismember('varargin', ceArgIn)
+                ceArgIn_Clean(strcmp(ceArgIn, 'varargin')) = [];
+            end
             % Count the length of each argument
-            nCharsLongestArg = max(cellfun(@(x) length(x), ceArgIn)) + 4;
+            nCharsLongestArg = max(cellfun(@(x) length(x), ceArgIn_Clean)) + 4;
             % Get the index of the next column (dividable by 4)
             nNextColumn = 4*ceil((nCharsLongestArg + 1)/4);
             % Prepend comment char and whitespace before uppercased argument
             % name, append whitespace up to filling column and a placeholder at
             % the end
-            ceArgIn_List = cellfun(@(x) sprintf('%%   %s%s%s %s', upper(x), repmat(' ', 1, nNextColumn - length(x)), 'Description of argument', upper(x)), ceArgIn, 'Uniform', false);
+            ceArgIn_List = cellfun(@(x) sprintf('%%   %s%s%s %s', upper(x), repmat(' ', 1, nNextColumn - length(x)), 'Description of argument', upper(x)), ceArgIn_Clean, 'Uniform', false);
         end
         
         % Second, create a lits of out arguments
         if ~isempty(ceArgOut)
+            ceArgOut_Clean = ceArgOut;
+            % Remove 'varargin' from list of in arguments
+            if ismember('varargout', ceArgOut)
+                ceArgOut_Clean(strcmp(ceArgOut, 'varargout')) = [];
+            end
             % Count the length of each argument
-            nCharsLongestArg = max(cellfun(@(x) length(x), ceArgOut)) + 4;
+            nCharsLongestArg = max(cellfun(@(x) length(x), ceArgOut_Clean)) + 4;
             % Get the index of the next column (dividable by 4)
             nNextColumn = 4*ceil((nCharsLongestArg + 1)/4);
             % Prepend comment char and whitespace before uppercased argument
             % name, append whitespace up to filling column and a placeholder at
             % the end
-            ceArgOut_List = cellfun(@(x) sprintf('%%   %s%s%s %s', upper(x), repmat(' ', 1, nNextColumn - length(x)), 'Description of argument', upper(x)), ceArgOut, 'Uniform', false);
+            ceArgOut_List = cellfun(@(x) sprintf('%%   %s%s%s %s', upper(x), repmat(' ', 1, nNextColumn - length(x)), 'Description of argument', upper(x)), ceArgOut_Clean, 'Uniform', false);
         end
         
         % Create the description first from the text given by the user
