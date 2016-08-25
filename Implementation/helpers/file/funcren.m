@@ -81,8 +81,7 @@ chNew_Filepath = fullfile(chNew_Path, sprintf('%s%s', chNew_Name, chNew_Ext));
 
 % Try copying the file
 try
-%     movefile(chOld_Filepath, chNew_Filepath);
-    copyfile(chOld_Filepath, chNew_Filepath);
+    movefile(chOld_Filepath, chNew_Filepath);
 catch me
     throwAsCaller(MException(me.identifier, me.message));
 end
