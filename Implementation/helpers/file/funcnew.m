@@ -29,6 +29,7 @@ function funcnew(Name, varargin)
 %   Author      Author string to be set. Most preferable you'd use something
 %               like
 %               'Firstname Lastname <author-email@example.com>'
+%   
 %   Description Description of function which is usually the first line after
 %               the function declaration and contains the function name in all
 %               caps.
@@ -37,8 +38,12 @@ function funcnew(Name, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-04
+% Date: 2016-08-25
 % Changelog:
+%   2016-08-25
+%       * Change option 'Open' to 'Silent' to have argument make more sense (A
+%       toggle should always be FALSE by default and only TRUE by request.
+%       Previously, that was not the case).
 %    2016-08-04
 %       * Change default value of option 'Open' to 'on'
 %   2016-08-02
@@ -69,9 +74,9 @@ addParameter(ip, 'Description', '', valFcn_Description);
 valFcn_Author = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Author');
 addParameter(ip, 'Author', 'Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>', valFcn_Author);
 
-% Open afterwards
-valFcn_Open = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no', 'please', 'never'}, mfilename, 'Open'));
-addParameter(ip, 'Open', 'on', valFcn_Open);
+% Silent creation i.e., not opening file afterwards
+valFcn_Silent = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no', 'please', 'never'}, mfilename, 'Silent'));
+addParameter(ip, 'Silent', 'off', valFcn_Silent);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -111,8 +116,8 @@ ceArgOut = ip.Results.ArgOut;
 chDescription = ip.Results.Description;
 % Author name
 chAuthor = ip.Results.Author;
-% Open afterwards?
-chOpen = in_charToValidArgument(ip.Results.Open);
+% Silent creation?
+chSilent = in_charToValidArgument(ip.Results.Silent);
 
 %%% Local variables
 % Path to function template file
@@ -124,7 +129,7 @@ chDate = datestr(now, 'yyyy-mm-dd');
 
 %% Assert variables
 % Assert we have a valid function template filepath
-assert(2 == exist(chTemplateFilepath, 'file'), 'Function template cannot be found at %s', chTemplateFilepath);
+assert(2 == exist(chTemplateFilepath, 'file'), 'PHILIPPTEMPEL:FUNCNEW:functionTemplateNotFound', 'Function template cannot be found at %s', chTemplateFilepath);
 
 
 
@@ -136,7 +141,7 @@ try
     fclose(fidSource);
 catch me
     if strcmp(me.identifier, 'MATLAB:FileIO:InvalidFid')
-        throw(MException('PHILIPPTEMPEL:NewFunction:InvalidFid', 'Could not open source file for reading.'));
+        throw(MException('PHILIPPTEMPEL:FUNCNEW:invalidTemplateFid', 'Could not open source file for reading.'));
     end
     throwAsCaller(MException(me.identifier, me.message));
 end
@@ -167,11 +172,13 @@ end
 chArgOut = strjoin(ceArgOut, ', ');
 
 % Description string
-chDescription = sprintf('%s %s', upper(chFunction_Name), chDescription);
+chDescription = in_createDescription();
+% chDescription = sprintf('%s %s', upper(chFunction_Name), chDescription);
 
 % Define the set of placeholders to replace here
 ceReplacers = {...
     'FUNCTION', chFunction_Name; ...
+    'FUNCTION_UPPER', upper(chFunction_Name); ...
     'ARGIN', chArgIn; ...
     'ARGOUT', chArgOut; ...
     'DESCRIPTION', chDescription; ...
@@ -196,7 +203,7 @@ try
     assert(fcStatus == 0);
 catch me
     if strcmp(me.identifier, 'MATLAB:FileIO:InvalidFid')
-        throw(MException('PHILIPPTEMPEL:NewFunction:InvalidFid', 'Could not open target file for writing.'));
+        throw(MException('PHILIPPTEMPEL:FUNCNEW:invalidTargetFid', 'Could not open target file for writing.'));
     end
     throwAsCaller(MException(me.identifier, me.message));
 end
@@ -205,9 +212,53 @@ end
 
 %% Assign output quantities
 % Open file afterwards?
-if strcmp(chOpen, 'on')
+if strcmp(chSilent, 'off')
     open(chFunction_FullFile);
 end
+
+
+    function chDesc = in_createDescription()
+        % Holds the formatted list entries of inargs and outargs
+        ceArgIn_List = cell(numel(ceArgIn), 1);
+        ceArgOut_List = cell(numel(ceArgOut), 1);
+        
+        % First, create a lits of in arguments
+        if ~isempty(ceArgIn)
+            % Count the length of each argument
+            nCharsLongestArg = max(cellfun(@(x) length(x), ceArgIn)) + 4;
+            % Get the index of the next column (dividable by 4)
+            nNextColumn = 4*ceil((nCharsLongestArg + 1)/4);
+            % Prepend comment char and whitespace before uppercased argument
+            % name, append whitespace up to filling column and a placeholder at
+            % the end
+            ceArgIn_List = cellfun(@(x) sprintf('%%   %s%s%s %s', upper(x), repmat(' ', 1, nNextColumn - length(x)), 'Description of argument', upper(x)), ceArgIn, 'Uniform', false);
+        end
+        
+        % Second, create a lits of out arguments
+        if ~isempty(ceArgOut)
+            % Count the length of each argument
+            nCharsLongestArg = max(cellfun(@(x) length(x), ceArgOut)) + 4;
+            % Get the index of the next column (dividable by 4)
+            nNextColumn = 4*ceil((nCharsLongestArg + 1)/4);
+            % Prepend comment char and whitespace before uppercased argument
+            % name, append whitespace up to filling column and a placeholder at
+            % the end
+            ceArgOut_List = cellfun(@(x) sprintf('%%   %s%s%s %s', upper(x), repmat(' ', 1, nNextColumn - length(x)), 'Description of argument', upper(x)), ceArgOut, 'Uniform', false);
+        end
+        
+        % Create the description first from the text given by the user
+        chDesc = sprintf('%s', chDescription);
+        
+        % Append list of input arguments?
+        if ~isempty(ceArgIn_List)
+            chDesc = sprintf('%s\n%%\n%%   Inputs:\n%%\n%s', chDesc, strjoin(ceArgIn_List, '\n%\n'));
+        end
+        
+        % Append list of output arguments?
+        if ~isempty(ceArgOut_List)
+            chDesc = sprintf('%s\n%%\n%%   Outputs:\n%%\n%s', chDesc, strjoin(ceArgOut_List, '\n%\n'));
+        end
+    end
 
 
 end

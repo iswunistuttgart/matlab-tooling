@@ -15,8 +15,11 @@ function funcren(Old, New, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-02
+% Date: 2016-08-25
 % Changelog:
+%   2016-08-25
+%       * Add option 'Silent' to silent renaming i.e., to not open file
+%       afterwards
 %   2016-08-02
 %       * Initial release
 
@@ -32,6 +35,11 @@ addRequired(ip, 'Old', valFcn_Old);
 % Allow custom input argument list
 valFcn_New = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'New');
 addRequired(ip, 'New', valFcn_New);
+
+% Silent creation i.e., not opening file afterwards
+valFcn_Silent = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no', 'please', 'never'}, mfilename, 'Silent'));
+addParameter(ip, 'Silent', 'off', valFcn_Silent);
+
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -53,6 +61,9 @@ end
 chName_Old = ip.Results.Old;
 % New function name
 chName_New = ip.Results.New;
+% Silent creation?
+chSilent = in_charToValidArgument(ip.Results.Silent);
+
 
 
 
@@ -70,7 +81,8 @@ chNew_Filepath = fullfile(chNew_Path, sprintf('%s%s', chNew_Name, chNew_Ext));
 
 % Try copying the file
 try
-    movefile(chOld_Filepath, chNew_Filepath);
+%     movefile(chOld_Filepath, chNew_Filepath);
+    copyfile(chOld_Filepath, chNew_Filepath);
 catch me
     throwAsCaller(MException(me.identifier, me.message));
 end
@@ -115,8 +127,26 @@ end
 
 %% Assign output quantities
 
-% None so far
+% Open file afterwards?
+if strcmp('off', chSilent)
+    open(chNew_Filepath);
+end
 
+
+end
+
+
+
+function out = in_charToValidArgument(in)
+
+switch lower(in)
+    case {'on', 'yes', 'please'}
+        out = 'on';
+    case {'off', 'no', 'never'}
+        out = 'off';
+    otherwise
+        out = 'off';
+end
 
 end
 
