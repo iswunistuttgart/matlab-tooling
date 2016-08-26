@@ -10,9 +10,9 @@ function [Trajectory] = siggen_difflattraj(Start, End, varargin)
 %
 %   Inputs:
 %
-%   START           Mx1 vector of start positions of the trajectory.
+%   START           1xM vector of start positions of the trajectory.
 %
-%   END             Mx1 vector of end positions of the trajectory.
+%   END             1xM vector of end positions of the trajectory.
 %
 %
 %   Outputs:
@@ -23,9 +23,8 @@ function [Trajectory] = siggen_difflattraj(Start, End, varargin)
 %   Order           Order of system i.e., smoothness of trajectory. Defaults to
 %                   6 [ ].
 %
-%   Time            Nx1 vector of time stamps at which to evaluate trajectory.
-%                   Defaults to a vector from 0 (zero) to 1 (one) sampled at
-%                   1e-3 [ms].
+%   Sampling        Sampling time for the trajectory generation. Defaults to
+%                   1e-3 [s].
 %
 %   Transition      Transition time of the motion. Must be a scalar and will be
 %                   applied to all transitions. Might change in a future
@@ -39,8 +38,11 @@ function [Trajectory] = siggen_difflattraj(Start, End, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-25
+% Date: 2016-08-26
 % Changelog:
+%   2016-08-26
+%       * Change option 'Time' to 'Sampling' and remove support for a time
+%       vector in favor of providing a sampling time
 %   2016-08-25
 %       * Initial release
 
@@ -57,13 +59,13 @@ addRequired(ip, 'Start', valFcn_Start);
 valFcn_End = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'vector', 'ncols', numel(Start)}, mfilename, 'End');
 addRequired(ip, 'End', valFcn_End);
 
-% Optional: Transition time. Numeric. Scalar. Non-negative.
-valFcn_Transition = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'vector', 'positive', 'nonzero'}, mfilename, 'Transition');
-addParameter(ip, 'Transition', 1, valFcn_Transition);
-
 % Optional: Time. Numeric. Scalar. Non-negative.
-valFcn_Time = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'vector', 'nonnegative', 'nonzero'}, mfilename, 'Time');
-addParameter(ip, 'Time', [], valFcn_Time);
+valFcn_Sampling = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'positive'}, mfilename, 'Sampling');
+addParameter(ip, 'Sampling', 1e-3, valFcn_Sampling);
+
+% Optional: Transition time. Numeric. Scalar. Non-negative.
+valFcn_Transition = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'vector', 'positive'}, mfilename, 'Transition');
+addParameter(ip, 'Transition', 1, valFcn_Transition);
 
 % Optional: Systme order. Numeric. Scalar. Non-negative.
 valFcn_Order = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'vector', 'positive', 'nonzero', '>=', 1, '<=', 7}, mfilename, 'Order');
@@ -86,29 +88,22 @@ end
 
 %% Parse input parse
 % Start pose
-vStart = ip.Results.Start;
+vStart = asrow(ip.Results.Start);
 % End pose
-vEnd = ip.Results.End;
+vEnd = asrow(ip.Results.End);
 % Transition time
 dTransition = ip.Results.Transition;
 % Time to evaluate trajectory on
-vTime = ip.Results.Time;
-if isempty(vTime)
-    vTime = 0:1e-3:dTransition;
-end
+dSampling = ip.Results.Sampling;
 % System order
 nSystemOrder = ip.Results.Order;
 
 % How many trajectories to generate?
 nTrajectories = numel(vStart);
-% How many timesteps
-nTime = numel(vTime);
-
-% Build trajectory holding array
-aTrajec = zeros(nTime, nTrajectories);
-% Ensure we are not creating a flat trajectory for more than the transition
-% time.
-assert(vTime(end) == dTransition, 'PHILIPPTEMPEL:SIGGEN_DIFFLATTRAJ:mismatchTimeTransition', 'Transition time [%ds] and final value of time [%ds] mismatch.', dTransition, vTime(end));
+% Number of time steps
+nTime = dTransition./dSampling + 1;
+% Create time vector
+vTime = (0:(nTime-1)).*dSampling;
 
 
 
@@ -125,16 +120,15 @@ aPowers = repmat(vPowers, nTime, 1);
 aTransitionTimePowers = diag(repmat(1/dTransition, 1, nSystemOrder + 1).^(vPowers));
 
 % Pre-Multiply coefficients with time scaling
-vCoeffsPerTime = vCoefficients*aTransitionTimePowers;
+vCoeffsPerTime = transpose(vCoefficients*aTransitionTimePowers);
 
 % Build matrix of all powers of time. Rows are by the power of system order and
 % columns are by increasing time.
-aTimeMatrix = transpose(repmat(vTime(:), 1, nSystemOrder + 1).^(aPowers));
+aTimeMatrix = repmat(vTime(:), 1, nSystemOrder + 1).^(aPowers);
 
-% Loop over each point
-for iTrajec = 1:nTrajectories
-    aTrajec(:,iTrajec) = vStart(iTrajec) + (vEnd(iTrajec) - vStart(iTrajec))*(vCoeffsPerTime*aTimeMatrix);
-end
+% Calculate the trajectory matrix with some repeated matrices and things like
+% that
+aTrajec = repmat(vStart, nTime, 1) + repmat(vEnd - vStart, nTime, 1).*(repmat(aTimeMatrix*vCoeffsPerTime, 1, nTrajectories));
 
 
 
