@@ -20,6 +20,8 @@ function [Trajectory] = siggen_difflattraj(Start, End, varargin)
 %   TRAJECTORY      Time series of the trajectory.
 %
 %   Optional Inputs -- specified as parameter value pairs
+%   Name            Name of the generated time series.
+%
 %   Order           Order of system i.e., smoothness of trajectory. Defaults to
 %                   6 [ ].
 %
@@ -41,6 +43,7 @@ function [Trajectory] = siggen_difflattraj(Start, End, varargin)
 % Date: 2016-08-26
 % Changelog:
 %   2016-08-26
+%       * Add option 'Name' to allow for direct naming of the time series object
 %       * Change option 'Time' to 'Sampling' and remove support for a time
 %       vector in favor of providing a sampling time
 %   2016-08-25
@@ -59,6 +62,14 @@ addRequired(ip, 'Start', valFcn_Start);
 valFcn_End = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'vector', 'ncols', numel(Start)}, mfilename, 'End');
 addRequired(ip, 'End', valFcn_End);
 
+% Optional: Time series name. Char. Non-empty
+valFcn_Name = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Order');
+addParameter(ip, 'Name', 'SmoothTrajectory', valFcn_Name);
+
+% Optional: System order. Numeric. Scalar. Non-negative.
+valFcn_Order = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'vector', 'positive', 'nonzero', '>=', 1, '<=', 7}, mfilename, 'Order');
+addParameter(ip, 'Order', 6, valFcn_Order);
+
 % Optional: Time. Numeric. Scalar. Non-negative.
 valFcn_Sampling = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'positive'}, mfilename, 'Sampling');
 addParameter(ip, 'Sampling', 1e-3, valFcn_Sampling);
@@ -66,10 +77,6 @@ addParameter(ip, 'Sampling', 1e-3, valFcn_Sampling);
 % Optional: Transition time. Numeric. Scalar. Non-negative.
 valFcn_Transition = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'vector', 'positive'}, mfilename, 'Transition');
 addParameter(ip, 'Transition', 1, valFcn_Transition);
-
-% Optional: Systme order. Numeric. Scalar. Non-negative.
-valFcn_Order = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'vector', 'positive', 'nonzero', '>=', 1, '<=', 7}, mfilename, 'Order');
-addParameter(ip, 'Order', 6, valFcn_Order);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -97,6 +104,8 @@ dTransition = ip.Results.Transition;
 dSampling = ip.Results.Sampling;
 % System order
 nSystemOrder = ip.Results.Order;
+% Time series name
+chName = ip.Results.Name;
 
 % How many trajectories to generate?
 nTrajectories = numel(vStart);
@@ -134,7 +143,7 @@ aTrajec = repmat(vStart, nTime, 1) + repmat(vEnd - vStart, nTime, 1).*(repmat(aT
 
 %% Assign output quantities
 % Only one output argument
-Trajectory = timeseries(aTrajec, vTime, 'Name', 'SmoothTrajectory');
+Trajectory = timeseries(aTrajec, vTime, 'Name', chName);
 
 
 end
