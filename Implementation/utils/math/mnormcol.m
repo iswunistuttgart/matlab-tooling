@@ -1,7 +1,7 @@
-function Mn = matnormalrows(M)%#codegen
-% MATNORMALROWS Normalize a matrix per row
+function Mn = mnormcol(M)%#codegen
+% MNORMCOL Normalize a matrix per column
 % 
-%   MN = MATNORMALROWS(M) normalizes each row of matrix MAT by its norm.
+%   MN = MATNORMALROWS(M) normalizes each column of matrix MAT by its norm.
 %
 %   
 %   Inputs:
@@ -10,7 +10,7 @@ function Mn = matnormalrows(M)%#codegen
 %
 %   Outputs:
 %
-%   MN: Matrix with each row's norm being one.
+%   MN: Matrix with each column's norm being one.
 %
 
 
@@ -30,7 +30,7 @@ assert(isa(M, 'double'), 'Input must be of type double');
 
 
 %% Magic, do your thing and create the output right away
-Mn = bsxfun(@times, M, 1./sqrt(sum(M.^2,2)));
+Mn = transpose(matnormalrows(transpose(M)));
 
 
 end
