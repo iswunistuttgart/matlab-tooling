@@ -68,16 +68,18 @@ aVel2 = reshape(aVel, [3, 1, nAngles]);
 vZeros = zeros(1, 1, nAngles);
 vPhiDot = aVel2(1,1,:);
 vThetaDot = aVel2(2,1,:);
-vSinTheta = sin(aAng2(2,1,:));
-vCosTheta = cos(aAng2(2,1,:));
-vSinPsi = sin(aAng2(3,1,:));
-vCosPsi = cos(aAng2(3,1,:));
+vSinOne = sin(aAng2(1,1,:));
+vCosOne = cos(aAng2(1,1,:));
+vSinTwo = sin(aAng2(2,1,:));
+vCosTwo = cos(aAng2(2,1,:));
+vSinThree = sin(aAng2(3,1,:));
+vCosThree = cos(aAng2(3,1,:));
 
 % Cast the big 3D matrix of dP^{-1}/dn
 aPInvDot_Temp = cat(1 ...
-    , vZeros,   -vPhiDot.*vSinTheta.*vCosPsi,   -vThetaDot.*vCosPsi - vPhiDot.*vCosTheta.*vCosPsi ...
-    , vZeros,   -vPhiDot.*vSinTheta.*vSinPsi,    vPhiDot.*vCosTheta.*vCosPsi + vThetaDot.*vSinPsi ...
-    , vZeros,   -vPhiDot*vCosTheta,              vZeros ...
+    , vZeros,   -vPhiDot.*vSinTwo.*vCosThree,   -vPhiDot.*vCosTwo.*vSinThree + vThetaDot.*vCosThree...
+    , vZeros,    vPhiDot.*vSinTwo.*vSinThree,   -vPhiDot.*vCosTwo.*vCosThree - vThetaDot.*vSinThree ...
+    , vZeros,    vPhiDot*vCosTwo,                vZeros ...
 );
 aPInvDot = reshape(aPInvDot_Temp, [3, 3, nAngles]);
 

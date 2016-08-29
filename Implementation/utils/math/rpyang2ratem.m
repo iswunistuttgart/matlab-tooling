@@ -52,16 +52,18 @@ aAng2 = reshape(aAng, [3, 1, nAngles]);
 % Quick-access variables
 vZeros = zeros(1, 1, nAngles);
 vOnes = ones(1, 1, nAngles);
-vSinTheta = sin(aAng2(2,1,:));
-vCosTheta = cos(aAng2(2,1,:));
-vSinPsi = sin(aAng2(3,1,:));
-vCosPsi = cos(aAng2(3,1,:));
+% vSinOne = sin(aAng2(1,1,:));
+% vCosOne = sin(aAng2(1,1,:));
+vSinTwo = sin(aAng2(2,1,:));
+vCosTwo = cos(aAng2(2,1,:));
+vSinThree = sin(aAng2(3,1,:));
+vCosThree = cos(aAng2(3,1,:));
 
 % Cast the big 3D matrix of P^{-1}
 aPInv_Temp = cat(1 ...
-    ,  vCosTheta.*vCosPsi,  -vSinPsi,   vZeros ...
-    ,  vCosTheta.*vSinPsi,   vCosPsi,   vZeros ...
-    , -vSinTheta,            vZeros,    vOnes ...
+    ,  vCosTwo.*vCosThree,   vSinThree,  vZeros ...
+    , -vCosTwo.*vSinThree,   vCosThree,  vZeros ...
+    ,  vSinTwo,              vZeros,     vOnes ...
 );
 aPInv = reshape(aPInv_Temp, [3, 3, nAngles]);
 
