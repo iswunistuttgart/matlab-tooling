@@ -1,7 +1,7 @@
 function Mn = mnormcol(M)%#codegen
 % MNORMCOL Normalize a matrix per column
 % 
-%   MN = MATNORMALROWS(M) normalizes each column of matrix MAT by its norm.
+%   MN = MNORMCOL(M) normalizes each column of matrix MAT by its norm.
 %
 %   
 %   Inputs:
@@ -30,7 +30,7 @@ assert(isa(M, 'double'), 'Input must be of type double');
 
 
 %% Magic, do your thing and create the output right away
-Mn = transpose(matnormalrows(transpose(M)));
+Mn = transpose(mnormrow(transpose(M)));
 
 
 end
