@@ -110,7 +110,7 @@ chName = ip.Results.Name;
 % How many trajectories to generate?
 nTrajectories = numel(vStart);
 % Number of time steps
-nTime = dTransition./dSampling + 1;
+nTime = dTransition/dSampling;
 % Create time vector
 vTime = (0:(nTime-1)).*dSampling;
 
