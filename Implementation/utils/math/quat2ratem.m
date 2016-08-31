@@ -43,7 +43,7 @@ aQuaternions = q;
 % Number of quaternions
 nQuaternions = size(aQuaternions, 1);
 % Normalize quaternions i.e., each row of the matrix of quaternions
-aQuaternions = transpose(matnormalrows(aQuaternions));
+aQuaternions = transpose(mnormrow(aQuaternions));
 
 
 
@@ -58,9 +58,11 @@ qy = aQuaternions2(3,1,:);
 qz = aQuaternions2(4,1,:);
 
 % Explicitly define concatenation dimension for codegen
-tempT = cat(1, -qx, qw, -qz, qy,...
--qy, qz, qw, -qx,...
--qz, -qy, qx, qw );
+tempT = cat(1 ...
+    , -qx, qw, -qz, qy ...
+    , -qy, qz, qw, -qx ...
+    , -qz, -qy, qx, qw ...
+);
 
 % Reshape the matrix to its proper dimensions
 aTrafos = reshape(tempT, [4, 3, nQuaternions]);

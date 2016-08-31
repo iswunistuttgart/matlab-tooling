@@ -36,7 +36,8 @@ function alpha = quat2acc(q, q_dot, q_ddot)%#codegen
 
 %% Calculation
 
-alpha = quat2ratem(asrow(q_dot))*ascolumn(q_dot) + quat2ratem(asrow(q))*ascolumn(q_ddot);
+% alpha = 2*quat2ratem(asrow(q_dot))*ascolumn(q_dot) + 2*quat2ratem(asrow(q))*ascolumn(q_ddot);
+alpha = 2*quat2ratem(asrow(q_dot))*ascolumn(q_ddot);
 
 end
 

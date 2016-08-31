@@ -31,7 +31,7 @@ function omega = quat2vel(q, q_dot)%#codegen
 
 
 %% Magic
-omega = quat2ratem(asrow(q))*ascolumn(q_dot);
+omega = 2*quat2ratem(asrow(q))*ascolumn(q_dot);
 
 
 end
