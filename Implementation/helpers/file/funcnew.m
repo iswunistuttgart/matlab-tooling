@@ -68,17 +68,21 @@ addOptional(ip, 'ArgIn', {}, valFcn_ArgIn);
 valFcn_ArgOut = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'ArgOut');
 addOptional(ip, 'ArgOut', {}, valFcn_ArgOut);
 
-% Description
+% Description: Char. Non-empty
 valFcn_Description = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Description');
-addParameter(ip, 'Description', '', valFcn_Description);
+addOptional(ip, 'Description', '', valFcn_Description);
 
-% Description
+% Author: Char. Non-empty
 valFcn_Author = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Author');
-addParameter(ip, 'Author', 'Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>', valFcn_Author);
+addOptional(ip, 'Author', 'Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>', valFcn_Author);
 
-% Silent creation i.e., not opening file afterwards
-valFcn_Silent = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no', 'please', 'never'}, mfilename, 'Silent'));
-addParameter(ip, 'Silent', 'off', valFcn_Silent);
+% Silent: Char. Matches {'on', 'off', 'yes', 'no'}. Defaults 'off'
+valFcn_Silent = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no'}, mfilename, 'Silent'));
+addOptional(ip, 'Silent', 'off', valFcn_Silent);
+
+% Overwrite: Char. Matches {'on', 'off', 'yes', 'no'}. Defaults 'no';
+valFcn_Overwrite = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no'}, mfilename, 'Overwrite'));
+addOptional(ip, 'Overwrite', 'off', valFcn_Overwrite);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -120,18 +124,24 @@ chDescription = ip.Results.Description;
 chAuthor = ip.Results.Author;
 % Silent creation?
 chSilent = in_charToValidArgument(ip.Results.Silent);
+% Overwrite existing?
+chOverwrite = in_charToValidArgument(ip.Results.Overwrite);
 
 %%% Local variables
 % Path to function template file
 chTemplateFilepath = fullfile(fileparts(mfilename('fullpath')), 'functiontemplate.mtpl');
 % Date of creation of the file
 chDate = datestr(now, 'yyyy-mm-dd');
+% Target file path
+chFunction_FullFile = fullfile(chFunction_Path, sprintf('%s%s', chFunction_Name , chFunction_Ext));
 
 
 
 %% Assert variables
 % Assert we have a valid function template filepath
-assert(2 == exist(chTemplateFilepath, 'file'), 'PHILIPPTEMPEL:FUNCNEW:functionTemplateNotFound', 'Function template cannot be found at %s', chTemplateFilepath);
+assert(2 == exist(chTemplateFilepath, 'file'), 'PHILIPPTEMPEL:FUNCNEW:functionTemplateNotFound', 'Function template cannot be found at %s.', chTemplateFilepath);
+% Assert the target file does not exist yet
+assert(0 == exist(chFunction_FullFile, 'file') && ~strcmp(chOverwite, 'on') || 2 == exist(chFunction_FullFile, 'file') && strcmp(chOverwrite, 'on'), 'PHILIPPTEMPEL:FUNCNEW:functionExists', 'Function already exists. Will not overwrite unless forced to do so.');
 
 
 
@@ -193,8 +203,6 @@ for iReplace = 1:size(ceReplacers, 1)
 end
 
 
-% Target file path
-chFunction_FullFile = fullfile(chFunction_Path, sprintf('%s%s', chFunction_Name , chFunction_Ext));
 % Save the file
 try
     fidTarget = fopen(chFunction_FullFile, 'w+');
@@ -237,7 +245,15 @@ end
         end
         
         % Determine longest argument name
-        nCharsLongestArg = max(max(cellfun(@(x) length(x), ceArgIn)), max(cellfun(@(x) length(x), ceArgOut))) + 4;
+        nCharsLongestArg_In = max(cellfun(@(x) length(x), ceArgIn));
+        if isempty(nCharsLongestArg_In)
+            nCharsLongestArg_In = 0;
+        end
+        nCharsLongestArg_Out = max(cellfun(@(x) length(x), ceArgOut));
+        if isempty(nCharsLongestArg_Out)
+            nCharsLongestArg_Out = 0;
+        end
+        nCharsLongestArg = max(nCharsLongestArg_In, nCharsLongestArg_Out) + 4;
         
         % First, create a lits of in arguments
         if ~isempty(ceArgIn)
