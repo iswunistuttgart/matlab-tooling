@@ -22,16 +22,22 @@ function LTData = cogiro_importlaser(Filename, varargin)
 %
 %   LTDATA          Timeseries of the spatial position data in order of [X,Y,Z].
 %
-%   Optional Inputs -- specified as parameter value pairsx
-%
-%   Columns         In which columns the to-be-extracted data is contained.
+%   
+%   Optional Inputs -- specified as parameter value pairs
+%   Columns         In which columns the to-be-extracted data are contained.
 %                   Defaults to [6, 7, 8].
 %
 %   FilterFirst     Whether to automatically filter the first laser tracker
-%                   measurement data against the next three rows ensuring that
+%                   measurement data against the next five values ensuring that
 %                   there is no gap/discontinuity
-%   SamplingTime    Sampling to use for generating the time vector. Defaults to
-%                   7.2 [ms].
+%
+%   FilterThresh    What threshold to use for filter the first value. Import
+%                   function looks at the average of the next five measurements
+%                   and removes the first measurement, if and only if it is
+%                   farther away than FILTERTHRESH. Defaults to 5e-3 [ m ].
+%
+%   Sampling        Sampling time to use for generating the time vector.
+%                   Defaults to 7.2e-3 [s].
 %
 %   SheetNo         Which sheet to select form the spreadsheet. Defaults to 2.
 %
@@ -41,8 +47,10 @@ function LTData = cogiro_importlaser(Filename, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-24
+% Date: 2016-09-01
 % Changelog:
+%   2016-09-01
+%       * Update help block with missing 'FilterThres' parameter
 %   2016-08-24
 %       * Add option 'FilterFirst'
 %   2016-08-23
@@ -57,9 +65,9 @@ ip = inputParser;
 valFcn_Filename = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Filename');
 addRequired(ip, 'Filename', valFcn_Filename);
 
-% Optional 1: SamplingTime. Real. Positive
-valFcn_SamplingTime = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'SamplingTime');
-addParameter(ip, 'SamplingTime', 0, valFcn_SamplingTime);
+% Optional 1: Sampling. Real. Positive
+valFcn_Sampling = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'Sampling');
+addParameter(ip, 'Sampling', 0, valFcn_Sampling);
 
 % Optional 2: Sheet Number. Real. Not zero. Positive.
 valFcn_SheetNo = @(x) validateattributes(x, {'numeric', 'cell'}, {'nonempty', 'real', 'nonzero', 'positive'}, mfilename, 'SheetNo');
@@ -74,8 +82,8 @@ valFcn_FilterFirst = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no'
 addParameter(ip, 'FilterFirst', 'off', valFcn_FilterFirst);
 
 % Optional 5: Filter start threshold. Numeric. Real. Positive.
-valFcn_FilterFirstThreshold = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'nonzero', 'positive'}, mfilename, 'FilterFirstThreshold');
-addParameter(ip, 'FilterFirstThreshold', 5*1e-3, valFcn_FilterFirstThreshold);
+valFcn_FilterThreshold = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'nonzero', 'positive'}, mfilename, 'FilterThresh');
+addParameter(ip, 'FilterThresh', 5*1e-3, valFcn_FilterThreshold);
 
 
 % Configuration of input parser
@@ -97,7 +105,7 @@ end
 % Filename
 chFilename = fullpath(ip.Results.Filename);
 % Sampling Time
-dSamplingTime = ip.Results.SamplingTime;
+dSamplingTime = ip.Results.Sampling;
 % Sheet number
 dSheetNumber = ip.Results.SheetNo;
 % Columns
@@ -105,7 +113,7 @@ vColumns = ip.Results.Columns;
 % Filter first pose measurement
 chFilterFirst = in_charToValidArgument(ip.Results.FilterFirst);
 % Threshold to filtering the first pose measurement
-dFilterFirstThreshold = ip.Results.FilterFirstThreshold;
+dFilterThreshold = ip.Results.FilterThresh;
 
 
 
@@ -168,7 +176,7 @@ if strcmp('on', chFilterFirst)
     
     % If any of the first pose measurements is farther away than the default or
     % user-specified threshold, we will remove the first pose measurement
-    if any((vAvgComing - vFirstPose) > dFilterFirstThreshold)
+    if any((vAvgComing - vFirstPose) > dFilterThreshold)
         aPoses(1,:) = [];
         vTime(end) = [];
     end

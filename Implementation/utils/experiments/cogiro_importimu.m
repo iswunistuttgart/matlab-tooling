@@ -35,8 +35,8 @@ function Collection = cogiro_importimu(Filename, varargin)
 %               or in cable forces
 %                   [f1, f2, f3, f4, f5, f6, f7, f8]
 %
-%   Optional Inputs -- specified as parameter value pairs
 %
+%   Optional Inputs -- specified as parameter value pairs
 %   SamplingTime    Sampling time rate of the IMU system for creation of proper
 %                   time information. Defaults to 100 ms.
 

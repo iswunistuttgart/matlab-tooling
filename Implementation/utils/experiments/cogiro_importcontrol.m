@@ -8,6 +8,16 @@ function [varargout] = cogiro_importcontrol(Filename, varargin)
 %   information in FILENAME with additional options specified by one or more
 %   Name,Value pair arguments.
 %
+%   [POS, VEL, ACC] = COGIRO_IMPORTCONTROL(FILENAME, ...) returns the data split
+%   into position POS, velocity VEL, and acceleration ACC data. All returned
+%   data will be a time series for the given command data. If optional input
+%   'SplitCommands' is given, each data will be a cell array of time series.
+%
+%   [POS, VEL, ACC, CMD] = COGIRO_IMPORTCONTROL(FILENAME, ...) additionally
+%   returns time series of the command. All returned data will be a time series
+%   for the given command data. If optional input 'SplitCommands' is given, each
+%   data will be a cell array of time series.
+%
 %   Inputs:
 %   
 %   FILENAME    File name of file to import. Can be a name of a file on the
@@ -33,17 +43,35 @@ function [varargout] = cogiro_importcontrol(Filename, varargin)
 %               control system of SetPose_Velocity. Columns are sorted same as
 %               for SetPos_Position.
 %
-%   Optional Inputs -- specified as parameter value pairs
 %
-%   SAMPLING    Sampling time rate of the IMU system for creation of proper time
+%   Optional Inputs -- specified as parameter value pairs
+%   Sampling    Sampling time rate of the IMU system for creation of proper time
 %               information. Defaults to 1.2 ms.
+%   
+%   SplitCommands   Switch whether to split the commands as determiend by the
+%                   value of variable 'MainControl_Command_StartNewMove' or not.
+%                   Possible values are
+%                   'on','yes'      Split commands
+%                   'off','no'      Do not split commands
+%                   'SplitCommands' can be used in conjunction with the number
+%                   of outputs as follows
+%                   COLL = COGIRO_IMPORTCONTROL(FILENAME) returns a cell array
+%                   of time series collections for each commanded trajectory.
+%                   [POS, VEL, ACC] = COGIRO_IMPORTCONTROL(FILENAME) returns
+%                   three cell arrays of time series for each commanded
+%                   trajectory. Additionally,
+%                   [POS, VEL, ACC, CMD] = COGIRO_IMPORTCONTROL(FILENAME)
+%                   returns a cell array of command time series, too.
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-23
+% Date: 2016-09-01
 % Changelog:
+%   2016-09-01
+%       * Update help block with missing param/value pair
+%       * Add support for returning split commands into separate variables
 %   2016-08-23
 %       * Introduce inputParser to function
 %   2016-06-15
@@ -62,8 +90,8 @@ valFcn_Filename = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 
 addRequired(ip, 'Filename', valFcn_Filename);
 
 % Optional 1: SamplingTime. Real. Positive
-valFcn_SamplingTime = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'SamplingTime');
-addParameter(ip, 'SamplingTime', 0, valFcn_SamplingTime);
+valFcn_Sampling = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'Sampling');
+addParameter(ip, 'Sampling', 0, valFcn_Sampling);
 
 % Optional 2: SplitCommands. Char. {'on', 'off', 'yes', 'no'
 valFcn_SplitCommands = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no'}, mfilename, 'SplitCommands'));
@@ -88,7 +116,7 @@ end
 % Filename
 chFilename = fullpath(ip.Results.Filename);
 % Sampling Time
-dSamplingTime = ip.Results.SamplingTime;
+dSamplingTime = ip.Results.Sampling;
 % Split commands
 chSplitCommands = in_charToValidArgument(ip.Results.SplitCommands);
 
@@ -97,9 +125,9 @@ chSplitCommands = in_charToValidArgument(ip.Results.SplitCommands);
 %% Process number of return arguments
 % If the commands shall be split, we allow only one argument to be returned:
 % collection of collection of commands
-if strcmp(chSplitCommands, 'on')
-    nargoutchk(1, 1);
-end
+% if strcmp(chSplitCommands, 'on')
+%     nargoutchk(1, 1);
+% end
 % If not commands split but more than one output argument requested ...
 if nargout > 1
     % Make sure it are three or four i.e., [Pos,Vel,Acc] or [Pos,Vel,Acc,Cmd]
@@ -291,33 +319,39 @@ if strcmp('on', chSplitCommands)
     nCommands = numel(vCommands_On);
     
     % Cell array to hold all the collections
-    cCollection = cell(nCommands, 1);
+    ceCollection = cell(nCommands, 1);
     
     % Loop over all commands
     for iCommand = 1:nCommands
         % Get the indices selector for the given command
         vCommand_Selector = vCommands_On(iCommand):1:vCommands_Off(iCommand);
         
-        % Build a timeseries collection for the commanded position
+        % Build a time series for the command
+        tsCommand_Cmd = getsampleusingtime(tsCommand, tsCommand.Time(vCommand_Selector(1)), tsCommand.Time(vCommand_Selector(end)));
+        tsCommand_Cmd.Time = tsCommand_Cmd.Time - tsCommand.Time(vCommand_Selector(1));
+        tsCommand_Cmd.Name = 'Command';
+        tsCommand_Cmd.TimeInfo.UserData.RelStartTime = tsCommand.Time(vCommand_Selector(1));
+        
+        % Build a time series for the commanded position
         tsCommand_Pos = getsampleusingtime(tsPosition, tsPosition.Time(vCommand_Selector(1)), tsPosition.Time(vCommand_Selector(end)));
         tsCommand_Pos.Time = tsCommand_Pos.Time - tsPosition.Time(vCommand_Selector(1));
         tsCommand_Pos.Name = 'Position';
         tsCommand_Pos.TimeInfo.UserData.RelStartTime = tsPosition.Time(vCommand_Selector(1));
         
-        % Build a timeseries collection for the commanded velocity
+        % Build a time series for the commanded velocity
         tsCommand_Vel = getsampleusingtime(tsVelocity, tsVelocity.Time(vCommand_Selector(1)), tsVelocity.Time(vCommand_Selector(end)));
         tsCommand_Vel.Time = tsCommand_Vel.Time - tsVelocity.Time(vCommand_Selector(1));
         tsCommand_Vel.Name = 'Velocity';
         tsCommand_Vel.TimeInfo.UserData.RelStartTime = tsVelocity.Time(vCommand_Selector(1));
         
-        % Build a timeseries collection for the commanded acceleration
+        % Build a time series for the commanded acceleration
         tsCommand_Acc = getsampleusingtime(tsAcceleration, tsAcceleration.Time(vCommand_Selector(1)), tsAcceleration.Time(vCommand_Selector(end)));
         tsCommand_Acc.Time = tsCommand_Acc.Time - tsAcceleration.Time(vCommand_Selector(1));
         tsCommand_Acc.Name = 'Acceleration';
         tsCommand_Acc.TimeInfo.UserData.RelStartTime = tsAcceleration.Time(vCommand_Selector(1));
         
-        % And push the timeseries collection to the cell
-        cCollection{iCommand} = tscollection({tsCommand_Pos, tsCommand_Vel, tsCommand_Acc}, 'Name', sprintf('%s_cmd%i', chFile_Name, iCommand));
+        % And create and push a time series collection to the cell of all
+        ceCollection{iCommand} = tscollection({tsCommand_Cmd, tsCommand_Pos, tsCommand_Vel, tsCommand_Acc}, 'Name', sprintf('%s_cmd%i', chFile_Name, iCommand));
     end
 end
 
@@ -326,20 +360,48 @@ end
 %% Create a collection of timeseries
 % One output: collection of all data
 if strcmp('on', chSplitCommands)
-    varargout{1} = cCollection;
+    % [Coll] = COGIRO_IMPORTCONTROL(FILENAME)
+    if nargout == 1
+        varargout{1} = ceCollection;
+    end
+    
+    % Extract position etc from gathered data
+    cePos = cell(nCommands, 1);
+    ceVel = cell(nCommands, 1);
+    ceAcc = cell(nCommands, 1);
+    ceCmd = cell(nCommands, 1);
+    for iCommand = 1:numel(ceCollection)
+        cePos{iCommand} = ceCollection{iCommand}.Position;
+        ceVel{iCommand} = ceCollection{iCommand}.Velocity;
+        ceAcc{iCommand} = ceCollection{iCommand}.Acceleration;
+        ceCmd{iCommand} = ceCollection{iCommand}.Command;
+    end
+    
+    % [Pos, Vel, Acc] = COGIRO_IMPORTCONTROL(FILENAME)
+    if nargout >= 3
+        varargout{1} = cePos;
+        varargout{2} = ceVel;
+        varargout{3} = ceAcc;
+    end
+    
+    % [Pos, Vel, Acc, Cmd] = COGIRO_IMPORTCONTROL(FILENAME)
+    if nargout >= 4
+        varargout{4} = ceCmd;
+    end
 else
+    % [Coll] = COGIRO_IMPORTCONTROL(FILENAME)
     if nargout == 1
         varargout{1} = tscollection({tsCommand, tsPosition, tsVelocity, tsAcceleration}, 'Name', chFile_Name);
     end
 
-    % Three outputs: [tsPosition, tsVelocity, tsAcceleration]
+    % [Pos, Vel, Acc] = COGIRO_IMPORTCONTROL(FILENAME)
     if nargout >= 3
         varargout{1} = tsPosition;
         varargout{2} = tsVelocity;
         varargout{3} = tsAcceleration;
     end
 
-    % Four outputs: [tsPosition, tsVelocity, tsAcceleration, tsCommand]
+    % [Pos, Vel, Acc, Cmd] = COGIRO_IMPORTCONTROL(FILENAME)
     if nargout >= 4
         varargout{4} = tsCommand;
     end
