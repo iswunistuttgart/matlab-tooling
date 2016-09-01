@@ -38,8 +38,13 @@ function funcnew(Name, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-25
+% Date: 2016-09-01
 % Changelog:
+%   2016-09-02
+%       * Prevent function from overwriting already existing functions unless
+%       overwriting is explicitely enforced
+%       * Fix bug in determination of longest in or out argument name causing a
+%       warning to be emitted by MATLAB.
 %   2016-08-25
 %       * Add support for input and output arguments appearing in the help part
 %       of the script.
