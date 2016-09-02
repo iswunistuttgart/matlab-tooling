@@ -38,11 +38,15 @@ function funcnew(Name, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-01
+% Date: 2016-09-02
 % Changelog:
 %   2016-09-02
+%       * Fix bug in description parsing when only {'varargin'} or {'varargout'}
+%       was given for 'ArgIn' or 'ArgOut', respectively.
+%       * Tweak the checking for file existance and overwrite flag.
+%   2016-09-01
 %       * Prevent function from overwriting already existing functions unless
-%       overwriting is explicitely enforced
+%       overwriting is explicitely enforced.
 %       * Fix bug in determination of longest in or out argument name causing a
 %       warning to be emitted by MATLAB.
 %   2016-08-25
@@ -66,28 +70,28 @@ valFcn_Name = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Nam
 addRequired(ip, 'Name', valFcn_Name);
 
 % Allow custom input argument list
-valFcn_ArgIn = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'ArgIn');
+valFcn_ArgIn = @(x) validateattributes(x, {'cell'}, {}, mfilename, 'ArgIn');
 addOptional(ip, 'ArgIn', {}, valFcn_ArgIn);
 
 % Allow custom return argument list
-valFcn_ArgOut = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'ArgOut');
+valFcn_ArgOut = @(x) validateattributes(x, {'cell'}, {}, mfilename, 'ArgOut');
 addOptional(ip, 'ArgOut', {}, valFcn_ArgOut);
 
 % Description: Char. Non-empty
 valFcn_Description = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Description');
-addOptional(ip, 'Description', '', valFcn_Description);
+addParameter(ip, 'Description', '', valFcn_Description);
 
 % Author: Char. Non-empty
 valFcn_Author = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Author');
-addOptional(ip, 'Author', 'Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>', valFcn_Author);
+addParameter(ip, 'Author', 'Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>', valFcn_Author);
 
 % Silent: Char. Matches {'on', 'off', 'yes', 'no'}. Defaults 'off'
 valFcn_Silent = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no'}, mfilename, 'Silent'));
-addOptional(ip, 'Silent', 'off', valFcn_Silent);
+addParameter(ip, 'Silent', 'off', valFcn_Silent);
 
 % Overwrite: Char. Matches {'on', 'off', 'yes', 'no'}. Defaults 'no';
 valFcn_Overwrite = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no'}, mfilename, 'Overwrite'));
-addOptional(ip, 'Overwrite', 'off', valFcn_Overwrite);
+addParameter(ip, 'Overwrite', 'off', valFcn_Overwrite);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -146,7 +150,7 @@ chFunction_FullFile = fullfile(chFunction_Path, sprintf('%s%s', chFunction_Name 
 % Assert we have a valid function template filepath
 assert(2 == exist(chTemplateFilepath, 'file'), 'PHILIPPTEMPEL:FUNCNEW:functionTemplateNotFound', 'Function template cannot be found at %s.', chTemplateFilepath);
 % Assert the target file does not exist yet
-assert(0 == exist(chFunction_FullFile, 'file') && ~strcmp(chOverwite, 'on') || 2 == exist(chFunction_FullFile, 'file') && strcmp(chOverwrite, 'on'), 'PHILIPPTEMPEL:FUNCNEW:functionExists', 'Function already exists. Will not overwrite unless forced to do so.');
+assert(2 == exist(chFunction_FullFile, 'file') && strcmp(chOverwrite, 'on') || 0 == exist(chFunction_FullFile, 'file'), 'PHILIPPTEMPEL:FUNCNEW:functionExists', 'Function already exists. Will not overwrite unless forced to do so.');
 
 
 
@@ -233,9 +237,6 @@ end
 
 
     function chDesc = in_createDescription(chDescription, ceArgIn, ceArgOut)
-        % Holds the formatted list entries of inargs and outargs
-        ceArgIn_List = cell(numel(ceArgIn), 1);
-        ceArgOut_List = cell(numel(ceArgOut), 1);
         % Determine if there is 'varargin' or 'varargout' in the arg list
         lHasVarargin = ismember('varargin', ceArgIn);
         lHasVarargout = ismember('varargout', ceArgOut);
@@ -248,6 +249,9 @@ end
         if lHasVarargout
             ceArgOut(strcmp(ceArgOut, 'varargout')) = [];
         end
+        % Holds the formatted list entries of inargs and outargs
+        ceArgIn_List = cell(numel(ceArgIn), min(numel(ceArgIn), 1));
+        ceArgOut_List = cell(numel(ceArgOut), min(numel(ceArgOut), 1));
         
         % Determine longest argument name
         nCharsLongestArg_In = max(cellfun(@(x) length(x), ceArgIn));
