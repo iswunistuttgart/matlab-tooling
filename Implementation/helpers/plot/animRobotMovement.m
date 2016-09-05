@@ -408,11 +408,10 @@ function CurrentRotation = inferCurrentRotation(CurrentRotation)
 
 switch numel(CurrentRotation)
     case 3
-        vEuler = [CurrentRotation(3), CurrentRotation(2), CurrentRotation(1)];
-        CurrentRotation = eul2rotm(vEuler, 'ZYX');
+        CurrentRotation = eul2rotm(fliplr(asrow(CurrentRotation(1:3)./180*pi)), 'ZYX');
         CurrentRotation(abs(CurrentRotation) < 2*eps) = 0;
     case 4
-        CurrentRotation = quat2rotm(CurrentRotation);
+        CurrentRotation = quat2rotm(quatnormalize(CurrentRotation));
     case 9
         CurrentRotation = rotrow2m(CurrentRotation);
     otherwise
