@@ -195,8 +195,8 @@ dRotationX = get(handles.sliderX, 'Value');
 dRotationY = get(handles.sliderY, 'Value');
 dRotationZ = get(handles.sliderZ, 'Value');
 
-vEuler = [dRotationZ, dRotationY, dRotationX]./180.*pi;
-aRotation = eul2rotm(vEuler, 'ZYX');
+vEuler = [dRotationX, dRotationY, dRotationZ]./180.*pi;
+aRotation = eul2rotm(fliplr(asrow(vEuler)), 'ZYX');
 aRotation(abs(aRotation) < 2*eps) = 0;
 vAxesX = aRotation*[1; 0; 0];
 vAxesY = aRotation*[0; 1; 0];
