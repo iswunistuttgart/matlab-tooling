@@ -1,9 +1,5 @@
-function [UCed] = strucfirst(varargin)
-% STRUCFIRST upper cases the frist character of the string(s)
-%
-%   Inputs:
-%
-%   STRING      Description of argument STRING
+function [UCed] = strucwords(varargin)
+% STRUCWORDS uppercases each word of the given strings
 %
 %   Outputs:
 %
@@ -22,11 +18,7 @@ function [UCed] = strucfirst(varargin)
 
 %% Do your code magic here
 
-UCed = varargin;
-
-for iStr = 1:nargin
-    UCed{iStr}(1) = upper(UCed{iStr}(1));
-end
+UCed = regexprep(varargin, '(^|[\. ])\s*.', '${upper($0)}');
 
 if nargin == 1
     UCed = UCed{1};
