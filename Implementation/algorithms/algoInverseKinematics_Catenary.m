@@ -152,10 +152,10 @@ aCableVectorUnit = zeros(3, nNumberOfCables);
 vPlatformPosition = ascolumn(Pose(1:3));
 % Extract rotation given in Euler angles from Pose
 if numel(Pose) == 6
-    aPlatformRotation = eul2rotm(fliplr(asrow(Pose(4:6))), 'ZYX');
+    aPlatformRotation = eul2rotm(fliplr(asrow(Pose(4:6)./180*pi)), 'ZYX');
 % Extract rotation given as Quaternion from Posae
 elseif numel(Pose) == 7
-    aPlatformRotation = quat2rotm(asrow(Pose(4:7)));
+    aPlatformRotation = quat2rotm(quatnormalize(asrow(Pose(4:7))));
 % Extract rotation given as row'ed Rotation matrix from Pose
 else
     aPlatformRotation = rotrow2m(Pose(4:12));

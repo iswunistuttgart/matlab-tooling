@@ -116,8 +116,7 @@ vPosition = xFinal(1:3);
 % Extract the yaw-pitch-roll rotation angles and ...
 vRotation = xFinal(4:6)';
 % ... transform it into a rotation matrix
-vEuler = [vRotation(3), vRotation(2), vRotation(1)]./180.*pi;
-aRotation = eul2rotm(vEuler, 'ZYX');
+aRotation = eul2rotm(fliplr(asrow(vRotation(1:3)./180*pi)), 'ZYX');
 aRotation(abs(aRotation) < 2*eps) = 0;
 
 % Build the final estimated pose
@@ -164,8 +163,7 @@ vPosition = vEstimatedPose(1:3);
 vRotation = vEstimatedPose(4:6);
 % Transform the rotation given in quaternions to a DCM (direct cosine
 % matrix)
-vEuler = [vRotation(3), vRotation(2), vRotation(1)]./180.*pi;
-aRotation = eul2rotm(vEuler, 'ZYX');
+aRotation = eul2rotm(fliplr(asrow(vRotation(1:3)./180*pi)), 'ZYX');
 aRotation(abs(aRotation) < 2*eps) = 0;
 % Create the needed pose for the inverse kinematics algorithm composed of
 % [x, y, z, R11, R12, R13, R21, R22, R23, R31, R32, R33]

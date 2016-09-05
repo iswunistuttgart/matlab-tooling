@@ -73,17 +73,17 @@ end
 
 
 %% Assertion for code generation
-% Assert CableAttachments
+% Assert CableAttachments: Double. 3 Rows. As many columns as CableVectors.
 assert(isa(CableAttachments, 'double'));
 assert(size(CableAttachments, 1) == 3);
 assert(size(CableAttachments, 2) == size(CableVectors, 2));
-% Assert CableVectors
+% Assert CableVectors: Double. 3 Rows. As many columns as CableAttachments.
 assert(isa(CableVectors, 'double'));
 assert(size(CableVectors, 1) == 3);
 assert(size(CableVectors, 2) == size(CableAttachments, 2));
-% Assert Rotation
+% Assert Rotation: Double. Vector of 3, 4, or 12 elements or matrix of 9 elements.
 assert(isa(Rotation, 'double'));
-assert(numel(Rotation) == 3 || issquare(Rotation, 3));
+assert(isvector(Rotation) && any(numel(Rotation) == [3, 4, 12]) || ~isvector(Rotation) && ismatrix(Rotation) && issquare(Rotation, 3));
 
 
 
@@ -95,16 +95,20 @@ aStructureMatrix = zeros(6, nNumberOfWires);
 % Keeping variable names consistent
 aCableVectors = CableVectors;
 aCableAttachments = CableAttachments;
-% If rotation given as vector, we infer it to be used as ZYX Tait-Bryan
-% yaw-pitch-roll angles
-if isvector(Rotation)
-    aRotation = eul2rotm(Rotation(:).', 'ZYX');
-% Rotation directly given
+% Extract rotation given in Euler angles from Pose
+if numel(Rotation) == 3
+    aRotation = eul2rotm(fliplr(asrow(Rotation./180*pi)), 'ZYX');
+% Extract rotation given as Quaternion from Posae
+elseif numel(Rotation) == 4
+    aRotation = quat2rotm(quatnormalize(asrow(Rotation)));
+% Extract rotation given as row'ed Rotation matrix from Pose
+elseif numel(Rotation) == 12
+    aRotation = rotrow2m(Rotation);
 else
     aRotation = Rotation;
 end
 % Nullspace is an Mx2 matrix;
-NullSpace = zeros(nNumberOfWires, 2);
+NullSpace = zeros(nNumberOfWires, nNumberOfWires - 6);
 
 
 

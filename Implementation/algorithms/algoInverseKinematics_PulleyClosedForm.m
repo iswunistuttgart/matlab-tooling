@@ -146,10 +146,10 @@ vCableLengthOffset = zeros(1, nNumberOfCables);
 vPlatformPosition = ascolumn(Pose(1:3));
 % Extract rotation given in Euler angles from Pose
 if numel(Pose) == 6
-    aPlatformRotation = eul2rotm(fliplr(asrow(Pose(4:6))), 'ZYX');
+    aPlatformRotation = eul2rotm(fliplr(asrow(Pose(4:6)./180*pi)), 'ZYX');
 % Extract rotation given as Quaternion from Posae
 elseif numel(Pose) == 7
-    aPlatformRotation = quat2rotm(asrow(Pose(4:7)));
+    aPlatformRotation = quat2rotm(quatnormalize(asrow(Pose(4:7))));
 % Extract rotation given as row'ed Rotation matrix from Pose
 else
     aPlatformRotation = rotrow2m(Pose(4:12));
@@ -165,8 +165,7 @@ aPulleyAngles = zeros(2, nNumberOfCables);
 for iUnit = 1:nNumberOfCables
     % Rotation matrix to rotate any vector given in pulley coordinate system
     % K_P into the global coordinate system K_O
-    vEuler = fliplr(asrow(aPulleyOrientations(:,iUnit)))./180.*pi;
-    aRotation_kW2kO = eul2rotm(vEuler, 'ZYX');
+    aRotation_kW2kO = eul2rotm(fliplr(asrow(aPulleyOrientations(:,iUnit)./180*pi)), 'ZYX');
     aRotation_kW2kO(abs(aRotation_kW2kO) < 2*eps) = 0;
     
     % Vector from contact point A of cable on pulley to cable attachment point

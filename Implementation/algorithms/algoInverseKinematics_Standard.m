@@ -126,7 +126,7 @@ nNumberOfCables = size(aPulleyPositions, 2);
 vPlatformPosition = reshape(Pose(1:3), 3, 1);
 % Extract rotation given in Euler angles from Pose
 if numel(Pose) == 6
-    aPlatformRotation = eul2rotm(fliplr(asrow(Pose(4:6))), 'ZYX');
+    aPlatformRotation = eul2rotm(fliplr(asrow(Pose(4:6)./180*pi)), 'ZYX');
 % Extract rotation given as Quaternion from Posae
 elseif numel(Pose) == 7
     aPlatformRotation = quat2rotm(quatnormalize(asrow(Pose(4:7))));
