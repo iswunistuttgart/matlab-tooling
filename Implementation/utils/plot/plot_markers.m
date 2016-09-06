@@ -63,8 +63,10 @@ function varargout = plot_markers(varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-02
+% Date: 2016-09-06
 % Changelog:
+%   2016-09-06
+%       * Update types of arguments from Parameter to Optional
 %   2016-08-02
 %       * Change to using gobjects for holding returned graphic handles
 %       * Change to using ```axescheck``` and ```newplot```
@@ -89,15 +91,15 @@ ip = inputParser;
 % Let user decide on the plot style
 % Plot style can be chosen anything from the list below
 valFcn_Count = @(x) validateattributes(x, {'numeric'}, {'row', '>=', 1}, mfilename, 'Count');
-addParameter(ip, 'Count', '25', valFcn_Count);
+addOptional(ip, 'Count', '25', valFcn_Count);
 
 % Optional 2: Markers to set or order of markers
 valFcn_Order = @(x) assert(all(ismember(strsplit(x, '|'), {'o', '+', '*', '.', 'x', 's', 'd', '^', 'v', '>', '<', 'p', 'h'})));
-addParameter(ip, 'Order', 'o|+|*|x', valFcn_Order);
+addOptional(ip, 'Order', 'o|+|*|x', valFcn_Order);
 
 % Optional 3: Spacing between the markers
 valFcn_Spacing = @(x) assert(any(validatestring(x, {'x', 'curve', 'logx'}, mfilename, 'Spacing')));
-addParameter(ip, 'Spacing', 'x', valFcn_Spacing);
+addOptional(ip, 'Spacing', 'x', valFcn_Spacing);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
