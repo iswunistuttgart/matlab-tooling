@@ -78,11 +78,8 @@ chName = ip.Results.Name;
 stVariables = ip.Results.Variables;
 % Overwrite toggle
 chOverwrite = ip.Results.Overwrite;
-% Path of this file
-[chFile_Path, ~, ~] = fileparts(mfilename('fullpath'));
-% Two levels up and down into folder 'robots' is where we will be storing the
-% data
-chPath_Store = fullpath(fullfile(chFile_Path, '..', '..', 'robots'));
+% Get path to robot storage
+chPath_Store = robstorage();
 
 % Ensure target folder exists
 if ~exist(chPath_Store, 'dir')

@@ -41,11 +41,8 @@ end
 %% Parse IP variables and create local variables
 % Name of robot to load
 chName = ip.Results.Name;
-% Path of this file
-[chFile_Path, ~, ~] = fileparts(mfilename('fullpath'));
-% Two levels up and down into folder 'robots' is where we will be storing the
-% data
-chPath_Store = fullpath(fullfile(chFile_Path, '..', '..', 'robots'));
+% Get path to robot storage folder
+chPath_Store = robstorage();
 
 
 
@@ -79,7 +76,7 @@ if nargout == 0
 end
 
 % If one output, we will assign the loaded struct to it
-if nargout < 2
+if nargout > 1
     varargout{1} = stData;
 end
 
