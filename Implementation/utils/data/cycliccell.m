@@ -22,8 +22,11 @@ function Cyclic = cycliccell(Cell, Count, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-02
+% Date: 2016-09-07
 % Changelog:
+%   2016-09-07
+%       * Fix bug with cycled cells not being created correctly in case a
+%       multi-dim cell array was given
 %   2016-08-02
 %       * Initial release
 
@@ -57,15 +60,26 @@ end
 
 %% Parse arguments
 % Input cell array
-ceInput = ip.Results.Cell;
+ceInput = asrow(ip.Results.Cell);
 % Repetition count
 nCount = ip.Results.Count;
+
+% Default return value
+ceCycled = cell(0);
 
 
 
 %% Do the magic
-% Cycle it
-ceCycled = repmat(ceInput, nCount, 1);
+% If its not already a multi-dim cell arrray, we will make it one
+if ~isempty(ceInput)
+    if ~iscell(ceInput{1})
+        ceInput = {ceInput};
+    end
+    
+    % Repeat the cell array n times horizontally
+    ceCycled = repmat(ceInput, 1, nCount);
+    ceCycled = ceCycled(1:nCount);
+end
 
 
 
