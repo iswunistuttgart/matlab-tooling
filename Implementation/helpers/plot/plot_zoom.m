@@ -57,8 +57,12 @@ function [varargout] = plot_zoom(Region, Position, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-12
+% Date: 2016-09-07
 % Changelog:
+%   2016-09-07
+%       * Fix bug with cycliccell that caused errors when custom styles were set
+%       on multiple zoom axes at once
+%       * Add support for usage of parseswitcharg()
 %   2016-08-12
 %       * Initial release
 
@@ -125,7 +129,7 @@ ceZoomAxesSpec = ip.Results.ZoomAxesSpec;
 % Specifications for the zoom line specs
 ceZoomLinesSpec = cycliccell(ip.Results.ZoomLineSpec, 2);
 % Whether to draw lines from source box to target zoom box
-chZoomLines = in_charToValidArgument(ip.Results.ZoomLines);
+chZoomLines = parseswitcharg(ip.Results.ZoomLines);
 % If the zoom lines are not requested, then the maximum number of output
 % arguments is two (zoomed axes handle and annotation box handle)
 if strcmp(chZoomLines, 'off')
@@ -308,8 +312,8 @@ if strcmp(chZoomLines, 'on')
 
     % Set line specific styles?
     if ~isempty(ceZoomLinesSpec)
-        set(haLines(1), ceZoomLinesSpec{1,:});
-        set(haLines(2), ceZoomLinesSpec{2,:});
+        set(haLines(1), ceZoomLinesSpec{1}{:});
+        set(haLines(2), ceZoomLinesSpec{2}{:});
     end
 end
 

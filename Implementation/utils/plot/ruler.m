@@ -43,8 +43,10 @@ function [varargout] = ruler(Axis, Position, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-02
+% Date: 2016-09-07
 % Changelog:
+%   2016-09-07
+%       * Fix bug with cycliccell not being created correctly
 %   2016-08-02
 %       * Initial release
 
@@ -63,7 +65,7 @@ addRequired(ip, 'Position', valFcn_Position);
 
 % Some style spec for the home position to plot?
 valFcn_LineSpec = @(x) validateattributes(x, {'cell', 'numeric'}, {'nonempty'}, mfilename, 'LineSpec');
-addParameter(ip, 'LineSpec', {}, valFcn_LineSpec);
+addOptional(ip, 'LineSpec', {}, valFcn_LineSpec);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -123,7 +125,7 @@ for iPos = 1:numel(vPositions)
     % Got plot styles?
     if ~isempty(cePlotStyle)
         % Set the current line style
-        set(hpRulers(iPos), cePlotStyle{iPos,:});
+        set(hpRulers(iPos), cePlotStyle{iPos}{:});
     end
 end
 

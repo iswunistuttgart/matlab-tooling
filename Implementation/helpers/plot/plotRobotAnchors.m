@@ -39,8 +39,11 @@ function plotRobotAnchors(Anchors, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-23
+% Date: 2016-09-07
 % Changelog:
+%   2016-09-07
+%       * Fix bug with cycliccell not being created correctly
+%       * Add support for usage of parseswitcharg()
 %   2016-08-23
 %       * Fix wrong access to gobjects of label and anchor graphic objects
 %   2016-08-12
@@ -126,7 +129,7 @@ ceLabelSpecs = cycliccell(ip.Results.LabelSpec, nAnchors);
 % Plot style: char
 chPlotStyle = ip.Results.PlotStyle;
 % Box switch: 'on' or 'off'
-chBBox = in_charToValidArgument(ip.Results.BoundingBox);
+chBBox = parseswitcharg(ip.Results.BoundingBox);
 % Box specifiactions: cell array
 ceBBoxSpec = ip.Results.BoundingBoxSpec;
 
@@ -163,7 +166,7 @@ for iAnchor = 1:nAnchors
 
     % Set custom anchor drawing specs?
     if ~isempty(ceAnchorSpecs)
-        set(hpAnchors{iAnchor}, ceAnchorSpecs{iAnchor,:});
+        set(hpAnchors{iAnchor}, ceAnchorSpecs{iAnchor}{:});
     end
 
     % If we shall plot a label, too
@@ -180,7 +183,7 @@ for iAnchor = 1:nAnchors
         
         % Custom label drawing specifications
         if ~isempty(ceLabelSpecs)
-            set(htLabels(iAnchor), ceLabelSpecs{iAnchor,:});
+            set(htLabels(iAnchor), ceLabelSpecs{iAnchor}{:});
         end
     end
 end
@@ -217,21 +220,6 @@ end
 
 % None so far
 
-
-end
-
-
-
-function out = in_charToValidArgument(in)
-
-switch lower(in)
-    case {'on', 'yes', 'please'}
-        out = 'on';
-    case {'off', 'no', 'never'}
-        out = 'off';
-    otherwise
-        out = 'off';
-end
 
 end
 
