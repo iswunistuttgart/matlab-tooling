@@ -118,7 +118,7 @@ chFilename = fullpath(ip.Results.Filename);
 % Sampling Time
 dSamplingTime = ip.Results.Sampling;
 % Split commands
-chSplitCommands = in_charToValidArgument(ip.Results.SplitCommands);
+chSplitCommands = parseswitcharg(ip.Results.SplitCommands);
 
 
 
@@ -179,15 +179,12 @@ if dSamplingTime == 0
 end
 vExp_Time = (0:1:(nTimeSamples-1)).*dSamplingTime;
 
-% Determine the number of measurements
-nDatapoints = numel(vExp_Time);
-
 % Initialize variables holding data
 vTime = vExp_Time;
-vCommand = zeros(nDatapoints, 1);
-aSetPose_Pos = zeros(nDatapoints, 6);
-aSetPose_Vel = zeros(nDatapoints, 6);
-aSetPose_Acc = zeros(nDatapoints, 6);
+vCommand = zeros(nTimeSamples, 1);
+aSetPose_Pos = zeros(nTimeSamples, 6);
+aSetPose_Vel = zeros(nTimeSamples, 6);
+aSetPose_Acc = zeros(nTimeSamples, 6);
 
 
 
@@ -331,24 +328,28 @@ if strcmp('on', chSplitCommands)
         tsCommand_Cmd.Time = tsCommand_Cmd.Time - tsCommand.Time(vCommand_Selector(1));
         tsCommand_Cmd.Name = 'Command';
         tsCommand_Cmd.TimeInfo.UserData.RelStartTime = tsCommand.Time(vCommand_Selector(1));
+        tsCommand_Cmd.TimeInfo.Increment = dSamplingTime;
         
         % Build a time series for the commanded position
         tsCommand_Pos = getsampleusingtime(tsPosition, tsPosition.Time(vCommand_Selector(1)), tsPosition.Time(vCommand_Selector(end)));
         tsCommand_Pos.Time = tsCommand_Pos.Time - tsPosition.Time(vCommand_Selector(1));
         tsCommand_Pos.Name = 'Position';
         tsCommand_Pos.TimeInfo.UserData.RelStartTime = tsPosition.Time(vCommand_Selector(1));
+        tsCommand_Pos.TimeInfo.Increment = dSamplingTime;
         
         % Build a time series for the commanded velocity
         tsCommand_Vel = getsampleusingtime(tsVelocity, tsVelocity.Time(vCommand_Selector(1)), tsVelocity.Time(vCommand_Selector(end)));
         tsCommand_Vel.Time = tsCommand_Vel.Time - tsVelocity.Time(vCommand_Selector(1));
         tsCommand_Vel.Name = 'Velocity';
         tsCommand_Vel.TimeInfo.UserData.RelStartTime = tsVelocity.Time(vCommand_Selector(1));
+        tsCommand_Vel.TimeInfo.Increment = dSamplingTime;
         
         % Build a time series for the commanded acceleration
         tsCommand_Acc = getsampleusingtime(tsAcceleration, tsAcceleration.Time(vCommand_Selector(1)), tsAcceleration.Time(vCommand_Selector(end)));
         tsCommand_Acc.Time = tsCommand_Acc.Time - tsAcceleration.Time(vCommand_Selector(1));
         tsCommand_Acc.Name = 'Acceleration';
         tsCommand_Acc.TimeInfo.UserData.RelStartTime = tsAcceleration.Time(vCommand_Selector(1));
+        tsCommand_Acc.TimeInfo.Increment = dSamplingTime;
         
         % And create and push a time series collection to the cell of all
         ceCollection{iCommand} = tscollection({tsCommand_Cmd, tsCommand_Pos, tsCommand_Vel, tsCommand_Acc}, 'Name', sprintf('%s_cmd%i', chFile_Name, iCommand));
@@ -407,21 +408,6 @@ else
     end
 end
 
-
-end
-
-
-
-function out = in_charToValidArgument(in)
-
-switch lower(in)
-    case {'on', 'yes', 'please'}
-        out = 'on';
-    case {'off', 'no', 'never'}
-        out = 'off';
-    otherwise
-        out = 'off';
-end
 
 end
 
