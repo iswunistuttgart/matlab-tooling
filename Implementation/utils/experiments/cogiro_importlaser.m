@@ -24,31 +24,58 @@ function LTData = cogiro_importlaser(Filename, varargin)
 %
 %   
 %   Optional Inputs -- specified as parameter value pairs
-%   Columns         In which columns the to-be-extracted data are contained.
-%                   Defaults to [6, 7, 8].
 %
-%   FilterFirst     Whether to automatically filter the first laser tracker
-%                   measurement data against the next five values ensuring that
-%                   there is no gap/discontinuity
+%   Columns                 In which columns the to-be-extracted data are
+%       contained. Defaults to [6, 7, 8].
 %
-%   FilterThresh    What threshold to use for filter the first value. Import
-%                   function looks at the average of the next five measurements
-%                   and removes the first measurement, if and only if it is
-%                   farther away than FILTERTHRESH. Defaults to 5e-3 [ m ].
+%   FilterNoise             Switch whether to filter noise during import or not.
+%       Noise filtering is done using the sgolayfilt filter with custom data.
+%       Possible values for FILTERNOISE are
+%           'on', 'yes'     Filter noise from data
+%           'off', 'no'     Do not filter data
+%
+%   FilterNoiseOrder        Order of the sgolayfilt filter used to filter noise.
+%       Defaults to 6.
+%
+%   FilterNoiseFramesize    Size of the frame used to filter noise. Defaults to
+%       the odd integer closes to half the sampling time.
+%
+%   FilterEnd               Switch whether to filter recording at the end of the
+%       data. Data filtering is done using the sgolayfilt with user-specifiable
+%       filter parameters. Possible values for FILTEREND are
+%           'on', 'yes'     Filter noise from data
+%           'off', 'no'     Do not filter data
+%
+%   FilterEndThresh         Threshold to use to filter assume final data to be
+%       of steady nature. By default, as many as the rounded number of
+%       1/SamplingTime is used as window size which is used to compare data
+%       against. Defaults to 5*1e-3 [m]
+%
+%   FilterFirst             Whether to automatically filter the first laser
+%       tracker measurement data against the next five values ensuring that
+%       there is no gap/discontinuity
+%
+%   FilterThresh            What threshold to use for filter the first value.%
+%       Import function looks at the average of the next five measurements and
+%       removes the first measurement, if and only if it is farther away than%
+%           FILTERTHRESH. Defaults to 5e-3 [ m ].
 %
 %   Sampling        Sampling time to use for generating the time vector.
-%                   Defaults to 7.2e-3 [s].
+%       Defaults to 7.2e-3 [s].
 %
 %   SheetNo         Which sheet to select form the spreadsheet. Defaults to 2.
 %
-%   See also: readtable
+%   See also: readtable sgolayfilt
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-01
+% Date: 2016-09-07
 % Changelog:
+%   2016-09-07
+%       * Add ability to filter noise during import
+%       * Add ability to filter the steady-state at the end
 %   2016-09-01
 %       * Update help block with missing 'FilterThres' parameter
 %   2016-08-24
@@ -67,23 +94,43 @@ addRequired(ip, 'Filename', valFcn_Filename);
 
 % Optional 1: Sampling. Real. Positive
 valFcn_Sampling = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'Sampling');
-addParameter(ip, 'Sampling', 0, valFcn_Sampling);
+addOptional(ip, 'Sampling', 0, valFcn_Sampling);
 
 % Optional 2: Sheet Number. Real. Not zero. Positive.
 valFcn_SheetNo = @(x) validateattributes(x, {'numeric', 'cell'}, {'nonempty', 'real', 'nonzero', 'positive'}, mfilename, 'SheetNo');
-addParameter(ip, 'SheetNo', 2, valFcn_SheetNo);
+addOptional(ip, 'SheetNo', 2, valFcn_SheetNo);
 
-% Optional 3: Columns to extract
+% Parameter: Columns to extract
 valFcn_Columns = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'nonzero', 'positive'}, mfilename, 'Columns');
 addParameter(ip, 'Columns', [6, 7, 8], valFcn_Columns);
 
-% Optional 4: Filter start. Char. Matches {'on', 'off', 'yes', 'no'}
+% Parameter: Filter noise. Char. Matches {'on', 'off', 'yes', 'no'}
+valFcn_FilterNoise = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no'}, mfilename, 'FilterNoise'));
+addParameter(ip, 'FilterNoise', 'off', valFcn_FilterNoise);
+
+% Parameter: Filter start threshold. Numeric. Real. Positive.
+valFcn_FilterNoiseOrder = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'nonzero', 'positive', 'int'}, mfilename, 'FilterNoiseOrder');
+addParameter(ip, 'FilterNoiseOrder', 6, valFcn_FilterNoiseOrder);
+
+% Parameter: Filter start threshold. Numeric. Real. Positive.
+valFcn_FilterNoiseFramesize = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'nonzero', 'positive', 'int'}, mfilename, 'FilterNoiseFramesize');
+addParameter(ip, 'FilterNoiseFramesize', 0, valFcn_FilterNoiseFramesize);
+
+% Parameter: Filter start. Char. Matches {'on', 'off', 'yes', 'no'}
 valFcn_FilterFirst = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no'}, mfilename, 'FilterFirst'));
 addParameter(ip, 'FilterFirst', 'off', valFcn_FilterFirst);
 
-% Optional 5: Filter start threshold. Numeric. Real. Positive.
-valFcn_FilterThreshold = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'nonzero', 'positive'}, mfilename, 'FilterThresh');
-addParameter(ip, 'FilterThresh', 5*1e-3, valFcn_FilterThreshold);
+% Parameter: Filter start threshold. Numeric. Real. Positive.
+valFcn_FilterFirstThreshold = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'nonzero', 'positive'}, mfilename, 'FilterFirstThresh');
+addParameter(ip, 'FilterFirstThresh', 5*1e-3, valFcn_FilterFirstThreshold);
+
+% Parameter: Filter static end values. Char. Matches {'on', 'off', 'yes', 'no'}
+valFcn_FilterEnd = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no'}, mfilename, 'FilterEnd'));
+addParameter(ip, 'FilterEnd', 'off', valFcn_FilterEnd);
+
+% Parameter: Filter static end values treshold. Numeric. Real. Positive.
+valFcn_FilterEndThreshold = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'nonzero', 'positive'}, mfilename, 'FilterEndThresh');
+addParameter(ip, 'FilterEndThresh', 1.5e-3, valFcn_FilterEndThreshold);
 
 
 % Configuration of input parser
@@ -110,10 +157,20 @@ dSamplingTime = ip.Results.Sampling;
 dSheetNumber = ip.Results.SheetNo;
 % Columns
 vColumns = ip.Results.Columns;
+% Filter noise from measurement
+chFilterNoise = parseswitcharg(ip.Results.FilterNoise);
+% Order of the noise filter
+nFilterNoise_Order = ip.Results.FilterNoiseOrder;
+% Frame size of noise filter
+nFilterNoise_Framesize = ip.Results.FilterNoiseFramesize;
 % Filter first pose measurement
-chFilterFirst = in_charToValidArgument(ip.Results.FilterFirst);
+chFilterFirst = parseswitcharg(ip.Results.FilterFirst);
 % Threshold to filtering the first pose measurement
-dFilterThreshold = ip.Results.FilterThresh;
+dFilterFirst_Threshold = ip.Results.FilterFirstThresh;
+% Filter static pose measurement
+chFilterEnd = parseswitcharg(ip.Results.FilterEnd);
+% Threshold to filtering satic pose measurement
+dFilterEnd_Threshold = ip.Results.FilterEndThresh;
 
 
 
@@ -176,16 +233,61 @@ if strcmp('on', chFilterFirst)
     
     % If any of the first pose measurements is farther away than the default or
     % user-specified threshold, we will remove the first pose measurement
-    if any((vAvgComing - vFirstPose) > dFilterThreshold)
+    if any((vAvgComing - vFirstPose) > dFilterFirst_Threshold)
         aPoses(1,:) = [];
         vTime(end) = [];
+    end
+end
+
+% Filter noise from data?
+if strcmp('on', chFilterNoise)
+    % If noise filter frame size was not set, we calculate the frame size from
+    % half the sampling time
+    if nFilterNoise_Framesize == 0
+        % Get the odd number larger than half the sampling time width
+        nFilterNoise_Framesize = 2*floor(floor(1/dSamplingTime/2)/2) + 1;
+    end
+    % Filter data using a 6th order sgolayfilter with a frame size depending on the
+    % sampling time
+    aPoses = sgolayfilt(aPoses, nFilterNoise_Order, nFilterNoise_Framesize);
+end
+
+% Filter static values at the beginning and at the end
+if strcmp('on', chFilterEnd)
+    % Get gradient of data along the y-axis
+    [~, aGradients] = gradient(aPoses, dSamplingTime);
+    % Filter the gradient to get it smoothed out: order 2; window width 131
+    aGradients_Filter = sgolayfilt(aGradients, 2, 131);
+    % Filter gradient values that are smaller than the the threshold
+    vGradients_Selected = all(abs(aGradients_Filter) <= dFilterEnd_Threshold, 2);
+    % Get vector of consecutive lengths and values
+    [vConsecutive_Lengths, vConsecutive_Values] = runLengthEncode(asrow(vGradients_Selected));
+    
+    % Flip the arrays containing the consecutive indices, so we will be looking
+    % at the data from the back
+%     vConsecutive_Lengths = fliplr(vConsecutive_Lengths);
+%     vConsecutive_Values = fliplr(vConsecutive_Values);
+    
+    % Determine the indices of switches to zero
+    vZeros = vConsecutive_Lengths(vConsecutive_Values == 0);
+    % Get the indices of switches to one
+    vOnes = vConsecutive_Lengths(vConsecutive_Values == 1);
+    % Find the first index of switch
+    idxConsecutiveOnes = find(vOnes >= round(0.5*1/dSamplingTime), 1, 'first');
+    % If we found a range of consecutive values...
+    if ~isempty(idxConsecutiveOnes) && numel(vZeros) > 1 && numel(vOnes) > 2
+        % We will count the number of values before then
+        idxConsecutive = sum(vZeros(1:(idxConsecutiveOnes))) + sum(vOnes(1:(idxConsecutiveOnes-1)));
+        % Extract data according to the index we have found
+        vTime = vTime(1:idxConsecutive);
+        aPoses = aPoses(1:idxConsecutive,:);
     end
 end
 
 
 
 %% Create output variable
-LTData = timeseries(aPoses, vTime, 'Name', 'Position');
+LTData = timeseries(aPoses, vTime, 'Name', 'Lasertracker_Position');
 LTData.UserData.Name = chFile_Name;
 LTData.UserData.Source = chFilename;
 
@@ -193,17 +295,11 @@ LTData.UserData.Source = chFilename;
 end
 
 
+function [lengths, values] = runLengthEncode(data)
 
-function out = in_charToValidArgument(in)
-
-switch lower(in)
-    case {'on', 'yes', 'please'}
-        out = 'on';
-    case {'off', 'no', 'never'}
-        out = 'off';
-    otherwise
-        out = 'off';
-end
+startPos = find(diff([data(1)-1, data]));
+lengths = diff([startPos, numel(data)+1]);
+values = data(startPos);
 
 end
 
