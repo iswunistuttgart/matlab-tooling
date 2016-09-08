@@ -13,14 +13,14 @@ function LTData = cogiro_importlaser(Filename, varargin)
 %   Inputs:
 %
 %   FILENAME        Path to file with laser tracker data. Must be a valid excel
-%                   spreadsheet. Function assumes the absolute spatial laser
-%                   tracker data to be present in sheet number 2 if not
-%                   specified differently. Column range F:H from spreadsheet
-%                   will be imported
+%       spreadsheet. Function assumes the absolute spatial laser tracker data to
+%       be present in sheet number 2 if not specified differently. Column range
+%       F:H from spreadsheet will be imported
 %
 %   Outputs:
 %
-%   LTDATA          Timeseries of the spatial position data in order of [X,Y,Z].
+%   LTDATA          Time series or collection of three time series: POSITION,
+%       VELOCITY, and ACCELERATION of the laser tracker target.
 %
 %   
 %   Optional Inputs -- specified as parameter value pairs
@@ -60,6 +60,20 @@ function LTData = cogiro_importlaser(Filename, varargin)
 %       removes the first measurement, if and only if it is farther away than%
 %           FILTERTHRESH. Defaults to 5e-3 [ m ].
 %
+%   IncludeGradient         Switch to include gradients of position to also
+%       return velocity and acceleration as measured by the laser tracker. So
+%       far, these values are determined by numerical differentiation. Defualts
+%       to 'off'. Possible values for INCLUDEGRADIENT are
+%           'on', 'yes'     Perform numeric differentation of data to obtain
+%                           velocity and acceleration
+%           'off', 'no'     No numeric differentiation is performed
+%       If INCLUDEGRADIENT is set to 'on' or 'yes', the returned value of
+%       COGIRO_IMPORTLASER is a time series collection of POSITION, VELOCITY,
+%       and ACCELERATION.
+%
+%   Resampling      Sampling time used for resampling of the data. Defaults to
+%       0 i.e., no resampling.
+%
 %   Sampling        Sampling time to use for generating the time vector.
 %       Defaults to 7.2e-3 [s].
 %
@@ -71,8 +85,13 @@ function LTData = cogiro_importlaser(Filename, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-07
+% Date: 2016-09-08
 % Changelog:
+%   2016-09-08
+%       * Add parameter 'IncludeGradient' to include gradient of position for
+%       numerical velocity and acceleration determination
+%       * Add parameter 'Resampling' to perform internal resampling given a
+%       specified resmapling time
 %   2016-09-07
 %       * Add ability to filter noise during import
 %       * Add ability to filter the steady-state at the end
@@ -132,6 +151,14 @@ addParameter(ip, 'FilterEnd', 'off', valFcn_FilterEnd);
 valFcn_FilterEndThreshold = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'nonzero', 'positive'}, mfilename, 'FilterEndThresh');
 addParameter(ip, 'FilterEndThresh', 1.5e-3, valFcn_FilterEndThreshold);
 
+% Parameter: Include gradients. Char. Matches {'on', 'off', 'yes', 'no'}
+valFcn_IncludeGradient = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no'}, mfilename, 'IncludeGradient'));
+addParameter(ip, 'IncludeGradient', 'off', valFcn_IncludeGradient);
+
+% Optional 1: Sampling. Real. Positive
+valFcn_Resampling = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'Resampling');
+addParameter(ip, 'Resampling', 0, valFcn_Resampling);
+
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -171,6 +198,10 @@ dFilterFirst_Threshold = ip.Results.FilterFirstThresh;
 chFilterEnd = parseswitcharg(ip.Results.FilterEnd);
 % Threshold to filtering satic pose measurement
 dFilterEnd_Threshold = ip.Results.FilterEndThresh;
+% Include gradient?
+chIncludeGradient = parseswitcharg(ip.Results.IncludeGradient);
+% Resampling time
+dResamplingTime = ip.Results.Resampling;
 
 
 
@@ -214,27 +245,30 @@ end
 vTime = (0:nTimeSamples - 1).*dSamplingTime;
 
 % Stores the measured poses [x, y, z, r, p, y]
-aPoses = zeros(nTimeSamples, 6);
-aPoses(:,1) = taData(vSelector,vColumns(1)).(taData(vSelector,vColumns(1)).Properties.VariableNames{1});
-aPoses(:,2) = taData(vSelector,vColumns(2)).(taData(vSelector,vColumns(2)).Properties.VariableNames{1});
-aPoses(:,3) = taData(vSelector,vColumns(3)).(taData(vSelector,vColumns(3)).Properties.VariableNames{1});
+aPoses_Pos = zeros(nTimeSamples, 6);
+aPoses_Pos(:,1) = taData(vSelector,vColumns(1)).(taData(vSelector,vColumns(1)).Properties.VariableNames{1});
+aPoses_Pos(:,2) = taData(vSelector,vColumns(2)).(taData(vSelector,vColumns(2)).Properties.VariableNames{1});
+aPoses_Pos(:,3) = taData(vSelector,vColumns(3)).(taData(vSelector,vColumns(3)).Properties.VariableNames{1});
 % Convert [ mm ] to [ m ]
-aPoses = aPoses./1000;
+aPoses_Pos = aPoses_Pos./1000;
+% Keeps the velocity and acceleration
+aPoses_Vel = zeros(nTimeSamples, 6);
+aPoses_Acc = zeros(nTimeSamples, 6);
 
 
 % Filter the first row if it is too far away from the average over the next five
 % measurements
 if strcmp('on', chFilterFirst)
     % Get first pose measurement
-    vFirstPose = aPoses(1,:);
+    vFirstPose = aPoses_Pos(1,:);
     
     % Average over at most the next five measurements
-    vAvgComing = mean(aPoses(1+(1:min(5, nTimeSamples)),:));
+    vAvgComing = mean(aPoses_Pos(1+(1:min(5, nTimeSamples)),:));
     
     % If any of the first pose measurements is farther away than the default or
     % user-specified threshold, we will remove the first pose measurement
     if any((vAvgComing - vFirstPose) > dFilterFirst_Threshold)
-        aPoses(1,:) = [];
+        aPoses_Pos(1,:) = [];
         vTime(end) = [];
     end
 end
@@ -249,13 +283,13 @@ if strcmp('on', chFilterNoise)
     end
     % Filter data using a 6th order sgolayfilter with a frame size depending on the
     % sampling time
-    aPoses = sgolayfilt(aPoses, nFilterNoise_Order, nFilterNoise_Framesize);
+    aPoses_Pos = sgolayfilt(aPoses_Pos, nFilterNoise_Order, nFilterNoise_Framesize);
 end
 
 % Filter static values at the beginning and at the end
 if strcmp('on', chFilterEnd)
     % Get gradient of data along the y-axis
-    [~, aGradients] = gradient(aPoses, dSamplingTime);
+    [~, aGradients] = gradient(aPoses_Pos, dSamplingTime);
     % Filter the gradient to get it smoothed out: order 2; window width 131
     aGradients_Filter = sgolayfilt(aGradients, 2, 131);
     % Filter gradient values that are smaller than the the threshold
@@ -280,16 +314,56 @@ if strcmp('on', chFilterEnd)
         idxConsecutive = sum(vZeros(1:(idxConsecutiveOnes))) + sum(vOnes(1:(idxConsecutiveOnes-1)));
         % Extract data according to the index we have found
         vTime = vTime(1:idxConsecutive);
-        aPoses = aPoses(1:idxConsecutive,:);
+        aPoses_Pos = aPoses_Pos(1:idxConsecutive,:);
+        aPoses_Vel = aPoses_Vel(1:idxConsecutive,:);
+        aPoses_Acc = aPoses_Acc(1:idxConsecutive,:);
     end
+end
+
+% Include gradient in data?
+if strcmp('on', chIncludeGradient)
+    % Fill in numerical gradient for velocity
+    [~, aPoses_Vel] = gradient(aPoses_Pos, dSamplingTime);
+    aPoses_Vel = sgolayfilt(aPoses_Vel, nFilterNoise_Order, nFilterNoise_Framesize);
+
+    % Fill in numerical gradient for acceleration
+    [~, aPoses_Acc] = gradient(aPoses_Vel, dSamplingTime);
+    aPoses_Acc = sgolayfilt(aPoses_Acc, nFilterNoise_Order, nFilterNoise_Framesize);
 end
 
 
 
+%% Collect all data
+tsPos = timeseries(aPoses_Pos, vTime, 'Name', 'Position');
+tsVel = timeseries(aPoses_Vel, vTime, 'Name', 'Velocity');
+tsAcc = timeseries(aPoses_Acc, vTime, 'Name', 'Acceleration');
+
+% Resampling necessary?
+if dResamplingTime > 0
+    % Determine new time vector
+    vNewTime = (0:(tsPos.Length - 1)).*dResamplingTime;
+    % Perform resampling of all data
+    tsPos = resample(tsPos, vNewTime);
+    tsVel = resample(tsVel, vNewTime);
+    tsAcc = resample(tsAcc, vNewTime);
+end
+
+
+
+
+
 %% Create output variable
-LTData = timeseries(aPoses, vTime, 'Name', 'Lasertracker_Position');
-LTData.UserData.Name = chFile_Name;
-LTData.UserData.Source = chFilename;
+% If gradients are requested
+if strcmp('on', chIncludeGradient)
+    % We will return a collection of time series
+    LTData = tscollection({tsPos, tsVel, tsAcc}, 'Name', 'Lasertracker');
+% No gradients requested (for reasons of BC)
+else
+    % Create a time series of just the position data
+    LTData = timeseries(aPoses_Pos, vTime, 'Name', 'Lasertracker_Position');
+    LTData.UserData.Name = chFile_Name;
+    LTData.UserData.Source = chFilename;
+end
 
 
 end
