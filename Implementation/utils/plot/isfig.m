@@ -1,4 +1,4 @@
-function flag = isfig(H, All)
+function flag = isfig(H)
 % ISFIG checks whether the given handle is a figure handle or not
 %
 %   ISFIG(H) checks the current handle to be of type 'figure' or not
@@ -15,49 +15,23 @@ function flag = isfig(H, All)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-06-15
+% Date: 2016-08-09
 % Changelog:
+%   2016-08-09
+%       * Remove second argument 'All'
+%       * Update check for figure handles. It's now safer to run it, especially
+%       with non-figure arguments
 %   2016-06-15
 %       * Initial release
 
 
 
-%% Argument defaults
-if nargin < 2
-    All = false;
-end
-
-
-
-%% Validate arguments
-% H must be an array of handles to begin with
-assert(all(ishandle(H)), 'Argument [H] must be a valid handle');
-% All must be a logical value
-assert(any(All == [false, true]), 'Argument [All] must be logical TRUE or FALSE');
-
-
-
-%% Process arguments
-aHandles = H;
-bAll = All;
-
-
-
 %% Do the MATLABgic
-% Get all handles' types
-ceTypes = get(aHandles, 'type');
-
-% Compare the type of every handle to be of type 'figure'
-vFlag = strcmp(ceTypes, 'figure');
-
-if bAll
-    vFlag = all(vFlag);
+if isempty(H)
+    flag = ~isempty(H) && ( isa(H, 'double') || isa(H, 'matlab.ui.Figure') );
+else
+    flag = ishghandle(H, 'figure');
 end
-
-
-
-%% Assign outputs
-flag = vFlag;
 
 
 end
