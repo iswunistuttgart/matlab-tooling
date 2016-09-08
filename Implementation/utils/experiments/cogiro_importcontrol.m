@@ -46,14 +46,16 @@ function [varargout] = cogiro_importcontrol(Filename, varargin)
 %
 %   Optional Inputs -- specified as parameter value pairs
 %
-%   FillMissing     Switch to fill in missing information by numerically
+%   IncludeGradient     Switch to fill in missing information by numerically
 %       differentaiting the data found in the respective position or velocity
 %       data. If for example velocity and acceleration data for the Z-axis
-%       cannot be found but 'FillMissing' is 'on', then Z-velocity and
+%       cannot be found but 'IncludeGradient' is 'on', then Z-velocity and
 %       Z-acceleration will be filled in by means of gradient of position and
 %       velocity, respectively, and smoothening filtering. Possible options are
-%       'on', 'yes'     Fill in missing data
-%       'off', 'no'     Do not fill in missing data
+%           'on', 'yes'     Determine numerical gradient (i.e., velocity and
+%                           acceleration) for existing position data
+%           'off', 'no'     Do not create numerical gradient for existing
+%                           position data
 %
 %   Resampling      Sampling time used for resampling of the data. Defaults to
 %       0 i.e., no resampling.
@@ -86,6 +88,8 @@ function [varargout] = cogiro_importcontrol(Filename, varargin)
 %   2016-09-08
 %       * Add parameter 'Resampling' to perform internal resampling given a
 %       specified resmapling time
+%       * Add parameter 'IncludeGradient' to include numeric gradient of
+%       position into velocity and acceleration where possible
 %   2016-09-01
 %       * Update help block with missing param/value pair
 %       * Add support for returning split commands into separate variables
@@ -114,9 +118,9 @@ addOptional(ip, 'Sampling', 0, valFcn_Sampling);
 valFcn_SplitCommands = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no'}, mfilename, 'SplitCommands'));
 addParameter(ip, 'SplitCommands', 'off', valFcn_SplitCommands);
 
-% Parameter: FillMissing. Char. {'on', 'off', 'yes', 'no'}
-valFcn_FillMissing = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no'}, mfilename, 'FillMissing'));
-addParameter(ip, 'FillMissing', 'off', valFcn_FillMissing);
+% Parameter: IncludeGradient. Char. {'on', 'off', 'yes', 'no'}
+valFcn_IncludeGradient = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no'}, mfilename, 'IncludeGradient'));
+addParameter(ip, 'IncludeGradient', 'off', valFcn_IncludeGradient);
 
 % Optional 1: Sampling. Real. Positive
 valFcn_Resampling = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'Resampling');
@@ -144,8 +148,8 @@ chFilename = fullpath(ip.Results.Filename);
 dSamplingTime = ip.Results.Sampling;
 % Split commands
 chSplitCommands = parseswitcharg(ip.Results.SplitCommands);
-% Fill missing data
-chFillMissing = parseswitcharg(ip.Results.FillMissing);
+% Include gradient data
+chIncludeGradient = parseswitcharg(ip.Results.IncludeGradient);
 % Resampling time
 dResamplingTime = ip.Results.Resampling;
 
@@ -216,7 +220,7 @@ aSetPose_Vel = zeros(nTimeSamples, 6);
 aSetPose_Acc = zeros(nTimeSamples, 6);
 
 % Holds missing positional data
-vMissingData = zeros(3, 6);
+vExistingData = zeros(3, 6);
 
 % Order of the sgolay filter for smoothing gradient of numerically derived
 % velocity or acceleration
@@ -238,150 +242,132 @@ end
 % X position
 if isfield(stLoadedData, 'Xcurrent_0_')
     aSetPose_Pos(:,1) = ascolumn(stLoadedData.Xcurrent_0_(2,:));
-else
-    vMissingData(1,1) = 1;
+    vExistingData(1,1) = 1;
 end
 % Y position
 if isfield(stLoadedData, 'Xcurrent_1_')
     aSetPose_Pos(:,2) = ascolumn(stLoadedData.Xcurrent_1_(2,:));
-else
-    vMissingData(1,2) = 1;
+    vExistingData(1,2) = 1;
 end
 % Z position
 if isfield(stLoadedData, 'Xcurrent_2_')
     aSetPose_Pos(:,3) = ascolumn(stLoadedData.Xcurrent_2_(2,:));
-else
-    vMissingData(1,3) = 1;
+    vExistingData(1,3) = 1;
 end
 % A position
 if isfield(stLoadedData, 'Xcurrent_3_')
     aSetPose_Pos(:,4) = ascolumn(stLoadedData.Xcurrent_3_(2,:));
-else
-    vMissingData(1,4) = 1;
+    vExistingData(1,4) = 1;
 end
 % B position
 if isfield(stLoadedData, 'Xcurrent_4_')
     aSetPose_Pos(:,5) = ascolumn(stLoadedData.Xcurrent_4_(2,:));
-else
-    vMissingData(1,5) = 1;
+    vExistingData(1,5) = 1;
 end
 % C position
 if isfield(stLoadedData, 'Xcurrent_5_')
     aSetPose_Pos(:,6) = ascolumn(stLoadedData.Xcurrent_5_(2,:));
-else
-    vMissingData(1,6) = 1;
+    vExistingData(1,6) = 1;
 end
 
 %%% Velocity data
 % X velocity
 if isfield(stLoadedData, 'Vcurrent_0_')
     aSetPose_Vel(:,1) = ascolumn(stLoadedData.Vcurrent_0_(2,:));
-else
-    vMissingData(2,1) = 1;
+    vExistingData(2,1) = 1;
 end
 % Y velocity
 if isfield(stLoadedData, 'Vcurrent_1_')
     aSetPose_Vel(:,2) = ascolumn(stLoadedData.Vcurrent_1_(2,:));
-else
-    vMissingData(2,2) = 1;
+    vExistingData(2,2) = 1;
 end
 % Z velocity
 if isfield(stLoadedData, 'Vcurrent_2_')
     aSetPose_Vel(:,3) = ascolumn(stLoadedData.Vcurrent_2_(2,:));
-else
-    vMissingData(2,3) = 1;
+    vExistingData(2,3) = 1;
 end
 % A velocity
 if isfield(stLoadedData, 'Vcurrent_3_')
     aSetPose_Vel(:,4) = ascolumn(stLoadedData.Vcurrent_3_(2,:));
-else
-    vMissingData(2,3) = 1;
+    vExistingData(2,3) = 1;
 end
 % B velocity
 if isfield(stLoadedData, 'Vcurrent_4_')
     aSetPose_Vel(:,5) = ascolumn(stLoadedData.Vcurrent_4_(2,:));
-else
-    vMissingData(2,5) = 1;
+    vExistingData(2,5) = 1;
 end
 % C velocity
 if isfield(stLoadedData, 'Vcurrent_5_')
     aSetPose_Vel(:,6) = ascolumn(stLoadedData.Vcurrent_5_(2,:));
-else
-    vMissingData(2,6) = 1;
+    vExistingData(2,6) = 1;
 end
 
 %%% Acceleration data
 % X acceleration
 if isfield(stLoadedData, 'Acurrent_0_')
     aSetPose_Acc(:,1) = ascolumn(stLoadedData.Acurrent_0_(2,:));
-else
-    vMissingData(3,1) = 1;
+    vExistingData(3,1) = 1;
 end
 % Y acceleration
 if isfield(stLoadedData, 'Acurrent_1_')
     aSetPose_Acc(:,2) = ascolumn(stLoadedData.Acurrent_1_(2,:));
-else
-    vMissingData(3,2) = 1;
+    vExistingData(3,2) = 1;
 end
 % Z acceleration
 if isfield(stLoadedData, 'Acurrent_2_')
     aSetPose_Acc(:,3) = ascolumn(stLoadedData.Acurrent_2_(2,:));
-else
-    vMissingData(3,3) = 1;
+    vExistingData(3,3) = 1;
 end
 % A acceleration
 if isfield(stLoadedData, 'Acurrent_3_')
     aSetPose_Acc(:,4) = ascolumn(stLoadedData.Acurrent_3_(2,:));
-else
-    vMissingData(3,4) = 1;
+    vExistingData(3,4) = 1;
 end
 % B acceleration
 if isfield(stLoadedData, 'Acurrent_4_')
     aSetPose_Acc(:,5) = ascolumn(stLoadedData.Acurrent_4_(2,:));
-else
-    vMissingData(3,5) = 1;
+    vExistingData(3,5) = 1;
 end
 % C acceleration
 if isfield(stLoadedData, 'Acurrent_5_')
     aSetPose_Acc(:,6) = ascolumn(stLoadedData.Acurrent_5_(2,:));
-else
-    vMissingData(3,6) = 1;
+    vExistingData(3,6) = 1;
 end
 
 
 
 %% Fill in missing data
-if strcmp('on', chFillMissing)
+if strcmp('on', chIncludeGradient)
     % Split missing data for position, velocity, and acceleration
-    vMissingData_Pos = vMissingData(1,:);
-    vMissingData_Vel = vMissingData(2,:);
-    vMissingData_Acc = vMissingData(3,:);
+    vExistingData_Pos = vExistingData(1,:);
+    vExistingData_Vel = vExistingData(2,:);
+    vExistingData_Acc = vExistingData(3,:);
     
     % Loop over missing velocity data
-    for iIdx_Acc = 1:numel(vMissingData_Vel)
+    for iIdx_Acc = 1:numel(vExistingData_Vel)
         % Skip if the velocity data exists
-        if vMissingData_Vel(iIdx_Acc) == 0
+        if vExistingData_Vel(iIdx_Acc) == 1
             continue
         end
         
         % If we have position data for the velocity index
-        if vMissingData_Pos(iIdx_Acc) == 0
+        if vExistingData_Pos(iIdx_Acc) == 1
             % We can get the velocity from deriving the position
             aSetPose_Vel(:,iIdx_Acc) = sgolayfilt(gradient(aSetPose_Pos(:,iIdx_Acc), dSamplingTime), nFilterGradient_Order, nFilterGradient_Framesize);
             % Ensure we know from here on that we have the velocity data
-            vMissingData_Vel(iIdx_Acc) = 0;
+            vExistingData_Vel(iIdx_Acc) = 1;
         end
     end
     
     % Loop over missing velocity data
-    for iIdx_Acc = 1:numel(vMissingData_Acc)
+    for iIdx_Acc = 1:numel(vExistingData_Acc)
         % Skip if the acceleration data exists
-        if vMissingData_Acc(iIdx_Acc) == 0
+        if vExistingData_Acc(iIdx_Acc) == 1
             continue
         end
         
         % If we have velocity data for the acceleration index
-        if vMissingData_Vel(iIdx_Acc) == 0
+        if vExistingData_Vel(iIdx_Acc) == 1
             % We can get the acceleration from deriving the velocity
             aSetPose_Acc(:,iIdx_Acc) = sgolayfilt(gradient(aSetPose_Vel(:,iIdx_Acc), dSamplingTime), nFilterGradient_Order, nFilterGradient_Framesize);
         end
