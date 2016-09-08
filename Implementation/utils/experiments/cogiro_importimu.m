@@ -180,11 +180,11 @@ aForces = zeros(nTimeSamples, 8);
 % % Z position (does not exist)
 % aIsPose_Pos(:,3) = ;
 % A position (does not exist)
-aPos(:,4) = aLoadedData(:,5);
+aPos(:,4) = -aLoadedData(:,5);
 % B position (does not exist)
-aPos(:,5) = aLoadedData(:,6);
+aPos(:,5) = -aLoadedData(:,6);
 % C position (does not exist)
-aPos(:,6) = aLoadedData(:,7);
+aPos(:,6) = -aLoadedData(:,7);
 
 
 %%% Velocities
@@ -195,20 +195,20 @@ aPos(:,6) = aLoadedData(:,7);
 % % Z velocity (does not exist)
 % aIsPose_Vel(:,3) = ;
 % A velocity
-aVel(:,4) = aLoadedData(:,8);
+aVel(:,4) = -aLoadedData(:,8);
 % B velocity
-aVel(:,5) = aLoadedData(:,9);
+aVel(:,5) = -aLoadedData(:,9);
 % C velocity
-aVel(:,6) = aLoadedData(:,10);
+aVel(:,6) = -aLoadedData(:,10);
 
 
 %%% Accelerations
 % X acceleration
-aAcc(:,1) = aLoadedData(:,2);
+aAcc(:,1) = -aLoadedData(:,2);
 % Y acceleration
-aAcc(:,2) = aLoadedData(:,3);
+aAcc(:,2) = -aLoadedData(:,3);
 % Z acceleration
-aAcc(:,3) = aLoadedData(:,4);
+aAcc(:,3) = -aLoadedData(:,4);
 % % A acceleration
 % aIsPose_Acc(:,4) = ;
 % % B acceleration
