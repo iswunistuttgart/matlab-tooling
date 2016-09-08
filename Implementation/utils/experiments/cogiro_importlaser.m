@@ -329,13 +329,21 @@ end
 
 % Include gradient in data?
 if strcmp('on', chIncludeGradient)
-    % Fill in numerical gradient for velocity
+    % Get velocity as numerical gradient from position
     [~, aPoses_Vel] = gradient(aPoses_Pos, dSamplingTime);
+    % Run sgolay filter on data
     aPoses_Vel = sgolayfilt(aPoses_Vel, nFilterNoise_Order, nFilterNoise_Framesize);
+    % And now a median fiter on the data to remove outliers especially on the
+    % edges
+    aPoses_Vel = medfilt1(aPoses_Vel, 5);
 
-    % Fill in numerical gradient for acceleration
+    % Get acceleration as numerical gradient from velocity
     [~, aPoses_Acc] = gradient(aPoses_Vel, dSamplingTime);
-    aPoses_Acc = sgolayfilt(aPoses_Acc, nFilterNoise_Order, nFilterNoise_Framesize);
+    % Run sgolay filter on data
+    aPoses_Acc = sgolayfilt(aPoses_Acc, nFilterNoise_Order, 7);
+    % And now a median fiter on the data to remove outliers especially on the
+    % edges
+    aPoses_Acc = medfilt1(aPoses_Acc, 5);
 end
 
 
