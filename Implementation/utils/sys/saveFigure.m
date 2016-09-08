@@ -65,8 +65,12 @@ function saveFigure(Filename, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-07-14
+% Date: 2016-08-08
 % Changelog:
+%   2016-08-08
+%       * Update logic for checking for figure handles in the first argument
+%       * Add support for printing a batch of files at once with number appended
+%       to the file name
 %   2016-07-14
 %       * Wrap IP-parse in try-catch to have nicer error display
 %   2016-06-10
@@ -78,10 +82,12 @@ function saveFigure(Filename, varargin)
 
 
 %% Pre-process inputs
-haFig = false;
-
-if ~isempty(varargin) && isfig(Filename)
-    haFig = Filename;
+hfSource = [];
+% If there's more than the required argument FILENAME and the first argument is
+% only figures, then shift arguments
+if ~isempty(varargin) && any(isfig(Filename))
+    assert(all(isfig(Filename)), 'PHILIPPTEMPEL:SAVEFIGURE:incorrectHandleType', 'All handles must be figure handles');
+    hfSource = Filename;
     Filename = varargin{1};
     varargin = varargin(2:end);
 end
@@ -97,7 +103,7 @@ addRequired(ip, 'Filename', valFcn_Filename);
 
 % Optional 1: Types of files to save as
 ceAllowedTypes = {'eps', 'fig', 'tikz', 'png', 'emf'};
-valFcn_Types = @(x) assert(all(ismember(x, ceAllowedTypes)), 'The value of ''Types'' is invalid. It must be a member of:\n\n%s', strjoin(ceAllowedTypes, ', ')); %all(cellfun(@(y) ischar(y), cellfun(@(z) validatestring(z, {'eps', 'fig', 'tikz', 'png', 'emf'}, mfilename, 'Types'), y, 'UniformOutput', false), x));
+valFcn_Types = @(x) assert(all(ismember(x, ceAllowedTypes)), 'The value of ''Types'' is invalid. It must be a member of:\n\n%s', strjoin(ceAllowedTypes, ', '));
 addOptional(ip, 'Types', {'fig'}, valFcn_Types);
 
 % Optional 2: Create subdirs for each type
@@ -131,7 +137,7 @@ end
 
 %% Parse inputs
 % Filename
-chFilepath = ip.Results.Filename;
+chFileTarget = ip.Results.Filename;
 % Types
 ceOutputTypes = ip.Results.Types;
 % Create dirs for each type
@@ -147,87 +153,81 @@ cePngConfig = ip.Results.PngPrint;
 
 %% Off we go
 % If no specific figure was given, we will just use the current figure
-if ~ishandle(haFig)
-    haFig = gcf;
+if isempty(hfSource)
+    hfSource = gcf;
 end
 
-% Make the given figure active and visible
-figure(haFig);
-set(haFig, 'Visible', 'on');
+% Count how many figure shall be saved
+nFigures = numel(hfSource);
 
 % Check the filename is a valid file i.e., starts with a directory
-chFilepath = GetFullPath(chFilepath);
-[chPath, chFilename, chExtension] = fileparts(chFilepath);
-% % Get the parts of the FQFN to make sure we don't have an extension
-% [pathstr, name, ext] = fileparts(chFilename);
-% % If there's an extension givne 
-% if ~isempty(ext)
-%     chFilename = fullfile(pathstr, name);
-% end
+chFileTarget = GetFullPath(chFileTarget);
+[chPath, chFilename, ~] = fileparts(chFileTarget);
 
-% Save as fig
-if ismember('fig', ceOutputTypes)
-    if strcmp(chInDir, 'on')
-        mkdir(fullfile(chPath, 'fig'));
-        chTargetPath = fullfile(chPath, 'fig', chFilename);
-    else
-        chTargetPath = fullfile(chPath, chFilename);
+% Loop over all figures
+for iFig = 1:nFigures
+    try
+        % Get the current figure
+        hfTheSource = hfSource(iFig);
+
+        % Make the given figure active and visible
+        figure(hfTheSource);
+        set(hfTheSource, 'Visible', 'on');
+
+        % Append number of figure if more than one figure
+        if nFigures > 1
+            chFilename = sprintf(sprintf('%%s-%%0%dd', length(sprintf('%d', nFigures)) + 1), chFilename, iFig);
+        end
+
+        % Save as fig
+        if ismember('fig', ceOutputTypes)
+            chFilepath = in_createFilepath('fig');
+            % Matlab .FIG file
+            saveas(hfTheSource, [chFilepath , '.fig']);
+        end
+
+        % Save as emf
+        if ismember('emf', ceOutputTypes)
+            chFilepath = in_createFilepath('emf');
+            % Windows Enhanced Meta-File (best for powerpoints)
+            saveas(hfTheSource, [chFilepath , '.emf']);
+        end
+
+        % Save as png
+        if ismember('png', ceOutputTypes)
+            chFilepath = in_createFilepath('png');
+            % Standard PNG graphics file (best for web)
+            print('-dpng', '-loose', '-zbuffer', '-r200', [chFilepath, '.png'], cePngConfig{:});
+        end
+
+        % Save as eps
+        if ismember('eps', ceOutputTypes)
+            chFilepath = in_createFilepath('eps');
+            % Enhanced Postscript (Level 2 color) (Best for LaTeX documents)
+            print('-depsc', '-tiff', '-zbuffer', '-r200', [chFilepath, '.eps'], ceEpsConfig{:});
+        end
+
+        % Save as tikz
+        if ismember('tikz', ceOutputTypes)
+            chFilepath = in_createFilepath('tikz');
+            % matlab2tikz([chTargetFolder , '.tikz'], 'Height', '\figureheight', 'Width', '\figurewidth', 'ShowInfo', false);
+            matlab2tikz('FigureHandle', hfTheSource, 'filename', [chFilepath, '.tikz'], 'figurehandle', hfSource, 'ShowInfo', false, ceTikzConfig{:});
+        end
+    catch me
+        me = addCause(me, MException('PHILIPPTEMPEL:SAVEFIGURE:errorSaveFile', 'Error saving file [%s]', chFilepath));
     end
-    
-    saveas(haFig, [chTargetPath , '.fig']);   % Matlab .FIG file
 end
 
-% Save as emf
-if ismember('emf', ceOutputTypes)
-    if strcmp(chInDir, 'on')
-        mkdir(fullfile(chPath, 'emf'));
-        chTargetPath = fullfile(chPath, 'emf', chFilename);
-    else
-        chTargetPath = fullfile(chPath, chFilename);
-    end
-    
-    saveas(haFig, [chTargetPath , '.emf']);   % Windows Enhanced Meta-File (best for powerpoints)
-end
 
-% Save as png
-if ismember('png', ceOutputTypes)
-    if strcmp(chInDir, 'on')
-        mkdir(fullfile(chPath, 'png'));
-        chTargetPath = fullfile(chPath, 'png', chFilename);
-    else
-        chTargetPath = fullfile(chPath, chFilename);
+    function chTargetPath = in_createFilepath(chFolder)
+        chTargetPath = fullfile(chPath);
+        if strcmp('on', chInDir)
+            mkdir(fullfile(chPath, chFolder));
+            chTargetPath = fullfile(chTargetPath, chFolder);
+        end
+        
+        chTargetPath = fullfile(chTargetPath, chFilename);
     end
-    
-%     saveas(haFig, [chTargetFolder, '.png']);   % Standard PNG graphics file (best for web)
-    print('-dpng', '-loose', '-zbuffer', '-r200', [chTargetPath, '.png'], cePngConfig{:}); 
-end
-
-% Save as eps
-if ismember('eps', ceOutputTypes)
-    if strcmp(chInDir, 'on')
-        mkdir(fullfile(chPath, 'eps'));
-        chTargetPath = fullfile(chPath, 'eps', chFilename);
-    else
-        chTargetPath = fullfile(chPath, chFilename);
-    end
-    
-%     eval(['print -depsc2 ' , [chTargetFolder, '.eps']]);   % Enhanced Postscript (Level 2 color) (Best for LaTeX documents)
-    print('-depsc', '-tiff', '-zbuffer', '-r200', [chTargetPath , '.eps'], ceEpsConfig{:});
-end
-
-% Save as tikz
-if ismember('tikz', ceOutputTypes)
-    % Save in a subdir? Then make sure we have the subdirectory set
-    if strcmp(chInDir, 'on')
-        mkdir(fullfile(chPath, 'tikz'));
-        chTargetPath = fullfile(chPath, 'tikz', chFilename);
-    else
-        chTargetPath = fullfile(chPath, chFilename);
-    end
-    
-%     matlab2tikz([chTargetFolder , '.tikz'], 'Height', '\figureheight', 'Width', '\figurewidth', 'ShowInfo', false);
-    matlab2tikz('filename', [chTargetPath , '.tikz'], 'figurehandle', haFig, ceTikzConfig{:});
-end
 
 
 end
