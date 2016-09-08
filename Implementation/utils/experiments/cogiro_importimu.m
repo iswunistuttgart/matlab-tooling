@@ -1,39 +1,41 @@
 function Collection = cogiro_importimu(Filename, varargin)
 % COGIRO_IMPORTIMU imports IMU data for the CoGiRo cable robot
 %
-%   C = COGIRO_IMPORTIMU(FILENAME) reads file given by FILENAME, proccesses data,
-%   and returns it in a timeseries-collection C.
+%   COLL = COGIRO_IMPORTIMU(FILENAME) reads file given by FILENAME, proccesses
+%   data, and returns it in a timeseries-collection C.
 %
-%   C = COGIRO_IMPORTIMU(FILENAME, 'Name', 'Value') reads file given by
+%   COLL = COGIRO_IMPORTIMU(FILENAME, SAMPLING) reads file with specified
+%   sampling time SAMPLING. Defaults to 0.1 (100 [ ms ]).
+%
+%   COLL = COGIRO_IMPORTIMU(FILENAME, 'Name', 'Value', ...) reads file given by
 %   FILENAME with additional options specified by one or more Name,Value pair
 %   arguments.
 %
 %   Inputs:
 %   
 %   FILENAME    File name of file to import. Can be a name of a file on the
-%               MATLAB path or in the local working directory. Can basically be
-%               anything that qualifies as a valid file. File must be created by
-%               export from the IMU and its extension must be .lirmm
+%       MATLAB path or in the local working directory. Can basically be anything
+%       that qualifies as a valid file. File must be created by export from the
+%       IMU and its extension must be .lirmm
 %
 %   Outputs:
 %   
-%   C           Timeseries collection of timeseries with fields
-%               - Position: timeseries of position data as acquired by the
-%               IMU. Data is stored in columns
-%                   [x, y, z, a, b, c]
-%               or
-%                   [x, y, z, roll, pitch, heading(yaw) ]
-%               - Velocity: timeseries of velocity data as acquired by the
-%               IMU. Data is stored in same columns as for C.POSITION
-%               - Acceleration: timseries of acceleration data as acquired
-%               by the IMU. No transformation is done an ddata is sorted same as
-%               for C.Position
-%               - CableForces: timeseries of cable forces as acquired by the
-%               IMU. The columns are sorted in one-based index for the canals of
-%               the IMU data i.e.,
-%                   [can0, can1, can2, can3, can4, can5, can6, can7]
-%               or in cable forces
-%                   [f1, f2, f3, f4, f5, f6, f7, f8]
+%   COLL        Timeseries collection of timeseries with fields
+%       .Position: timeseries of position data as acquired by the IMU. Data is
+%       stored in columns
+%           [x, y, z, a, b, c]
+%       or
+%           [x, y, z, roll, pitch, yaw ]
+%       .Velocity: timeseries of velocity data as acquired by the IMU. Data is
+%       stored in same columns as for C.POSITION
+%       .Acceleration: timseries of acceleration data as acquired by the IMU.
+%       No transformation is done an data is sorted same as for C.Position
+%       .CableForces: timeseries of cable forces as acquired by the IMU. The
+%       columns are sorted in one-based index for the canals of the IMU data
+%       i.e.,
+%           [can0, can1, can2, can3, can4, can5, can6, can7]
+%       or in cable forces
+%           [f1, f2, f3, f4, f5, f6, f7, f8]
 %
 %
 %   Optional Inputs -- specified as parameter value pairs
@@ -50,26 +52,6 @@ function Collection = cogiro_importimu(Filename, varargin)
 %   FilterNoiseFramesize    Size of the frame used to filter noise. Defaults to
 %       the odd integer closes to half the sampling time.
 %
-%   FilterEnd               Switch whether to filter recording at the end of the
-%       data. Data filtering is done using the sgolayfilt with user-specifiable
-%       filter parameters. Possible values for FILTEREND are
-%           'on', 'yes'     Filter noise from data
-%           'off', 'no'     Do not filter data
-%
-%   FilterEndThresh         Threshold to use to filter assume final data to be
-%       of steady nature. By default, as many as the rounded number of
-%       1/SamplingTime is used as window size which is used to compare data
-%       against. Defaults to 5*1e-3 [m]
-%
-%   FilterFirst             Whether to automatically filter the first laser
-%       tracker measurement data against the next five values ensuring that
-%       there is no gap/discontinuity
-%
-%   FilterThresh            What threshold to use for filter the first value.%
-%       Import function looks at the average of the next five measurements and
-%       removes the first measurement, if and only if it is farther away than%
-%           FILTERTHRESH. Defaults to 5e-3 [ m ].
-%
 %   Resampling      Sampling time used for resampling of the data. Defaults to
 %       0 i.e., no resampling.
 %
@@ -82,7 +64,7 @@ function Collection = cogiro_importimu(Filename, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-07
+% Date: 2016-09-08
 % Changelog:
 %   2016-09-08
 %       * Remove support for filtering steady-state data
@@ -287,7 +269,7 @@ tsForces.UserData.Source = chFilename;
 % Resampling necessary?
 if dResamplingTime > 0
     % Determine new time vector
-    vNewTime = (0:(tsPos.Length - 1)).*dResamplingTime;
+    vNewTime = (0:(tsPos.TimeInfo.End/dSamplingTime)).*dSamplingTime;
     % Perform resampling of all data
     tsPos = resample(tsPos, vNewTime);
     tsVel = resample(tsVel, vNewTime);

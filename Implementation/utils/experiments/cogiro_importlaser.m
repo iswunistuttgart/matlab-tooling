@@ -6,9 +6,15 @@ function LTData = cogiro_importlaser(Filename, varargin)
 %   the absolute spatial laser tracker data to be in sheet number 2 and the
 %   column range to be F to H.
 %
-%   LTDATA = COGIRO_IMPORTLASER(FILENAME, 'Name', 'Value') reads processed laser
-%   tracker data from file FILENAME with additional options specified by one or
-%   more Name,Value pair arguments.
+%   LTDATA = COGIRO_IMPORTLASER(FILENAME, SAMPLING) uses sampling time SAMPLING
+%   for import and surpasses automatic detection of sampling time.
+%
+%   LTDATA = COGIRO_IMPORTLASER(FILENAME, SAMPLING, SHEETNO) uses sheet number
+%   specified in SHEETNO to read data from. Defaults to 2.
+%
+%   LTDATA = COGIRO_IMPORTLASER(FILENAME, 'Name', 'Value', ...) reads processed
+%   laser tracker data from file FILENAME with additional options specified by
+%   one or more Name,Value pair arguments.
 %
 %   Inputs:
 %
@@ -88,6 +94,7 @@ function LTData = cogiro_importlaser(Filename, varargin)
 % Date: 2016-09-08
 % Changelog:
 %   2016-09-08
+%       * Update help docs a bit
 %       * Add parameter 'IncludeGradient' to include gradient of position for
 %       numerical velocity and acceleration determination
 %       * Add parameter 'Resampling' to perform internal resampling given a
@@ -337,11 +344,17 @@ end
 tsPos = timeseries(aPoses_Pos, vTime, 'Name', 'Position');
 tsVel = timeseries(aPoses_Vel, vTime, 'Name', 'Velocity');
 tsAcc = timeseries(aPoses_Acc, vTime, 'Name', 'Acceleration');
+tsPos.UserData.Name = chFile_Name;
+tsPos.UserData.Source = chFilename;
+tsVel.UserData.Name = chFile_Name;
+tsVel.UserData.Source = chFilename;
+tsAcc.UserData.Name = chFile_Name;
+tsAcc.UserData.Source = chFilename;
 
 % Resampling necessary?
 if dResamplingTime > 0
     % Determine new time vector
-    vNewTime = (0:(tsPos.Length - 1)).*dResamplingTime;
+    vNewTime = (0:(tsPos.TimeInfo.End/dSamplingTime)).*dSamplingTime;
     % Perform resampling of all data
     tsPos = resample(tsPos, vNewTime);
     tsVel = resample(tsVel, vNewTime);
@@ -360,9 +373,7 @@ if strcmp('on', chIncludeGradient)
 % No gradients requested (for reasons of BC)
 else
     % Create a time series of just the position data
-    LTData = timeseries(aPoses_Pos, vTime, 'Name', 'Lasertracker_Position');
-    LTData.UserData.Name = chFile_Name;
-    LTData.UserData.Source = chFilename;
+    LTData = tsPos;
 end
 
 
