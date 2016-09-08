@@ -37,15 +37,60 @@ function Collection = cogiro_importimu(Filename, varargin)
 %
 %
 %   Optional Inputs -- specified as parameter value pairs
-%   SamplingTime    Sampling time rate of the IMU system for creation of proper
-%                   time information. Defaults to 100 ms.
+%
+%   FilterNoise             Switch whether to filter noise during import or not.
+%       Noise filtering is done using the sgolayfilt filter with custom data.
+%       Possible values for FILTERNOISE are
+%           'on', 'yes'     Filter noise from data
+%           'off', 'no'     Do not filter data
+%
+%   FilterNoiseOrder        Order of the sgolayfilt filter used to filter noise.
+%       Defaults to 6.
+%
+%   FilterNoiseFramesize    Size of the frame used to filter noise. Defaults to
+%       the odd integer closes to half the sampling time.
+%
+%   FilterEnd               Switch whether to filter recording at the end of the
+%       data. Data filtering is done using the sgolayfilt with user-specifiable
+%       filter parameters. Possible values for FILTEREND are
+%           'on', 'yes'     Filter noise from data
+%           'off', 'no'     Do not filter data
+%
+%   FilterEndThresh         Threshold to use to filter assume final data to be
+%       of steady nature. By default, as many as the rounded number of
+%       1/SamplingTime is used as window size which is used to compare data
+%       against. Defaults to 5*1e-3 [m]
+%
+%   FilterFirst             Whether to automatically filter the first laser
+%       tracker measurement data against the next five values ensuring that
+%       there is no gap/discontinuity
+%
+%   FilterThresh            What threshold to use for filter the first value.%
+%       Import function looks at the average of the next five measurements and
+%       removes the first measurement, if and only if it is farther away than%
+%           FILTERTHRESH. Defaults to 5e-3 [ m ].
+%
+%   Resampling      Sampling time used for resampling of the data. Defaults to
+%       0 i.e., no resampling.
+%
+%   Sampling        Sampling time to use for generating the time vector.
+%       Defaults to 7.2e-3 [s].
+%
+%   See also: sgolayfilt
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-23
+% Date: 2016-09-07
 % Changelog:
+%   2016-09-08
+%       * Remove support for filtering steady-state data
+%   2016-09-07
+%       * Add support for filtering noise using sgolayfilt
+%       * Add support to filter steady-state at the beginning using sgolayfilt
+%       on the data gradient
+%       * Rename parameter 'SamplingTime' to 'Sampling'
 %   2016-08-23
 %       * Introduce inputParser to function
 %   2016-06-15
@@ -64,8 +109,24 @@ valFcn_Filename = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 
 addRequired(ip, 'Filename', valFcn_Filename);
 
 % Optional 1: SamplingTime. Real. Positive
-valFcn_SamplingTime = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'SamplingTime');
-addParameter(ip, 'SamplingTime', 100*1e-3, valFcn_SamplingTime);
+valFcn_Sampling = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'Sampling');
+addOptional(ip, 'Sampling', 100*1e-3, valFcn_Sampling);
+
+% Parameter: Filter noise. Char. Matches {'on', 'off', 'yes', 'no'}
+valFcn_FilterNoise = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no'}, mfilename, 'FilterNoise'));
+addParameter(ip, 'FilterNoise', 'off', valFcn_FilterNoise);
+
+% Parameter: Filter start threshold. Numeric. Real. Positive.
+valFcn_FilterNoiseOrder = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'nonzero', 'positive', 'int'}, mfilename, 'FilterNoiseOrder');
+addParameter(ip, 'FilterNoiseOrder', 6, valFcn_FilterNoiseOrder);
+
+% Parameter: Filter start threshold. Numeric. Real. Positive.
+valFcn_FilterNoiseFramesize = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'nonzero', 'positive', 'int'}, mfilename, 'FilterNoiseFramesize');
+addParameter(ip, 'FilterNoiseFramesize', 0, valFcn_FilterNoiseFramesize);
+
+% Optional 1: Sampling. Real. Positive
+valFcn_Resampling = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'Resampling');
+addParameter(ip, 'Resampling', 0, valFcn_Resampling);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -86,7 +147,15 @@ end
 % Filename
 chFilename = fullpath(ip.Results.Filename);
 % Sampling Time
-dSamplingTime = ip.Results.SamplingTime;
+dSamplingTime = ip.Results.Sampling;
+% Filter noise from measurement
+chFilterNoise = parseswitcharg(ip.Results.FilterNoise);
+% Order of the noise filter
+nFilterNoise_Order = ip.Results.FilterNoiseOrder;
+% Frame size of noise filter
+nFilterNoise_Framesize = ip.Results.FilterNoiseFramesize;
+% Resampling time
+dResamplingTime = ip.Results.Resampling;
 
 
 
@@ -99,7 +168,7 @@ assert(strcmpi('.lirmm', chFile_Ext), 'PHILIPPTEMPEL:COGIRO_IMPORTIMU:invalidFil
 
 %% Read IMU data file
 try
-    aLoadedData = if_importImuDataFile(chFilename);
+    aLoadedData = in_importImuDataFile(chFilename);
 catch me
     error('PHILIPPTEMPEL:COGIRO_IMPORTIMU:fileLoadFailure', 'Could not load file with error: %s', me.message);
 end
@@ -110,10 +179,12 @@ end
 % How many data points do we have?
 nTimeSamples = numel(aLoadedData(:,1));
 
+% Determine time vector
 vTime = (0:(nTimeSamples - 1)).*dSamplingTime;
-aIsPose_Pos = zeros(nTimeSamples, 6);
-aIsPose_Vel = zeros(nTimeSamples, 6);
-aIsPose_Acc = zeros(nTimeSamples, 6);
+% Holds the data read
+aPos = zeros(nTimeSamples, 6);
+aVel = zeros(nTimeSamples, 6);
+aAcc = zeros(nTimeSamples, 6);
 aForces = zeros(nTimeSamples, 8);
 
 
@@ -127,11 +198,11 @@ aForces = zeros(nTimeSamples, 8);
 % % Z position (does not exist)
 % aIsPose_Pos(:,3) = ;
 % A position (does not exist)
-aIsPose_Pos(:,4) = aLoadedData(:,5);
+aPos(:,4) = aLoadedData(:,5);
 % B position (does not exist)
-aIsPose_Pos(:,5) = aLoadedData(:,6);
+aPos(:,5) = aLoadedData(:,6);
 % C position (does not exist)
-aIsPose_Pos(:,6) = aLoadedData(:,7);
+aPos(:,6) = aLoadedData(:,7);
 
 
 %%% Velocities
@@ -142,20 +213,20 @@ aIsPose_Pos(:,6) = aLoadedData(:,7);
 % % Z velocity (does not exist)
 % aIsPose_Vel(:,3) = ;
 % A velocity
-aIsPose_Vel(:,4) = aLoadedData(:,8);
+aVel(:,4) = aLoadedData(:,8);
 % B velocity
-aIsPose_Vel(:,5) = aLoadedData(:,9);
+aVel(:,5) = aLoadedData(:,9);
 % C velocity
-aIsPose_Vel(:,6) = aLoadedData(:,10);
+aVel(:,6) = aLoadedData(:,10);
 
 
 %%% Accelerations
 % X acceleration
-aIsPose_Acc(:,1) = aLoadedData(:,2);
+aAcc(:,1) = aLoadedData(:,2);
 % Y acceleration
-aIsPose_Acc(:,2) = aLoadedData(:,3);
+aAcc(:,2) = aLoadedData(:,3);
 % Z acceleration
-aIsPose_Acc(:,3) = aLoadedData(:,4);
+aAcc(:,3) = aLoadedData(:,4);
 % % A acceleration
 % aIsPose_Acc(:,4) = ;
 % % B acceleration
@@ -176,35 +247,65 @@ aForces(:,8) = aLoadedData(:,18);
 
 
 
+%% Filtering
+% Filter noise from data?
+if strcmp('on', chFilterNoise)
+    % If noise filter frame size was not set, we calculate the frame size from
+    % half the sampling time
+    if nFilterNoise_Framesize == 0
+        % Get the odd number larger than half the sampling time width
+        nFilterNoise_Framesize = 2*floor(floor(1/dSamplingTime/2)/2) + 1;
+    end
+    % Filter data using a 6th order sgolayfilter with a frame size depending on the
+    % sampling time
+    aPos = sgolayfilt(aPos, nFilterNoise_Order, nFilterNoise_Framesize);
+    aVel = sgolayfilt(aVel, nFilterNoise_Order, nFilterNoise_Framesize);
+    aAcc = sgolayfilt(aAcc, nFilterNoise_Order, nFilterNoise_Framesize);
+    aForces = sgolayfilt(aForces, nFilterNoise_Order, nFilterNoise_Framesize);
+end
+
+
+
 %% Create timeseries of data
 % Position data
-tsIsPose_Pos = timeseries(aIsPose_Pos, vTime, 'Name', 'Position');
-tsIsPose_Pos.UserData.Name = chFile_Name;
-tsIsPose_Pos.UserData.Source = chFilename;
+tsPos = timeseries(aPos, vTime, 'Name', 'Position');
+tsPos.UserData.Name = chFile_Name;
+tsPos.UserData.Source = chFilename;
 % Velocity data
-tsIsPose_Vel = timeseries(aIsPose_Vel, vTime, 'Name', 'Velocity');
-tsIsPose_Vel.UserData.Name = chFile_Name;
-tsIsPose_Vel.UserData.Source = chFilename;
+tsVel = timeseries(aVel, vTime, 'Name', 'Velocity');
+tsVel.UserData.Name = chFile_Name;
+tsVel.UserData.Source = chFilename;
 % Acceleration data
-tsIsPose_Acc = timeseries(aIsPose_Acc, vTime, 'Name', 'Acceleration');
-tsIsPose_Acc.UserData.Name = chFile_Name;
-tsIsPose_Acc.UserData.Source = chFilename;
+tsAcc = timeseries(aAcc, vTime, 'Name', 'Acceleration');
+tsAcc.UserData.Name = chFile_Name;
+tsAcc.UserData.Source = chFilename;
 % Cable forces
 tsForces = timeseries(aForces, vTime, 'Name', 'CableForces');
 tsForces.UserData.Name = chFile_Name;
 tsForces.UserData.Source = chFilename;
 
+% Resampling necessary?
+if dResamplingTime > 0
+    % Determine new time vector
+    vNewTime = (0:(tsPos.Length - 1)).*dResamplingTime;
+    % Perform resampling of all data
+    tsPos = resample(tsPos, vNewTime);
+    tsVel = resample(tsVel, vNewTime);
+    tsAcc = resample(tsAcc, vNewTime);
+    tsForces = resample(tsForces, vNewTime);
+end
+
 
 
 %% Assign return value
 % Return collection is a collcetion of timeseries data
-Collection = tscollection({tsIsPose_Pos, tsIsPose_Vel, tsIsPose_Acc, tsForces}, 'Name', chFile_Name);
+Collection = tscollection({tsPos, tsVel, tsAcc, tsForces}, 'Name', 'IMU');
 
 
 end
 
 
-function ImuData = if_importImuDataFile(Filename, StartRow, EndRow)
+function ImuData = in_importImuDataFile(Filename, StartRow, EndRow)
 
 %% Input defaults
 if nargin < 2
@@ -300,6 +401,15 @@ fclose(hFile);
 %% Allocate imported array to column variable names
 ImuData = [ceDataArray{1:end-1}];
 
+
+end
+
+
+function [lengths, values] = runLengthEncode(data)
+
+startPos = find(diff([data(1)-1, data]));
+lengths = diff([startPos, numel(data)+1]);
+values = data(startPos);
 
 end
 
