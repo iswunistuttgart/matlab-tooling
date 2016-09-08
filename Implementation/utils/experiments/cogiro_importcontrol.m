@@ -45,30 +45,47 @@ function [varargout] = cogiro_importcontrol(Filename, varargin)
 %
 %
 %   Optional Inputs -- specified as parameter value pairs
+%
+%   FillMissing     Switch to fill in missing information by numerically
+%       differentaiting the data found in the respective position or velocity
+%       data. If for example velocity and acceleration data for the Z-axis
+%       cannot be found but 'FillMissing' is 'on', then Z-velocity and
+%       Z-acceleration will be filled in by means of gradient of position and
+%       velocity, respectively, and smoothening filtering. Possible options are
+%       'on', 'yes'     Fill in missing data
+%       'off', 'no'     Do not fill in missing data
+%
+%   Resampling      Sampling time used for resampling of the data. Defaults to
+%       0 i.e., no resampling.
+%
 %   Sampling    Sampling time rate of the IMU system for creation of proper time
-%               information. Defaults to 1.2 ms.
+%       information. Defaults to 1.2 ms.
 %   
 %   SplitCommands   Switch whether to split the commands as determiend by the
-%                   value of variable 'MainControl_Command_StartNewMove' or not.
-%                   Possible values are
-%                   'on','yes'      Split commands
-%                   'off','no'      Do not split commands
-%                   'SplitCommands' can be used in conjunction with the number
-%                   of outputs as follows
-%                   COLL = COGIRO_IMPORTCONTROL(FILENAME) returns a cell array
-%                   of time series collections for each commanded trajectory.
-%                   [POS, VEL, ACC] = COGIRO_IMPORTCONTROL(FILENAME) returns
-%                   three cell arrays of time series for each commanded
-%                   trajectory. Additionally,
-%                   [POS, VEL, ACC, CMD] = COGIRO_IMPORTCONTROL(FILENAME)
-%                   returns a cell array of command time series, too.
+%       value of variable 'MainControl_Command_StartNewMove' or not. Possible
+%       values are
+%           'on','yes'      Split commands
+%           'off','no'      Do not split commands
+%       'SplitCommands' can be used in conjunction with the number of outputs as
+%       follows
+%       COLL = COGIRO_IMPORTCONTROL(FILENAME) returns a cell array of time
+%       series collections for each commanded trajectory.
+%       [POS, VEL, ACC] = COGIRO_IMPORTCONTROL(FILENAME) returns three cell
+%       arrays of time series for each commanded trajectory. Additionally,
+%       [POS, VEL, ACC, CMD] = COGIRO_IMPORTCONTROL(FILENAME) returns a cell
+%       array of command time series, too.
+%
+%   See also: gradient sgolayfilt
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-01
+% Date: 2016-09-08
 % Changelog:
+%   2016-09-08
+%       * Add parameter 'Resampling' to perform internal resampling given a
+%       specified resmapling time
 %   2016-09-01
 %       * Update help block with missing param/value pair
 %       * Add support for returning split commands into separate variables
@@ -91,11 +108,19 @@ addRequired(ip, 'Filename', valFcn_Filename);
 
 % Optional 1: SamplingTime. Real. Positive
 valFcn_Sampling = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'Sampling');
-addParameter(ip, 'Sampling', 0, valFcn_Sampling);
+addOptional(ip, 'Sampling', 0, valFcn_Sampling);
 
-% Optional 2: SplitCommands. Char. {'on', 'off', 'yes', 'no'
+% Parameter: SplitCommands. Char. {'on', 'off', 'yes', 'no'}
 valFcn_SplitCommands = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no'}, mfilename, 'SplitCommands'));
 addParameter(ip, 'SplitCommands', 'off', valFcn_SplitCommands);
+
+% Parameter: FillMissing. Char. {'on', 'off', 'yes', 'no'}
+valFcn_FillMissing = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no'}, mfilename, 'FillMissing'));
+addParameter(ip, 'FillMissing', 'off', valFcn_FillMissing);
+
+% Optional 1: Sampling. Real. Positive
+valFcn_Resampling = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'Resampling');
+addParameter(ip, 'Resampling', 0, valFcn_Resampling);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -119,6 +144,10 @@ chFilename = fullpath(ip.Results.Filename);
 dSamplingTime = ip.Results.Sampling;
 % Split commands
 chSplitCommands = parseswitcharg(ip.Results.SplitCommands);
+% Fill missing data
+chFillMissing = parseswitcharg(ip.Results.FillMissing);
+% Resampling time
+dResamplingTime = ip.Results.Resampling;
 
 
 
@@ -186,6 +215,16 @@ aSetPose_Pos = zeros(nTimeSamples, 6);
 aSetPose_Vel = zeros(nTimeSamples, 6);
 aSetPose_Acc = zeros(nTimeSamples, 6);
 
+% Holds missing positional data
+vMissingData = zeros(3, 6);
+
+% Order of the sgolay filter for smoothing gradient of numerically derived
+% velocity or acceleration
+nFilterGradient_Order = 6;
+% Frame size of sgolay filter for smoothing gradient of numerically derived
+% velocity or acceleration
+nFilterGradient_Framesize = 2*floor(floor(1/dSamplingTime/2)/2) + 1;
+
 
 
 %% Assign data from imported data
@@ -199,106 +238,193 @@ end
 % X position
 if isfield(stLoadedData, 'Xcurrent_0_')
     aSetPose_Pos(:,1) = ascolumn(stLoadedData.Xcurrent_0_(2,:));
+else
+    vMissingData(1,1) = 1;
 end
 % Y position
 if isfield(stLoadedData, 'Xcurrent_1_')
     aSetPose_Pos(:,2) = ascolumn(stLoadedData.Xcurrent_1_(2,:));
+else
+    vMissingData(1,2) = 1;
 end
 % Z position
 if isfield(stLoadedData, 'Xcurrent_2_')
     aSetPose_Pos(:,3) = ascolumn(stLoadedData.Xcurrent_2_(2,:));
+else
+    vMissingData(1,3) = 1;
 end
 % A position
 if isfield(stLoadedData, 'Xcurrent_3_')
     aSetPose_Pos(:,4) = ascolumn(stLoadedData.Xcurrent_3_(2,:));
+else
+    vMissingData(1,4) = 1;
 end
 % B position
 if isfield(stLoadedData, 'Xcurrent_4_')
     aSetPose_Pos(:,5) = ascolumn(stLoadedData.Xcurrent_4_(2,:));
+else
+    vMissingData(1,5) = 1;
 end
 % C position
 if isfield(stLoadedData, 'Xcurrent_5_')
     aSetPose_Pos(:,6) = ascolumn(stLoadedData.Xcurrent_5_(2,:));
+else
+    vMissingData(1,6) = 1;
 end
 
 %%% Velocity data
 % X velocity
 if isfield(stLoadedData, 'Vcurrent_0_')
     aSetPose_Vel(:,1) = ascolumn(stLoadedData.Vcurrent_0_(2,:));
+else
+    vMissingData(2,1) = 1;
 end
 % Y velocity
 if isfield(stLoadedData, 'Vcurrent_1_')
     aSetPose_Vel(:,2) = ascolumn(stLoadedData.Vcurrent_1_(2,:));
+else
+    vMissingData(2,2) = 1;
 end
 % Z velocity
 if isfield(stLoadedData, 'Vcurrent_2_')
     aSetPose_Vel(:,3) = ascolumn(stLoadedData.Vcurrent_2_(2,:));
+else
+    vMissingData(2,3) = 1;
 end
 % A velocity
 if isfield(stLoadedData, 'Vcurrent_3_')
     aSetPose_Vel(:,4) = ascolumn(stLoadedData.Vcurrent_3_(2,:));
+else
+    vMissingData(2,3) = 1;
 end
 % B velocity
 if isfield(stLoadedData, 'Vcurrent_4_')
     aSetPose_Vel(:,5) = ascolumn(stLoadedData.Vcurrent_4_(2,:));
+else
+    vMissingData(2,5) = 1;
 end
 % C velocity
 if isfield(stLoadedData, 'Vcurrent_5_')
     aSetPose_Vel(:,6) = ascolumn(stLoadedData.Vcurrent_5_(2,:));
+else
+    vMissingData(2,6) = 1;
 end
 
 %%% Acceleration data
 % X acceleration
 if isfield(stLoadedData, 'Acurrent_0_')
     aSetPose_Acc(:,1) = ascolumn(stLoadedData.Acurrent_0_(2,:));
+else
+    vMissingData(3,1) = 1;
 end
 % Y acceleration
 if isfield(stLoadedData, 'Acurrent_1_')
     aSetPose_Acc(:,2) = ascolumn(stLoadedData.Acurrent_1_(2,:));
+else
+    vMissingData(3,2) = 1;
 end
 % Z acceleration
 if isfield(stLoadedData, 'Acurrent_2_')
     aSetPose_Acc(:,3) = ascolumn(stLoadedData.Acurrent_2_(2,:));
+else
+    vMissingData(3,3) = 1;
 end
 % A acceleration
 if isfield(stLoadedData, 'Acurrent_3_')
     aSetPose_Acc(:,4) = ascolumn(stLoadedData.Acurrent_3_(2,:));
+else
+    vMissingData(3,4) = 1;
 end
 % B acceleration
 if isfield(stLoadedData, 'Acurrent_4_')
     aSetPose_Acc(:,5) = ascolumn(stLoadedData.Acurrent_4_(2,:));
+else
+    vMissingData(3,5) = 1;
 end
 % C acceleration
 if isfield(stLoadedData, 'Acurrent_5_')
     aSetPose_Acc(:,6) = ascolumn(stLoadedData.Acurrent_5_(2,:));
+else
+    vMissingData(3,6) = 1;
+end
+
+
+
+%% Fill in missing data
+if strcmp('on', chFillMissing)
+    % Split missing data for position, velocity, and acceleration
+    vMissingData_Pos = vMissingData(1,:);
+    vMissingData_Vel = vMissingData(2,:);
+    vMissingData_Acc = vMissingData(3,:);
+    
+    % Loop over missing velocity data
+    for iIdx_Acc = 1:numel(vMissingData_Vel)
+        % Skip if the velocity data exists
+        if vMissingData_Vel(iIdx_Acc) == 0
+            continue
+        end
+        
+        % If we have position data for the velocity index
+        if vMissingData_Pos(iIdx_Acc) == 0
+            % We can get the velocity from deriving the position
+            aSetPose_Vel(:,iIdx_Acc) = sgolayfilt(gradient(aSetPose_Pos(:,iIdx_Acc), dSamplingTime), nFilterGradient_Order, nFilterGradient_Framesize);
+            % Ensure we know from here on that we have the velocity data
+            vMissingData_Vel(iIdx_Acc) = 0;
+        end
+    end
+    
+    % Loop over missing velocity data
+    for iIdx_Acc = 1:numel(vMissingData_Acc)
+        % Skip if the acceleration data exists
+        if vMissingData_Acc(iIdx_Acc) == 0
+            continue
+        end
+        
+        % If we have velocity data for the acceleration index
+        if vMissingData_Vel(iIdx_Acc) == 0
+            % We can get the acceleration from deriving the velocity
+            aSetPose_Acc(:,iIdx_Acc) = sgolayfilt(gradient(aSetPose_Vel(:,iIdx_Acc), dSamplingTime), nFilterGradient_Order, nFilterGradient_Framesize);
+        end
+    end
 end
 
 
 
 %% Turn into timeseries
 % Command data
-tsCommand = timeseries(vCommand, vTime, 'Name', 'Command');
-tsCommand.UserData.Name = chFile_Name;
-tsCommand.Userdata.Source = chFilename;
+tsCmd = timeseries(vCommand, vTime, 'Name', 'Command');
+tsCmd.UserData.Name = chFile_Name;
+tsCmd.Userdata.Source = chFilename;
 % Position data
-tsPosition = timeseries(aSetPose_Pos, vTime, 'Name', 'Position');
-tsPosition.UserData.Name = chFile_Name;
-tsPosition.UserData.Source = chFilename;
+tsPos = timeseries(aSetPose_Pos, vTime, 'Name', 'Position');
+tsPos.UserData.Name = chFile_Name;
+tsPos.UserData.Source = chFilename;
 % Velocity data
-tsVelocity = timeseries(aSetPose_Vel, vTime, 'Name', 'Velocity');
-tsVelocity.UserData.Name = chFile_Name;
-tsVelocity.UserData.Source = chFilename;
+tsVel = timeseries(aSetPose_Vel, vTime, 'Name', 'Velocity');
+tsVel.UserData.Name = chFile_Name;
+tsVel.UserData.Source = chFilename;
 % Acceleration data
-tsAcceleration = timeseries(aSetPose_Acc, vTime, 'Name', 'Acceleration');
-tsAcceleration.UserData.Name = chFile_Name;
-tsAcceleration.UserData.Source = chFilename;
+tsAcc = timeseries(aSetPose_Acc, vTime, 'Name', 'Acceleration');
+tsAcc.UserData.Name = chFile_Name;
+tsAcc.UserData.Source = chFilename;
+
+% Resampling necessary?
+if dResamplingTime > 0
+    % Determine new time vector
+    vNewTime = (0:(tsCmd.Length - 1)).*dResamplingTime;
+    % Perform resampling of all data
+    tsCmd = resample(tsCmd, vNewTime);
+    tsPos = resample(tsPos, vNewTime);
+    tsVel = resample(tsVel, vNewTime);
+    tsAcc = resample(tsAcc, vNewTime);
+end
 
 
 
 %% Split commands?
 if strcmp('on', chSplitCommands)
     % When commands where changed i.e., from 0 to 1 or from 1 to zero
-    vCommandChange = diff(tsCommand.Data);
+    vCommandChange = diff(tsCmd.Data);
     
     % Get inices of command "ON"
     vCommands_On = find(vCommandChange == 1);
@@ -309,7 +435,7 @@ if strcmp('on', chSplitCommands)
     if numel(vCommands_Off) < numel(vCommands_On)
         % Add the last index of the time as the last time a command was turned
         % off
-        vCommands_Off = [vCommands_Off; numel(tsCommand.Time)];
+        vCommands_Off = [vCommands_Off; numel(tsCmd.Time)];
     end
     
     % How many commands do we have?
@@ -324,31 +450,31 @@ if strcmp('on', chSplitCommands)
         vCommand_Selector = vCommands_On(iCommand):1:vCommands_Off(iCommand);
         
         % Build a time series for the command
-        tsCommand_Cmd = getsampleusingtime(tsCommand, tsCommand.Time(vCommand_Selector(1)), tsCommand.Time(vCommand_Selector(end)));
-        tsCommand_Cmd.Time = tsCommand_Cmd.Time - tsCommand.Time(vCommand_Selector(1));
+        tsCommand_Cmd = getsampleusingtime(tsCmd, tsCmd.Time(vCommand_Selector(1)), tsCmd.Time(vCommand_Selector(end)));
+        tsCommand_Cmd.Time = tsCommand_Cmd.Time - tsCmd.Time(vCommand_Selector(1));
         tsCommand_Cmd.Name = 'Command';
-        tsCommand_Cmd.TimeInfo.UserData.RelStartTime = tsCommand.Time(vCommand_Selector(1));
+        tsCommand_Cmd.TimeInfo.UserData.RelStartTime = tsCmd.Time(vCommand_Selector(1));
         tsCommand_Cmd.TimeInfo.Increment = dSamplingTime;
         
         % Build a time series for the commanded position
-        tsCommand_Pos = getsampleusingtime(tsPosition, tsPosition.Time(vCommand_Selector(1)), tsPosition.Time(vCommand_Selector(end)));
-        tsCommand_Pos.Time = tsCommand_Pos.Time - tsPosition.Time(vCommand_Selector(1));
+        tsCommand_Pos = getsampleusingtime(tsPos, tsPos.Time(vCommand_Selector(1)), tsPos.Time(vCommand_Selector(end)));
+        tsCommand_Pos.Time = tsCommand_Pos.Time - tsPos.Time(vCommand_Selector(1));
         tsCommand_Pos.Name = 'Position';
-        tsCommand_Pos.TimeInfo.UserData.RelStartTime = tsPosition.Time(vCommand_Selector(1));
+        tsCommand_Pos.TimeInfo.UserData.RelStartTime = tsPos.Time(vCommand_Selector(1));
         tsCommand_Pos.TimeInfo.Increment = dSamplingTime;
         
         % Build a time series for the commanded velocity
-        tsCommand_Vel = getsampleusingtime(tsVelocity, tsVelocity.Time(vCommand_Selector(1)), tsVelocity.Time(vCommand_Selector(end)));
-        tsCommand_Vel.Time = tsCommand_Vel.Time - tsVelocity.Time(vCommand_Selector(1));
+        tsCommand_Vel = getsampleusingtime(tsVel, tsVel.Time(vCommand_Selector(1)), tsVel.Time(vCommand_Selector(end)));
+        tsCommand_Vel.Time = tsCommand_Vel.Time - tsVel.Time(vCommand_Selector(1));
         tsCommand_Vel.Name = 'Velocity';
-        tsCommand_Vel.TimeInfo.UserData.RelStartTime = tsVelocity.Time(vCommand_Selector(1));
+        tsCommand_Vel.TimeInfo.UserData.RelStartTime = tsVel.Time(vCommand_Selector(1));
         tsCommand_Vel.TimeInfo.Increment = dSamplingTime;
         
         % Build a time series for the commanded acceleration
-        tsCommand_Acc = getsampleusingtime(tsAcceleration, tsAcceleration.Time(vCommand_Selector(1)), tsAcceleration.Time(vCommand_Selector(end)));
-        tsCommand_Acc.Time = tsCommand_Acc.Time - tsAcceleration.Time(vCommand_Selector(1));
+        tsCommand_Acc = getsampleusingtime(tsAcc, tsAcc.Time(vCommand_Selector(1)), tsAcc.Time(vCommand_Selector(end)));
+        tsCommand_Acc.Time = tsCommand_Acc.Time - tsAcc.Time(vCommand_Selector(1));
         tsCommand_Acc.Name = 'Acceleration';
-        tsCommand_Acc.TimeInfo.UserData.RelStartTime = tsAcceleration.Time(vCommand_Selector(1));
+        tsCommand_Acc.TimeInfo.UserData.RelStartTime = tsAcc.Time(vCommand_Selector(1));
         tsCommand_Acc.TimeInfo.Increment = dSamplingTime;
         
         % And create and push a time series collection to the cell of all
@@ -392,19 +518,19 @@ if strcmp('on', chSplitCommands)
 else
     % [Coll] = COGIRO_IMPORTCONTROL(FILENAME)
     if nargout == 1
-        varargout{1} = tscollection({tsCommand, tsPosition, tsVelocity, tsAcceleration}, 'Name', chFile_Name);
+        varargout{1} = tscollection({tsCmd, tsPos, tsVel, tsAcc}, 'Name', chFile_Name);
     end
 
     % [Pos, Vel, Acc] = COGIRO_IMPORTCONTROL(FILENAME)
     if nargout >= 3
-        varargout{1} = tsPosition;
-        varargout{2} = tsVelocity;
-        varargout{3} = tsAcceleration;
+        varargout{1} = tsPos;
+        varargout{2} = tsVel;
+        varargout{3} = tsAcc;
     end
 
     % [Pos, Vel, Acc, Cmd] = COGIRO_IMPORTCONTROL(FILENAME)
     if nargout >= 4
-        varargout{4} = tsCommand;
+        varargout{4} = tsCmd;
     end
 end
 
