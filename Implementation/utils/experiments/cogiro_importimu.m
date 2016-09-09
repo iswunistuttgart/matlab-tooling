@@ -1,4 +1,4 @@
-function Collection = cogiro_importimu(Filename, varargin)
+function Collection = cogiro_importimu(File, varargin)
 % COGIRO_IMPORTIMU imports IMU data for the CoGiRo cable robot
 %
 %   COLL = COGIRO_IMPORTIMU(FILENAME) reads file given by FILENAME, proccesses
@@ -64,8 +64,12 @@ function Collection = cogiro_importimu(Filename, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-08
+% Date: 2016-09-09
 % Changelog:
+%   2016-09-09
+%       * Rename argument 'Filename' to 'File'
+%       * Update check for file extension and make sure that there is a file
+%       extension '.lirmm' if none was found
 %   2016-09-08
 %       * Remove support for filtering steady-state data
 %   2016-09-07
@@ -87,8 +91,8 @@ function Collection = cogiro_importimu(Filename, varargin)
 ip = inputParser;
 
 % Require: Filename. Char. Non-empty
-valFcn_Filename = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Filename');
-addRequired(ip, 'Filename', valFcn_Filename);
+valFcn_Filename = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'File');
+addRequired(ip, 'File', valFcn_Filename);
 
 % Optional 1: SamplingTime. Real. Positive
 valFcn_Sampling = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'Sampling');
@@ -116,7 +120,7 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
-    varargin = [{Filename}, varargin];
+    varargin = [{File}, varargin];
     
     parse(ip, varargin{:});
 catch me
@@ -126,8 +130,8 @@ end
 
 
 %% Parse variables of the input parser to local parser
-% Filename
-chFilename = fullpath(ip.Results.Filename);
+% Filen
+chFile = fullpath(ip.Results.File);
 % Sampling Time
 dSamplingTime = ip.Results.Sampling;
 % Filter noise from measurement
@@ -142,15 +146,25 @@ dResamplingTime = ip.Results.Resampling;
 
 
 %% Data assertion
-assert(2 == exist(chFilename, 'file'), 'PHILIPPTEMPEL:COGIRO_IMPORTIMU:invalidFileName', 'File cannot be found');
-[~, chFile_Name, chFile_Ext] = fileparts(Filename);
+% Get the file name and its extension
+[~, chFile_Name, chFile_Ext] = fileparts(chFile);
+% No file extension found?
+if isempty(chFile_Ext)
+    % Default file extension
+    chFile_Ext = '.lirmm';
+    % Append file extension to the filename
+    chFile = sprintf('%s%s', chFile, chFile_Ext);
+end
+% File must exist
+assert(2 == exist(chFile, 'file'), 'PHILIPPTEMPEL:COGIRO_IMPORTIMU:invalidFileName', 'File [%s] cannot be found.', escapepath(chFile));
+% File extension must be '.lirmm'
 assert(strcmpi('.lirmm', chFile_Ext), 'PHILIPPTEMPEL:COGIRO_IMPORTIMU:invalidFileExt', 'Invalid file extension [%s] found. Must be [.lirmm].', chFile_Ext);
 
 
 
 %% Read IMU data file
 try
-    aLoadedData = in_importImuDataFile(chFilename);
+    aLoadedData = in_importImuDataFile(chFile);
 catch me
     error('PHILIPPTEMPEL:COGIRO_IMPORTIMU:fileLoadFailure', 'Could not load file with error: %s', me.message);
 end
@@ -252,19 +266,19 @@ end
 % Position data
 tsPos = timeseries(aPos, vTime, 'Name', 'Position');
 tsPos.UserData.Name = chFile_Name;
-tsPos.UserData.Source = chFilename;
+tsPos.UserData.Source = chFile;
 % Velocity data
 tsVel = timeseries(aVel, vTime, 'Name', 'Velocity');
 tsVel.UserData.Name = chFile_Name;
-tsVel.UserData.Source = chFilename;
+tsVel.UserData.Source = chFile;
 % Acceleration data
 tsAcc = timeseries(aAcc, vTime, 'Name', 'Acceleration');
 tsAcc.UserData.Name = chFile_Name;
-tsAcc.UserData.Source = chFilename;
+tsAcc.UserData.Source = chFile;
 % Cable forces
 tsForces = timeseries(aForces, vTime, 'Name', 'CableForces');
 tsForces.UserData.Name = chFile_Name;
-tsForces.UserData.Source = chFilename;
+tsForces.UserData.Source = chFile;
 
 % Resampling necessary?
 if dResamplingTime > 0
