@@ -1,12 +1,40 @@
-function Files = allfiles(Dir, varargin)
+function Files = allfiles(varargin)
 % ALLFILES Finds all files in directory DIR and returns them in a structure
 %
+%   FILES = ALLFILES() scans through current working directory and returns all
+%   files. This is basically the same as calling the `dir` function. However,
+%   the power lies in the magic of this function. Read more to see what is
+%   meant.
+%
 %   FILES = ALLFILES(DIR) scans through directory DIR and returns all files.
-%   This is basically the same as calling the `dir` function. However, the power
-%   lies in the magic of this function. Read more to see what is meant
 %
 %   FILES = ALLFILES(DIR, 'csv') scans through directory DIR and returns all
 %   files with extension 'csv' (or, '.csv' to be more precise).
+%
+%   FILES = ALLFILES('Name', 'Value', ...) with additional options specified by
+%   one or more Name,Value pair arguments.
+%
+%   Optional Inputs -- specified as parameter value pairs
+%
+%   Dir             Directory to list files from. Defaults to `pwd`.
+%
+%   Extension       Extension to match. Allows for easy filtering of all
+%       'csv' files in a given directory. Extension must be without the trailing
+%       period and also without any placeholders. Defaults to '*'.
+%
+%   Prefix          Prefix to match files against. When given, only files
+%       starting with 'Prefix' are searched and returned. Defaults to ''.
+%
+%   Suffix          Suffix to match files against. When given, only files ending
+%       with 'Suffix' are searched and returned. Defaults to ''.
+%
+%   IncludeHidden   Switch to include hidden files i.e., files starting with a
+%       '.' (period). Possible options are:
+%           'on', 'yes'     Include hidden files
+%           'off', 'no'     Do not include hidden files
+%       Defaults to 'off'.
+%
+%   See also: dir
 
 
 
@@ -15,6 +43,9 @@ function Files = allfiles(Dir, varargin)
 % Date: 2016-09-09
 % Changelog:
 %   2016-09-09
+%       * Update logic to work correctly and a bit more efficiently
+%       * Rename parameter 'IncludeSystem' to 'IncludeHidden' to make it more
+%       meaningful
 %       * Fix bug due to incorrect referencing of 'isdir' attribute
 %   2016-07-14
 %       * Wrap IP-parse in try-catch to have nicer error display
@@ -23,21 +54,12 @@ function Files = allfiles(Dir, varargin)
 
 
 
-%% Pre-process arguments
-% If no arguments are given
-if nargin == 0
-    % The directory defaults to the current
-    Dir = pwd;
-end
-
-
-
 %% Define the input parser
 ip = inputParser;
 
 % Require: Marks. Must be a 3xN array
 valFcn_Dir = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Dir');
-addRequired(ip, 'Dir', valFcn_Dir);
+addOptional(ip, 'Dir', pwd, valFcn_Dir);
 
 % Include system files like '.', or '..'?
 valFcn_Extension = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Extension');
@@ -52,8 +74,8 @@ valFcn_Suffix = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'S
 addParameter(ip, 'Suffix', '', valFcn_Suffix);
 
 % Include system files like '.', or '..'?
-valFcn_IncludeSystem = @(x) any(validatestring(lower(x), {'yes', 'no'}, mfilename, 'IncludeSystem'));
-addParameter(ip, 'IncludeSystem', 'no', valFcn_IncludeSystem);
+valFcn_IncludeHidden = @(x) any(validatestring(lower(x), {'on', 'yes', 'off', 'no'}, mfilename, 'IncludeHidden'));
+addParameter(ip, 'IncludeHidden', 'off', valFcn_IncludeHidden);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -61,7 +83,7 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
-    parse(ip, Dir, varargin{:});
+    parse(ip, varargin{:});
 catch me
     throw(MException(me.identifier, me.message));
 end
@@ -78,7 +100,7 @@ chPrefix = ip.Results.Prefix;
 % File suffix: char
 chSuffix = ip.Results.Suffix;
 % Include system: char, {'yes', 'no'}
-chIncludeSystem = ip.Results.IncludeSystem;
+chIncludeHidden = parseswitcharg(ip.Results.IncludeHidden);
 
 
 
@@ -91,15 +113,17 @@ stFiles = dir(chPath);
 
 % Proceed only from here on if there were any files found
 if ~isempty(stFiles)
-    % Do we need to filter the system files like '.' and '..'?
-    if strcmpi(chIncludeSystem, 'no')
-        % Remove all directories from the found items
-        vIsDir = [stFiles(:).isdir];
-        stFiles(vIsDir) = [];
-    end
+    % Remove the system entries '.' and '..'
+    stFiles(ismember({stFiles(:).name}, {'.', '..'})) = [];
     
     % Remove directories
-    stFiles = stFiles(~[stFiles.isdir]);
+    stFiles([stFiles.isdir]) = [];
+    
+    % Do we need to filter the system files like '.' and '..'?
+    if strcmpi('off', chIncludeHidden)
+        % Remove all directories from the found items
+        stFiles(find(1 == cell2mat(regexp({stFiles(:).name}, '^\..*')))) = [];
+    end
 end
 
 
