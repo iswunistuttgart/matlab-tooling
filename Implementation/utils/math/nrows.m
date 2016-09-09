@@ -50,7 +50,7 @@ end
 assert(isa(A, 'double'), 'Argument [A] must be of type double');
 assert(ismatrix(A), 'Argument [A] must be a matrix');
 % Make sure we check MExpected only if its given
-if ~isinf(MExpected)
+if ~isinf(NExpected)
     % NExpected must be of type double and must also be greater than zero
     assert(isa(NExpected, 'double'), 'Argument [MExpected] must be of type double');
     assert(NExpected > 0, 'Argument [MExpected] must be greater than zero');
