@@ -1,24 +1,24 @@
-function LTData = cogiro_importlaser(Filename, varargin)
+function LTData = cogiro_importlaser(File, varargin)
 % COGIRO_IMPORTLASER imports processed laser tracker data
 %
-%   LTDATA = COGIRO_IMPORTLASER(FILENAME) imports processed laser tracker data
-%   from the file FILENAME. Must be a valid excel spreadsheet. Function assumes
+%   LTDATA = COGIRO_IMPORTLASER(FILE) imports processed laser tracker data
+%   from the file FILE. Must be a valid excel spreadsheet. Function assumes
 %   the absolute spatial laser tracker data to be in sheet number 2 and the
 %   column range to be F to H.
 %
-%   LTDATA = COGIRO_IMPORTLASER(FILENAME, SAMPLING) uses sampling time SAMPLING
+%   LTDATA = COGIRO_IMPORTLASER(FILE, SAMPLING) uses sampling time SAMPLING
 %   for import and surpasses automatic detection of sampling time.
 %
-%   LTDATA = COGIRO_IMPORTLASER(FILENAME, SAMPLING, SHEETNO) uses sheet number
+%   LTDATA = COGIRO_IMPORTLASER(FILE, SAMPLING, SHEETNO) uses sheet number
 %   specified in SHEETNO to read data from. Defaults to 2.
 %
-%   LTDATA = COGIRO_IMPORTLASER(FILENAME, 'Name', 'Value', ...) reads processed
-%   laser tracker data from file FILENAME with additional options specified by
+%   LTDATA = COGIRO_IMPORTLASER(FILE, 'Name', 'Value', ...) reads processed
+%   laser tracker data from file FILE with additional options specified by
 %   one or more Name,Value pair arguments.
 %
 %   Inputs:
 %
-%   FILENAME        Path to file with laser tracker data. Must be a valid excel
+%   FILE            Path to file with laser tracker data. Must be a valid excel
 %       spreadsheet. Function assumes the absolute spatial laser tracker data to
 %       be present in sheet number 2 if not specified differently. Column range
 %       F:H from spreadsheet will be imported
@@ -91,8 +91,12 @@ function LTData = cogiro_importlaser(Filename, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-08
+% Date: 2016-09-09
 % Changelog:
+%   2016-09-09
+%       * Rename argument 'Filename' to 'File
+%       * Update check for existance of file etension in file name
+%       * Add support for loading 'xls' files, too
 %   2016-09-08
 %       * Update help docs a bit
 %       * Add parameter 'IncludeGradient' to include gradient of position for
@@ -115,8 +119,8 @@ function LTData = cogiro_importlaser(Filename, varargin)
 ip = inputParser;
 
 % Require: Filename. Char. Non-empty
-valFcn_Filename = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Filename');
-addRequired(ip, 'Filename', valFcn_Filename);
+valFcn_File = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'File');
+addRequired(ip, 'File', valFcn_File);
 
 % Optional 1: Sampling. Real. Positive
 valFcn_Sampling = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'Sampling');
@@ -173,7 +177,7 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
-    varargin = [{Filename}, varargin];
+    varargin = [{File}, varargin];
     
     parse(ip, varargin{:});
 catch me
@@ -184,7 +188,7 @@ end
 
 %% Parse variables of the input parser to local parser
 % Filename
-chFilename = fullpath(ip.Results.Filename);
+chFile = fullpath(ip.Results.File);
 % Sampling Time
 dSamplingTime = ip.Results.Sampling;
 % Sheet number
@@ -213,16 +217,27 @@ dResamplingTime = ip.Results.Resampling;
 
 
 %% Data assertion
-assert(2 == exist(chFilename, 'file'), 'PHILIPPTEMPEL:COGIRO_IMPORTLASER:invalidFileName', 'File cannot be found');
-[~, chFile_Name, chFile_Ext] = fileparts(Filename);
-assert(strcmpi('.xlsx', chFile_Ext), 'PHILIPPTEMPEL:COGIRO_IMPORTLASER:invalidFileExt', 'Invalid file extension [%s] found. Must be [.xlsx].', chFile_Ext);
+% Get the file name and its extension
+[~, chFile_Name, chFile_Ext] = fileparts(chFile);
+% No file extension found? Then fall back to '.mat'
+if isempty(chFile_Ext)
+    % Default file extension
+    chFile_Ext = '.xlsx';
+    % Append file extension to the filename
+    chFile = sprintf('%s%s', chFile, chFile_Ext);
+end
+% File must exist
+assert(2 == exist(chFile, 'file'), 'PHILIPPTEMPEL:COGIRO_IMPORTLASER:invalidFileName', 'File [%s] cannot be found.', escapepath(chFile));
+% File extension must be any of the following
+ceValidFilextensions = {'.xls', '.xlsx'};
+assert(any(strcmpi(ceValidFilextensions, chFile_Ext)), 'PHILIPPTEMPEL:COGIRO_IMPORTLASER:invalidFileExt', 'Invalid file extension [%s] found. Must be [%s].', chFile_Ext, strjoin(ceValidFilextensions, ', '));
 
 
 
 %% Read data and process
 % Read file as table
 try
-    taData = readtable(chFilename, 'Sheet', dSheetNumber, 'FileType', 'spreadsheet');
+    taData = readtable(chFile, 'Sheet', dSheetNumber, 'FileType', 'spreadsheet');
 catch me
     error('PHILIPPTEMPEL:COGIRO_IMPORTLASER:fileLoadFailure', 'Could not load file with error: %s', me.message);
 end
@@ -353,11 +368,11 @@ tsPos = timeseries(aPoses_Pos, vTime, 'Name', 'Position');
 tsVel = timeseries(aPoses_Vel, vTime, 'Name', 'Velocity');
 tsAcc = timeseries(aPoses_Acc, vTime, 'Name', 'Acceleration');
 tsPos.UserData.Name = chFile_Name;
-tsPos.UserData.Source = chFilename;
+tsPos.UserData.Source = chFile;
 tsVel.UserData.Name = chFile_Name;
-tsVel.UserData.Source = chFilename;
+tsVel.UserData.Source = chFile;
 tsAcc.UserData.Name = chFile_Name;
-tsAcc.UserData.Source = chFilename;
+tsAcc.UserData.Source = chFile;
 
 % Resampling necessary?
 if dResamplingTime > 0
