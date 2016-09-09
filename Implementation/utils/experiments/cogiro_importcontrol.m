@@ -147,7 +147,7 @@ end
 
 
 %% Parse variables of the input parser to local parser
-% Filename
+% File
 chFile = fullpath(ip.Results.File);
 % Sampling Time
 dSamplingTime = ip.Results.Sampling;
@@ -171,7 +171,7 @@ end
 
 %% Data assertion
 % Get the file name and its extension
-[~, chFile_Name, chFile_Ext] = fileparts(File);
+[~, chFile_Name, chFile_Ext] = fileparts(chFile);
 % No file extension found? Then fall back to '.mat'
 if isempty(chFile_Ext)
     % Default file extension
@@ -180,7 +180,7 @@ if isempty(chFile_Ext)
     chFile = sprintf('%s%s', chFile, chFile_Ext);
 end
 % File must exist
-assert(2 == exist(chFile, 'file'), 'PHILIPPTEMPEL:COGIRO_IMPORTCONTROL:invalidFileName', 'File cannot be found');
+assert(2 == exist(chFile, 'file'), 'PHILIPPTEMPEL:COGIRO_IMPORTCONTROL:invalidFileName', 'File [%s] cannot be found.', escapepath(chFile));
 % File extension must be '.mat'
 assert(strcmpi('.mat', chFile_Ext), 'PHILIPPTEMPEL:COGIRO_IMPORTCONTROL:invalidFileExt', 'Invalid file extension [%s] found. Must be [.mat].', chFile_Ext);
 
@@ -430,7 +430,7 @@ if strcmp('on', chSplitCommands)
         % Get inices of command "ON"
         vCommands_On = find(vCommandChange == 1);
         % Get indices of command "OFF"
-        vCommands_Off = find(vCommandChange == -1);
+        vCommands_Off = find(vCommandChange == -1) + 1;
 
         % Ensure we have enough OFFs as ONs
         if numel(vCommands_Off) < numel(vCommands_On)
@@ -452,31 +452,27 @@ if strcmp('on', chSplitCommands)
 
             % Build a time series for the command
             tsCommand_Cmd = getsampleusingtime(tsCmd, tsCmd.Time(vCommand_Selector(1)), tsCmd.Time(vCommand_Selector(end)));
-            tsCommand_Cmd.Time = tsCommand_Cmd.Time - tsCmd.Time(vCommand_Selector(1));
+            tsCommand_Cmd = setuniformtime(tsCommand_Cmd, 'Interval', dSamplingTime);
             tsCommand_Cmd.Name = 'Command';
             tsCommand_Cmd.TimeInfo.UserData.RelStartTime = tsCmd.Time(vCommand_Selector(1));
-            tsCommand_Cmd.TimeInfo.Increment = dSamplingTime;
 
             % Build a time series for the commanded position
             tsCommand_Pos = getsampleusingtime(tsPos, tsPos.Time(vCommand_Selector(1)), tsPos.Time(vCommand_Selector(end)));
-            tsCommand_Pos.Time = tsCommand_Pos.Time - tsPos.Time(vCommand_Selector(1));
+            tsCommand_Pos = setuniformtime(tsCommand_Pos, 'Interval', dSamplingTime);
             tsCommand_Pos.Name = 'Position';
             tsCommand_Pos.TimeInfo.UserData.RelStartTime = tsPos.Time(vCommand_Selector(1));
-            tsCommand_Pos.TimeInfo.Increment = dSamplingTime;
 
             % Build a time series for the commanded velocity
             tsCommand_Vel = getsampleusingtime(tsVel, tsVel.Time(vCommand_Selector(1)), tsVel.Time(vCommand_Selector(end)));
-            tsCommand_Vel.Time = tsCommand_Vel.Time - tsVel.Time(vCommand_Selector(1));
+            tsCommand_Vel = setuniformtime(tsCommand_Vel, 'Interval', dSamplingTime);
             tsCommand_Vel.Name = 'Velocity';
             tsCommand_Vel.TimeInfo.UserData.RelStartTime = tsVel.Time(vCommand_Selector(1));
-            tsCommand_Vel.TimeInfo.Increment = dSamplingTime;
 
             % Build a time series for the commanded acceleration
             tsCommand_Acc = getsampleusingtime(tsAcc, tsAcc.Time(vCommand_Selector(1)), tsAcc.Time(vCommand_Selector(end)));
-            tsCommand_Acc.Time = tsCommand_Acc.Time - tsAcc.Time(vCommand_Selector(1));
+            tsCommand_Acc = setuniformtime(tsCommand_Acc, 'Interval', dSamplingTime);
             tsCommand_Acc.Name = 'Acceleration';
             tsCommand_Acc.TimeInfo.UserData.RelStartTime = tsAcc.Time(vCommand_Selector(1));
-            tsCommand_Acc.TimeInfo.Increment = dSamplingTime;
 
             % And create and push a time series collection to the cell of all
             ceCollection{iCommand} = tscollection({tsCommand_Cmd, tsCommand_Pos, tsCommand_Vel, tsCommand_Acc}, 'Name', sprintf('%s_cmd%i', chFile_Name, iCommand));
