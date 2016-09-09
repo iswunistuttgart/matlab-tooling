@@ -12,8 +12,10 @@ function Files = allfiles(Dir, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-07-14
+% Date: 2016-09-09
 % Changelog:
+%   2016-09-09
+%       * Fix bug due to incorrect referencing of 'isdir' attribute
 %   2016-07-14
 %       * Wrap IP-parse in try-catch to have nicer error display
 %   2016-07-04:
@@ -82,11 +84,6 @@ chIncludeSystem = ip.Results.IncludeSystem;
 
 
 %% Magic, collect the files
-% chPath = sprintf('%s%s', chDir, filesep);
-% Add a prefix?
-% if ~isempty(chPrefix)
-%     chPath = sprintf('%s%s', chPath, chPrefix);
-% end
 chPath = sprintf('%s%s%s*%s.%s', chDir, filesep, chPrefix, chSuffix, chExtension);
 
 % Get all the files in the given directory
@@ -102,7 +99,7 @@ if ~isempty(stFiles)
     end
     
     % Remove directories
-    stFiles = stFiles(~[stFiles.isDir]);
+    stFiles = stFiles(~[stFiles.isdir]);
 end
 
 
