@@ -21,22 +21,26 @@ function [] = robsave(varargin)
 %   ROBSAVE('Name', 'Value', ...) uses name-value pair syntax.
 %
 %   Optional Inputs -- specified as parameter value pairs
+%
 %   Name        Name of the robot to save current configuration as
 %
 %   Variables   If variables should not be taken from the workspace but given by
-%               the user, this cell array must contain the variables' names.
+%       the user, this cell array must contain the variables' names.
 %
 %   Overwrite   Switch to enable or disable overwriting. Possible values are
-%               'on', 'yes'     Overwrite target file
-%               'off', 'no'     Do not overwrite target file but append current
-%                               timestamp to the filename
+%           'on', 'yes'     Overwrite target file
+%           'off', 'no'     Do not overwrite target file but append current
+%                           timestamp to the filename
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-06
+% Date: 2016-09-09
 % Changelog:
+%   2016-09-09
+%       * Update script to work nicer with overwriting and not overwriting
+%       target file
 %   2016-09-06
 %       * Initial release
 
@@ -104,18 +108,6 @@ end
 
 % Filename of stored file
 chFilename = fullfile(chPath_Store, chName);
-% Append to MAT file name
-chFile_Appendix = '';
-
-% Ensure we are not overwriting the target file
-if strcmp(chOverwrite, 'off')
-    if 2 == exist([chFilename , '.mat'], 'file')
-        chFile_Appendix = sprintf('_%s', datestr8601(now));
-    end
-end
-
-% And finally, append the appendix to the filename
-chFilename = [chFilename , chFile_Appendix];
 
 
 
@@ -136,8 +128,14 @@ for iVar = 1:numel(stVariables)
     stStore.(stVariables{iVar}) = evalin('caller', stVariables{iVar});
 end
 
-% And finally, save the file from the struct we have created above
-save(chFilename, '-struct', 'stStore');
+% If we shall overwrite
+if strcmp('on', chOverwrite)
+    % And finally, save the file from the struct we have created above
+    save(chFilename, '-struct', 'stStore');
+% Do not overwrite the filename
+else
+    tsave(chFilename, '-struct', 'stStore');
+end
 
 
 end
