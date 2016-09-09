@@ -213,6 +213,17 @@ dFilterEnd_Threshold = ip.Results.FilterEndThresh;
 chIncludeGradient = parseswitcharg(ip.Results.IncludeGradient);
 % Resampling time
 dResamplingTime = ip.Results.Resampling;
+% Default for sgolay filter frame size
+if nFilterNoise_Framesize == 0
+    % Get the odd number larger than half the sampling time width
+    nFilterNoise_Framesize = 2*floor(floor(1/dSamplingTime/2)/2) + 1;
+end
+% Make sure the filter frame size is at least the filter order
+if nFilterNoise_Framesize < nFilterNoise_Order
+    nFilterNoise_Framesize = nFilterNoise_Order;
+end
+% Ensure frame size is an odd number
+nFilterNoise_Framesize = 2*floor(nFilterNoise_Framesize/2) + 1;
 
 
 
@@ -299,10 +310,6 @@ end
 if strcmp('on', chFilterNoise)
     % If noise filter frame size was not set, we calculate the frame size from
     % half the sampling time
-    if nFilterNoise_Framesize == 0
-        % Get the odd number larger than half the sampling time width
-        nFilterNoise_Framesize = 2*floor(floor(1/dSamplingTime/2)/2) + 1;
-    end
     % Filter data using a 6th order sgolayfilter with a frame size depending on the
     % sampling time
     aPoses_Pos = sgolayfilt(aPoses_Pos, nFilterNoise_Order, nFilterNoise_Framesize);
@@ -351,11 +358,14 @@ if strcmp('on', chIncludeGradient)
     % And now a median fiter on the data to remove outliers especially on the
     % edges
     aPoses_Vel = medfilt1(aPoses_Vel, 5);
+    
+    % Determine a frame size for the acceleration filter
+    nFilterNoiseAcc_Framesize = max([nFilterNoise_Framesize, 2*floor(floor(nFilterNoise_Framesize/6)/2)+1]);
 
     % Get acceleration as numerical gradient from velocity
     [~, aPoses_Acc] = gradient(aPoses_Vel, dSamplingTime);
     % Run sgolay filter on data
-    aPoses_Acc = sgolayfilt(aPoses_Acc, nFilterNoise_Order, 7);
+    aPoses_Acc = sgolayfilt(aPoses_Acc, nFilterNoise_Order, nFilterNoiseAcc_Framesize);
     % And now a median fiter on the data to remove outliers especially on the
     % edges
     aPoses_Acc = medfilt1(aPoses_Acc, 5);
