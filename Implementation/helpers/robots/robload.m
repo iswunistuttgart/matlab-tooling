@@ -9,8 +9,10 @@ function [varargout] = robload(Name, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-06
+% Date: 2016-09-10
 % Changelog:
+%   2016-09-10
+%       * Fix failing assignment of return valye
 %   2016-09-06
 %       * Initial release
 
@@ -76,7 +78,7 @@ if nargout == 0
 end
 
 % If one output, we will assign the loaded struct to it
-if nargout > 1
+if nargout > 0
     varargout{1} = stData;
 end
 

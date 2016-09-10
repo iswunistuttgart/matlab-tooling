@@ -36,8 +36,10 @@ function [] = robsave(varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-09
+% Date: 2016-09-10
 % Changelog:
+%   2016-09-10
+%       * Change parameter 'Name' to be optional rather than parameter
 %   2016-09-09
 %       * Update script to work nicer with overwriting and not overwriting
 %       target file
@@ -51,7 +53,7 @@ ip = inputParser;
 
 % Require: Anchors. Must be a 3xN array
 valFcn_Name = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Name');
-addParameter(ip, 'Name', '', valFcn_Name);
+addOptional(ip, 'Name', '', valFcn_Name);
 
 % Optional 1: AnchorSpec. One-dimensional or two-dimensional cell-array
 valFcn_Variables = @(x) validateattributes(x, {'struct'}, {}, mfilename, 'Variables');
