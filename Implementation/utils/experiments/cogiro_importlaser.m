@@ -91,8 +91,14 @@ function LTData = cogiro_importlaser(File, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-09
+% Date: 2016-09-10
 % Changelog:
+%   2016-09-10
+%       * Update function to get time stamps from the xls(x) file and use this
+%       as non-uniform time stamps
+%       * Move resampling to an earlier stage in the import process. Note that
+%       requesting the gradient only works if resampling is enabled, too, or if
+%       a sampling time was specified
 %   2016-09-09
 %       * Rename argument 'Filename' to 'File
 %       * Update check for existance of file etension in file name
@@ -216,7 +222,8 @@ dResamplingTime = ip.Results.Resampling;
 % Default for sgolay filter frame size
 if nFilterNoise_Framesize == 0
     % Get the odd number larger than half the sampling time width
-    nFilterNoise_Framesize = 2*floor(floor(1/dSamplingTime/2)/2) + 1;
+%     nFilterNoise_Framesize = 2*floor(floor(1/dSamplingTime/2)/2) + 1;
+    nFilterNoise_Framesize = 131;
 end
 % Make sure the filter frame size is at least the filter order
 if nFilterNoise_Framesize < nFilterNoise_Order
@@ -265,17 +272,23 @@ for iCol = 1:size(aDataIsNan,2)
     nLastVal = min(nLastVal, find(aDataIsNan(:,iCol), 1, 'first') - 1);
 end
 % Select only the rows that have values other than NaN
-vSelector = 1:1:nLastVal;
+vSelector = 3:1:nLastVal;
 % Number of time samples equals the number of rows we select
 nTimeSamples = numel(vSelector);
 
-% If no sampling time was given, we will guess so from the first column of
-% taData which is Time_Step
-if dSamplingTime == 0
-    dSamplingTime = round(mean(diff(taData{vSelector(2:end),1}))./1000, 4);
+% Ensure we have either a sampling time given or the sampling time can be read
+% form the data read
+assert(dSamplingTime ~= 0 || ( dSamplingTime == 0 && ismember('Time_Stamp', taData.Properties.VariableNames)), 'PHILIPPTEMPEL:COGIRO_IMPORTLASER:noSamplingTime', 'No sampling time specified and no info found in the imported data. Please fix before importing data again');
+
+% Sampling time given
+if dSamplingTime ~= 0
+    % Create time vector for the given sampling time
+    vTime = (0:nTimeSamples - 1).*dSamplingTime;
+else
+    % Get the time from the table, remove the absolute offset, and convert from
+    % milliseconds to seconds
+    vTime = (taData.Time_Stamp(vSelector) - taData.Time_Stamp(vSelector(1)))./1000;
 end
-% Create time vector
-vTime = (0:nTimeSamples - 1).*dSamplingTime;
 
 % Stores the measured poses [x, y, z, r, p, y]
 aPoses_Pos = zeros(nTimeSamples, 6);
@@ -287,6 +300,33 @@ aPoses_Pos = aPoses_Pos./1000;
 % Keeps the velocity and acceleration
 aPoses_Vel = zeros(nTimeSamples, 6);
 aPoses_Acc = zeros(nTimeSamples, 6);
+
+
+% Create a time series from the data now so that all other algorithms are going
+% to work
+tsPos = timeseries(aPoses_Pos, vTime, 'Name', 'Position');
+tsVel = timeseries(aPoses_Vel, vTime, 'Name', 'Velocity');
+tsAcc = timeseries(aPoses_Acc, vTime, 'Name', 'Acceleration');
+
+% Resampling necessary?
+if dResamplingTime > 0
+    % Determine new time vector
+    vNewTime = (0:(tsPos.TimeInfo.End/dResamplingTime)).*dResamplingTime;
+    % Perform resampling of all data
+    tsPos = resample(tsPos, vNewTime);
+    tsVel = resample(tsVel, vNewTime);
+    tsAcc = resample(tsAcc, vNewTime);
+    
+    % Update our sampling time
+    dSamplingTime = dResamplingTime;
+    
+    % Overwrite the old laser tracker data with the new, interpolated data
+    aPoses_Pos = tsPos.Data;
+    aPoses_Vel = tsVel.Data;
+    aPoses_Acc = tsAcc.Data;
+    vTime = tsPos.Time;
+end
+
 
 
 % Filter the first row if it is too far away from the average over the next five
@@ -316,7 +356,7 @@ if strcmp('on', chFilterNoise)
 end
 
 % Filter static values at the beginning and at the end
-if strcmp('on', chFilterEnd)
+if strcmp('on', chFilterEnd) && dSamplingTime > 0
     % Get gradient of data along the y-axis
     [~, aGradients] = gradient(aPoses_Pos, dSamplingTime);
     % Filter the gradient to get it smoothed out: order 2; window width 131
@@ -350,7 +390,7 @@ if strcmp('on', chFilterEnd)
 end
 
 % Include gradient in data?
-if strcmp('on', chIncludeGradient)
+if strcmp('on', chIncludeGradient) && dSamplingTime > 0
     % Get velocity as numerical gradient from position
     [~, aPoses_Vel] = gradient(aPoses_Pos, dSamplingTime);
     % Run sgolay filter on data
@@ -383,18 +423,6 @@ tsVel.UserData.Name = chFile_Name;
 tsVel.UserData.Source = chFile;
 tsAcc.UserData.Name = chFile_Name;
 tsAcc.UserData.Source = chFile;
-
-% Resampling necessary?
-if dResamplingTime > 0
-    % Determine new time vector
-    vNewTime = (0:(tsPos.TimeInfo.End/dSamplingTime)).*dSamplingTime;
-    % Perform resampling of all data
-    tsPos = resample(tsPos, vNewTime);
-    tsVel = resample(tsVel, vNewTime);
-    tsAcc = resample(tsAcc, vNewTime);
-end
-
-
 
 
 
