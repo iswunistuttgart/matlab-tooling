@@ -5,6 +5,7 @@ chPath = fileparts(mfilename('fullpath'));
 cePaths = {
     fullfile(chPath, '..', '..', 'Matlab', 'Helper');
     fullfile(chPath, 'Data');
+    fullfile(chPath, 'Data', 'robots');
     fullfile(chPath, 'Data', 'workspace');
     fullfile(chPath, 'Implementation');
     fullfile(chPath, 'Implementation', 'algorithms');
