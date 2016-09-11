@@ -13,8 +13,11 @@ function [LCed] = strlcfirst(varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-05
+% Date: 2016-09-11
 % Changelog:
+%   2016-09-11
+%       * Fix bug that a cell array was returned when only one argument was
+%       given
 %   2016-09-05
 %       * Initial release
 
@@ -26,6 +29,10 @@ LCed = varargin;
 
 for iStr = 1:nargin
     LCed{iStr}(1) = lower(LCed{iStr}(1));
+end
+
+if nargin == 1
+    LCed = LCed{1};
 end
 
 

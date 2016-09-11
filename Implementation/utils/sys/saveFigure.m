@@ -14,6 +14,7 @@ function saveFigure(Filename, varargin)
 %       eps
 %       fig
 %       png
+%       pdf
 %       tikz
 %
 %   The default save type is {'fig'}. Also works with attribute-value key
@@ -51,7 +52,11 @@ function saveFigure(Filename, varargin)
 %               '-depsc', '-tiff', '-zbuffer', '-r200'
 %               '-dpng', '-loose', '-zbuffer', '-r200'
 %
-%   PngPrint    - Pass custom print options to tikz print command. Default
+%   PdfPrint    - Pass custom print options to pdf print command. Default
+%               command configuration is
+%               '-dpdf', '-painters', '-loose', '-zbuffer'
+%
+%   PngPrint    - Pass custom print options to png print command. Default
 %               command configuration is
 %               '-dpng', '-loose', '-zbuffer', '-r200'
 %   
@@ -65,8 +70,10 @@ function saveFigure(Filename, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-08
+% Date: 2016-09-11
 % Changelog:
+%   2016-09-11
+%       * Add support for printing to PDF
 %   2016-08-08
 %       * Update logic for checking for figure handles in the first argument
 %       * Add support for printing a batch of files at once with number appended
@@ -102,7 +109,7 @@ valFcn_Filename = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 
 addRequired(ip, 'Filename', valFcn_Filename);
 
 % Optional 1: Types of files to save as
-ceAllowedTypes = {'eps', 'fig', 'tikz', 'png', 'emf'};
+ceAllowedTypes = {'eps', 'fig', 'tikz', 'png', 'emf', 'pdf'};
 valFcn_Types = @(x) assert(all(ismember(x, ceAllowedTypes)), 'The value of ''Types'' is invalid. It must be a member of:\n\n%s', strjoin(ceAllowedTypes, ', '));
 addOptional(ip, 'Types', {'fig'}, valFcn_Types);
 
@@ -121,6 +128,10 @@ addOptional(ip, 'TikzPrint', {}, valFcn_TikzPrint);
 % Optional: Allow custom png print options
 valFcn_PngPrint = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'PngPrint');
 addOptional(ip, 'PngPrint', {}, valFcn_PngPrint);
+
+% Optional: Allow custom pdf print options
+valFcn_PdfPrint = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'PdfPrint');
+addOptional(ip, 'PdfPrint', {}, valFcn_PdfPrint);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -148,6 +159,8 @@ ceEpsConfig = ip.Results.EpsPrint;
 ceTikzConfig = ip.Results.TikzPrint;
 % Custom png print options
 cePngConfig = ip.Results.PngPrint;
+% Custom pdf print options
+cePdfConfig = ip.Results.PdfPrint;
 
 
 
@@ -207,6 +220,13 @@ for iFig = 1:nFigures
             print('-depsc', '-tiff', '-zbuffer', '-r200', [chFilepath, '.eps'], ceEpsConfig{:});
         end
 
+        % Save as pdf
+        if ismember('pdf', ceOutputTypes)
+            chFilepath = in_createFilepath('pdf');
+            % Full page Portable Document Format (PDF) color
+            print('-dpdf', '-painters', [chFilepath, '.pdf'], cePdfConfig{:});
+        end
+
         % Save as tikz
         if ismember('tikz', ceOutputTypes)
             chFilepath = in_createFilepath('tikz');
@@ -215,6 +235,8 @@ for iFig = 1:nFigures
         end
     catch me
         me = addCause(me, MException('PHILIPPTEMPEL:SAVEFIGURE:errorSaveFile', 'Error saving file [%s]', chFilepath));
+        
+        throwAsCaller(me);
     end
 end
 
