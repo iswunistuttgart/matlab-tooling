@@ -52,6 +52,15 @@ function Collection = cogiro_importimu(File, varargin)
 %   FilterNoiseFramesize    Size of the frame used to filter noise. Defaults to
 %       the odd integer closes to half the sampling time.
 %
+%   KeepAxisDirection       Switch to keep original axes directions. Per
+%       default, all three axes are inverted as per default, the Z-axis is
+%       pointing downwards and the X- and Y-axis of the IMU are pointing in the
+%       opposite direction of the world frame. Possible values for
+%       KEEPAXISDIRECTION are
+%           'on', 'yes'     Keep original axis direction
+%           'off', 'no      Do not keep original axes direction and invert all
+%                           axes' directions
+%
 %   Resampling      Sampling time used for resampling of the data. Defaults to
 %       0 i.e., no resampling.
 %
@@ -64,8 +73,12 @@ function Collection = cogiro_importimu(File, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-09
+% Date: 2016-09-11
 % Changelog:
+%   2016-09-11
+%       * Add parameter 'KeepAxisDirection' to keep original axes directions
+%       when importing data. This keeps data in the raw format as recorded by
+%       the IMU
 %   2016-09-09
 %       * Rename argument 'Filename' to 'File'
 %       * Update check for file extension and make sure that there is a file
@@ -110,6 +123,10 @@ addParameter(ip, 'FilterNoiseOrder', 6, valFcn_FilterNoiseOrder);
 valFcn_FilterNoiseFramesize = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'nonzero', 'positive', 'int'}, mfilename, 'FilterNoiseFramesize');
 addParameter(ip, 'FilterNoiseFramesize', 0, valFcn_FilterNoiseFramesize);
 
+% Parameter: Keep axis direction. Char. Matches {'on', 'off', 'yes', 'no'}
+valFcn_KeepAxisDirection = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no'}, mfilename, 'KeepAxisDirection'));
+addParameter(ip, 'KeepAxisDirection', 0, valFcn_KeepAxisDirection);
+
 % Optional 1: Sampling. Real. Positive
 valFcn_Resampling = @(x) validateattributes(x, {'numeric'}, {'real', 'positive'}, mfilename, 'Resampling');
 addParameter(ip, 'Resampling', 0, valFcn_Resampling);
@@ -142,6 +159,15 @@ nFilterNoise_Order = ip.Results.FilterNoiseOrder;
 nFilterNoise_Framesize = ip.Results.FilterNoiseFramesize;
 % Resampling time
 dResamplingTime = ip.Results.Resampling;
+% Keep axis direction
+chKeepAxis = parseswitcharg(ip.Results.KeepAxisDirection);
+% Convert the axis direction keeping switch to a number so we can re-use it
+% easily further down
+if strcmp('on', chKeepAxis)
+    dAxisDirection = 1;
+else
+    dAxisDirection = -1;
+end
 
 
 
@@ -193,12 +219,12 @@ aForces = zeros(nTimeSamples, 8);
 % aIsPose_Pos(:,1) = ;
 % % Z position (does not exist)
 % aIsPose_Pos(:,3) = ;
-% A position (does not exist)
-aPos(:,4) = -aLoadedData(:,5);
-% B position (does not exist)
-aPos(:,5) = -aLoadedData(:,6);
-% C position (does not exist)
-aPos(:,6) = -aLoadedData(:,7);
+% A position
+aPos(:,4) = dAxisDirection*aLoadedData(:,5);
+% B position
+aPos(:,5) = dAxisDirection*aLoadedData(:,6);
+% C position
+aPos(:,6) = dAxisDirection*aLoadedData(:,7);
 
 
 %%% Velocities
@@ -209,20 +235,20 @@ aPos(:,6) = -aLoadedData(:,7);
 % % Z velocity (does not exist)
 % aIsPose_Vel(:,3) = ;
 % A velocity
-aVel(:,4) = -aLoadedData(:,8);
+aVel(:,4) = dAxisDirection*aLoadedData(:,8);
 % B velocity
-aVel(:,5) = -aLoadedData(:,9);
+aVel(:,5) = dAxisDirection*aLoadedData(:,9);
 % C velocity
-aVel(:,6) = -aLoadedData(:,10);
+aVel(:,6) = dAxisDirection*aLoadedData(:,10);
 
 
 %%% Accelerations
 % X acceleration
-aAcc(:,1) = -aLoadedData(:,2);
+aAcc(:,1) = dAxisDirection*aLoadedData(:,2);
 % Y acceleration
-aAcc(:,2) = -aLoadedData(:,3);
+aAcc(:,2) = dAxisDirection*aLoadedData(:,3);
 % Z acceleration
-aAcc(:,3) = -aLoadedData(:,4);
+aAcc(:,3) = dAxisDirection*aLoadedData(:,4);
 % % A acceleration
 % aIsPose_Acc(:,4) = ;
 % % B acceleration
