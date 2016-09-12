@@ -25,8 +25,11 @@ function [Inertia_O] = parallel_axis_inertia(Inertia_C, Mass, Offset)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-29
+% Date: 2016-09-12
 % Changelog:
+%   2016-09-12
+%       * Modify assertion because inertia matrix can be negative, too
+%       * Add assertion for finite values of all values
 %   2016-08-29
 %       * Initial release
 
@@ -34,15 +37,17 @@ function [Inertia_O] = parallel_axis_inertia(Inertia_C, Mass, Offset)
 
 %% Assertion
 % Inertia_C: Double. Non-negative.
-assert(isa(Inertia_C, 'double'), 'PHILIPPTEMPEL:PARALLEL_AXIS_INERTIA:invalidTypeInertiaC', 'Inertia_C must be double.');
-assert(all(all(Inertia_C >= 0)), 'PHILIPPTEMPEL:PARALLEL_AXIS_INERTIA:nonNegativeInertiaC', 'Inertia_C must be non-negative.');
+assert(isa(Inertia_C, 'double'), 'PHILIPPTEMPEL:MATLAB_TOOLING:PARALLEL_AXIS_INERTIA:invalidTypeInertiaC', 'Inertia_C must be double.');
+assert(all(all(~isinf(Inertia_C))), 'PHILIPPTEMPEL:MATLAB_TOOLING:PARALLEL_AXIS_INERTIA:nonNegativeInertiaC', 'Inertia_C must be finite.');
 
 % Mass: Double. Non-negative.
-assert(isa(Mass, 'double'), 'PHILIPPTEMPEL:PARALLEL_AXIS_INERTIA:invalidTypeMass', 'Mass must be double');
-assert(Mass > 0, 'PHILIPPTEMPEL:PARALLEL_AXIS_INERTIA:positiveMass', 'Mass must be positive');
+assert(isa(Mass, 'double'), 'PHILIPPTEMPEL:MATLAB_TOOLING:PARALLEL_AXIS_INERTIA:invalidTypeMass', 'Mass must be double.');
+assert(Mass > 0, 'PHILIPPTEMPEL:MATLAB_TOOLING:PARALLEL_AXIS_INERTIA:positiveMass', 'Mass must be positive.');
+assert(~isinf(Mass), 'PHILIPPTEMPEL:MATLAB_TOOLING:PARALLEL_AXIS_INERTIA:finiteMass', 'Mass must be finite');
 
 % Offset: Double.
-assert(isa(Offset, 'double'), 'PHILIPPTEMPEL:PARALLEL_AXIS_INERTIA:invalidTypeOffset', 'Offset must be double');
+assert(isa(Offset, 'double'), 'PHILIPPTEMPEL:MATLAB_TOOLING:PARALLEL_AXIS_INERTIA:invalidTypeOffset', 'Offset must be double.');
+assert(all(~isinf(Offset)), 'PHILIPPTEMPEL:MATLAB_TOOLING:PARALLEL_AXIS_INERTIA:nonfiniteOffset', 'Offset must be finite.');
 
 
 
