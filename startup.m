@@ -12,7 +12,6 @@ cePaths = {
     fullfile(chPath, 'Implementation', 'csv');
     genpath(fullfile(chPath, 'Implementation', 'helpers'));
     fullfile(chPath, 'Implementation', 'mat');
-    fullfile(chPath, 'Implementation', 'robots');
     genpath(fullfile(chPath, 'Implementation', 'utils'));
 };
 
