@@ -10,6 +10,12 @@ function plotRobotAnchors(Anchors, varargin)
 %                   two-dimensional cell array will be determined by checking
 %                   whether the first value of 'AnchorSpec' is a cell array in
 %                   itself.
+%
+%   BoundBox        Plots a bounding box around the values of ANCHORS that
+%                   contains all points of ANCHORS.
+%
+%   BoundBoxSpec    Cell array of specifications applied to bounding box (which
+%                   is a patch figure object).
 %   
 %   Labels          Cell array of labels that shall be placed nex to the anchors
 %                   in consecutive order. Labels will be repeated cyclically.
@@ -21,6 +27,9 @@ function plotRobotAnchors(Anchors, varargin)
 %                   whether the first value of 'AnchorSpec' is a cell array in
 %                   itself.
 %
+%   Camera          Set the projection type of the plot. Possible options are
+%       'ortographic' and 'perspective'.
+%
 %   PlotStyle       Defines the plot style which will be used independent of the
 %                   axes that the plot will be placed in. Supported values are
 %                   2D      plot [Y] against [X] (plots second row of ANCHORS
@@ -28,19 +37,15 @@ function plotRobotAnchors(Anchors, varargin)
 %                   3D      plot [Z] against [Y] against [X] (plots third row of
 %                           ANCHORS against second row of ANCHORS aganst first
 %                           row)
-%
-%   BoundBox        Plots a bounding box around the values of ANCHORS that
-%                   contains all points of ANCHORS.
-%
-%   BoundBoxSpec    Cell array of specifications applied to bounding box (which
-%                   is a patch figure object).
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-07
+% Date: 2016-09-12
 % Changelog:
+%   2016-09-12
+%       * Add parameter 'Camera' to change camera perspective of 3D plots
 %   2016-09-07
 %       * Fix bug with cycliccell not being created correctly
 %       * Add support for usage of parseswitcharg()
@@ -64,34 +69,38 @@ function plotRobotAnchors(Anchors, varargin)
 %% Define the input parser
 ip = inputParser;
 
-% Require: Anchors. Must be a 3xN array
-valFcn_Anchors = @(x) validateattributes(x, {'numeric'}, {'2d'}, mfilename, 'Anchors');
+% Anchors. Numeric. 2D array. 3 Rows
+valFcn_Anchors = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', 3}, mfilename, 'Anchors');
 addRequired(ip, 'Anchors', valFcn_Anchors);
 
-% Optional 1: AnchorSpec. One-dimensional or two-dimensional cell-array
+% AnchorSpec. Cell or numeric. Non-empty.
 valFcn_AnchorSpec = @(x) validateattributes(x, {'cell', 'numeric'}, {'nonempty'}, mfilename, 'AnchorSpec');
 addParameter(ip, 'AnchorSpec', {}, valFcn_AnchorSpec);
 
-% Maybe also display the winch labels? Or custom labels?
+% BoundingBox: Char. Matches {'on', 'off'}
+valFcn_BoundBox = @(x) any(validatestring(lower(x), {'on', 'off'}, mfilename, 'BoundingBox'));
+addParameter(ip, 'BoundingBox', 'off', valFcn_BoundBox);
+
+% BoundingBoxSpec: Cell. Non-empty.
+valFcn_BoudBoxSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'BoundBoxSpec');
+addParameter(ip, 'BoundingBoxSpec', {}, valFcn_BoudBoxSpec);
+
+% WinchLabels: Cell. Non-empty.
 valFcn_WinchLabels = @(x) validateattributes(x, {'numeric', 'cell'}, {'nonempty', 'row', 'numel', size(Anchors, 2)}, mfilename, 'WinchLabels');
 addParameter(ip, 'Labels', {}, valFcn_WinchLabels);
 
-% Parameter 2: LabelSpec. One-dimensional or two-dimensional cell-array
+% LabelSpec. Cell array. Non-empty.
 valFcn_LabelSpec = @(x) validateattributes(x, {'cell', 'numeric'}, {'nonempty'}, mfilename, 'LabelSpec');
 addParameter(ip, 'LabelSpec', {}, valFcn_LabelSpec);
 
-% Let user decide on the plot style
-% Plot style can be chosen anything from the list below
-valFcn_PlotStyle = @(x) any(validatestring(x, {'2D', '2DXY', '2DYX', '2DYZ', '2DZY', '2DXZ', '2DZX', '3D'}, mfilename, 'PlotStyle'));
+% PlotStyle: Char. Matches {'2D', '2DXY', '2DYX', '2DYZ', '2DZY', '2DXZ',
+% '2DZX', '3D'}.
+valFcn_PlotStyle = @(x) any(validatestring(upper(x), {'2D', '2DXY', '2DYX', '2DYZ', '2DZY', '2DXZ', '2DZX', '3D'}, mfilename, 'PlotStyle'));
 addParameter(ip, 'PlotStyle', '2D', valFcn_PlotStyle);
 
-% Bounding box about the winch positions? May be any numeric or logical value
-valFcn_BoundBox = @(x) any(validatestring(lower(x), {'on', 'off', 'minor'}, mfilename, 'BoundBox'));
-addParameter(ip, 'BoundingBox', 'off', valFcn_BoundBox);
-
-% Maybe the bounding box must have other spec as the ones we use here?
-valFcn_BoudBoxSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'BoundBoxSpec');
-addParameter(ip, 'BoundingBoxSpec', {}, valFcn_BoudBoxSpec);
+% Parameter: Camera. Char. Matches {'orthographic', 'perspective'}
+valFcn_Camera = @(x) any(validatestring(lower(x), {'orthographic', 'perspective'}, mfilename, 'Camera'));
+addParameter(ip, 'Camera', '', valFcn_Camera);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -132,6 +141,8 @@ chPlotStyle = ip.Results.PlotStyle;
 chBBox = parseswitcharg(ip.Results.BoundingBox);
 % Box specifiactions: cell array
 ceBBoxSpec = ip.Results.BoundingBoxSpec;
+% Perspetive
+chCamera = ip.Results.Camera;
 
 
 
@@ -204,6 +215,11 @@ if strcmp(chBBox, 'on')
     if ~isempty(ceBBoxSpec)
         set(hpBoundingBox, ceBBoxSpec{:});
     end
+end
+
+% Set the camera perspective, but only on 3D plots (2D don't support that)
+if strcmp('3d', chPlotStyle) && ~isempty(chCamera)
+    camproj(chCamera);
 end
 
 % Finally, make sure the figure is drawn
