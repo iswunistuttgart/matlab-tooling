@@ -75,8 +75,10 @@ function [Length, CableUnitVectors, PulleyAngles] = algoInverseKinematics_Standa
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-23
+% Date: 2016-09-12
 % Changelog:
+%   2016-09-12
+%       * Fix calling deperated `matnormcols` to `mnormcols`
 %   2016-05-23
 %       * Update help doc to reflect introduced paramterization option for pose
 %   2016-05-20
@@ -156,7 +158,7 @@ Length = vCableLength;
 % Second output is the matrix of normalized cable vectors
 if nargout > 1
     % Get the unit vectors of each cable
-    CableUnitVectors = matnormalcols(aCableVector);
+    CableUnitVectors = mnormcol(aCableVector);
 end
 
 % Third output is the rotation angle of each cable plane
