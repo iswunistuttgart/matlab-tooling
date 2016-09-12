@@ -56,8 +56,8 @@ valFcn_Name = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Nam
 addOptional(ip, 'Name', '', valFcn_Name);
 
 % Optional 1: AnchorSpec. One-dimensional or two-dimensional cell-array
-valFcn_Variables = @(x) validateattributes(x, {'struct'}, {}, mfilename, 'Variables');
-addParameter(ip, 'Variables', {}, valFcn_Variables);
+valFcn_Variables = @(x) validateattributes(x, {'struct', 'cell'}, {}, mfilename, 'Variables');
+addOptional(ip, 'Variables', {}, valFcn_Variables);
 
 % Overwrite: Char. Matches {'on', 'off', 'yes', 'no'}. Defaults 'no';
 valFcn_Overwrite = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no'}, mfilename, 'Overwrite'));
@@ -81,7 +81,7 @@ end
 % Name of robot
 chName = ip.Results.Name;
 % Variables to save
-stVariables = ip.Results.Variables;
+mxVariables = ip.Results.Variables;
 % Overwrite toggle
 chOverwrite = ip.Results.Overwrite;
 % Get path to robot storage
@@ -99,13 +99,15 @@ if isempty(chName)
     if ~isempty(stRobotName)
         chName = evalin('caller', stRobotName(1).name);
     end
+    % Ensure we know the robot name
+    assert(~isempty(chName), 'PHILIPPTEMPEL:MATLAB_TOOLING:ROBSAVE:NoRobotNameFound', 'No robot name found or given');
 end
 % Ensure we have variables
-if isempty(stVariables)
+if isempty(mxVariables)
     % Get all variables in workspace
-    stVariables = evalin('base', 'whos(''*'');');
+    mxVariables = evalin('base', 'whos(''*'');');
     % And get the names of all variables
-    stVariables = {stVariables(:).name};
+    mxVariables = {mxVariables(:).name};
 end
 
 % Filename of stored file
@@ -116,7 +118,7 @@ chFilename = fullfile(chPath_Store, chName);
 %% Additional assertion
 
 % We need variables to save...
-assert(~isempty(stVariables), 'PHILIPPTEMPEL:ROBSAVE:noVariablesFound', 'No variables given and no variables found in caller workspace');
+assert(~isempty(mxVariables), 'PHILIPPTEMPEL:MATLAB_TOOLING:ROBSAVE:noVariablesFound', 'No variables given and no variables found in caller workspace');
 
 
 
@@ -125,13 +127,20 @@ assert(~isempty(stVariables), 'PHILIPPTEMPEL:ROBSAVE:noVariablesFound', 'No vari
 % Keeps a copy of each variable to save later on
 stStore = struct();
 
-% Loop over all variables and store them to a local struct
-for iVar = 1:numel(stVariables)
-    stStore.(stVariables{iVar}) = evalin('caller', stVariables{iVar});
+% If the variables argument given was a struct, this are all the variables to
+% store
+if isstruct(mxVariables)
+    stStore = mxVariables;
+% The variables given are strings so we need to read them from the workspace
+else
+    % Loop over all variables and store them to a local struct
+    for iVar = 1:numel(mxVariables)
+        stStore.(mxVariables{iVar}) = evalin('caller', mxVariables{iVar});
+    end
 end
 
 % If we shall overwrite
-if strcmp('on', chOverwrite)
+if strcmp('on', chOverwrite) || 2 ~= exist([chFilename , '.mat'], 'file')
     % And finally, save the file from the struct we have created above
     save(chFilename, '-struct', 'stStore');
 % Do not overwrite the filename

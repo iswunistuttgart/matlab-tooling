@@ -55,6 +55,14 @@ stFiles = dir(fullfile(chPath_Store, sprintf('%s*', chName)));
 % Ensure we found files
 assert(~isempty(stFiles), 'PHILIPPTEMPEL:ROBLOAD:noRobotFound', 'No robot configuration found for robot [%s].', chName);
 
+% Filter files that do not match the patter 'Name_yyyymmdd_HHMMSSFFF' => the
+% length of the filename must be length(chName) + [0, 19] + 4 (4 for the file
+% extension).
+loFilter = cellfun(@(name) any(length(name) == (length(chName) + [0, 19] + 4)), {stFiles(:).name});
+
+% And remove all non-matching files
+stFiles = stFiles(loFilter);
+
 % Sort the files from newest to oldest
 [~, nSortedIdx] = sort([stFiles.datenum], 'descend');
 
