@@ -5,7 +5,8 @@ function [varargout] = plot_zoom(Region, Position, varargin)
 %   REGION into a zoomed axis located at POSITION. Region REGION may be selected
 %   arbitrarily and without restrictions on the aspect ratio. The resulting axes
 %   centered at POSITION will however get the parent axes' ratio and zoom in by
-%   the zoom factor
+%   the zoom factor.
+%   Region REGION to zoom in must be given as [Xmin, Xmax, YMin, YMax].
 %
 %   PLOT_ZOOM(REGION, POSITION, ZOOM) plots a zoomed version of the data plotted
 %   in REGION into a new axis located at POSITION. The zoom factor is defined by
@@ -29,27 +30,27 @@ function [varargout] = plot_zoom(Region, Position, varargin)
 %   be set. For a full list of these, see the help further down.
 %
 %   Optional Inputs -- specified as parameter value pairs
-%   Zoom            Zoom factor of the source data. Must be greater than zero,
-%                   but can be any value you desire. Note that, the zoom factor
-%                   linearly scales the width of the resulting zoomed axes.
-%
-%   ZoomAxesSpec    Additional specifications to set on the inset zoomed axes
-%                   like XAxisLocation or FontSize. Must be a nonempty cell
-%                   array.
 %
 %   SourceBoxSpec   Plotting specifications on the source annotation box. Can be
-%                   a cell array of valid annotation rectangle properties which
-%                   can be found in the docs.
+%       a cell array of valid annotation rectangle properties which can be found
+%       in the docs.
+%
+%   Zoom            Zoom factor of the source data. Must be greater than zero,
+%       but can be any value you desire. Note that, the zoom factor linearly
+%       scales the width of the resulting zoomed axes.
+%
+%   ZoomSpec        Additional specifications to set on the inset zoomed axes
+%       like XAxisLocation or FontSize. Must be a nonempty cell array.
 %
 %   ZoomLines       Whether to also annotate the drawing with zoom lines
-%                   connecting the respective corners of the source annotation
-%                   box with the target axes corners. Possible values are
-%                   'on', 'yes'     enable drawing zoom lines
-%                   'off', 'no'     disable drawing zoom lines (default)
+%       connecting the respective corners of the source annotation box with the
+%       target axes corners. Possible values are
+%           'on', 'yes'     enable drawing zoom lines
+%           'off', 'no'     disable drawing zoom lines (default)
 %
 %   ZoomLineSpec    Additional line properties to set on the zoom lines. Can be
-%                   a cell array of valid annotation line properties which may
-%                   be found in the docs.
+%       a cell array of valid annotation line properties which may be found in
+%       the docs.
 %
 %   SEE: axes annotation
 
@@ -57,8 +58,11 @@ function [varargout] = plot_zoom(Region, Position, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-07
+% Date: 2016-09-13
 % Changelog:
+%   2016-09-13
+%       * Fix bug with incorrect corner detection for option 'ZoomLines'
+%       * Rename option 'ZoomAxesSpec' to 'ZoomSpec'
 %   2016-09-07
 %       * Fix bug with cycliccell that caused errors when custom styles were set
 %       on multiple zoom axes at once
@@ -88,8 +92,8 @@ valFcn_SourceBoxSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilen
 addParameter(ip, 'SourceBoxSpec', {}, valFcn_SourceBoxSpec);
 
 % Optional: Specifications of the rectangle marking the source region
-valFcn_AxesSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'ZoomAxesSpec');
-addParameter(ip, 'ZoomAxesSpec', {}, valFcn_AxesSpec);
+valFcn_AxesSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'ZoomSpec');
+addParameter(ip, 'ZoomSpec', {}, valFcn_AxesSpec);
 
 % Optional: Zoom lines connecting the appropriate corners of the source
 %           rectangle with the target rectangle
@@ -125,7 +129,7 @@ vZoomPosition = ip.Results.Position;
 % Specifications of the source rectangle
 ceSourceBoxSpec = ip.Results.SourceBoxSpec;
 % Cell array of specs for the zoomed axes
-ceZoomAxesSpec = ip.Results.ZoomAxesSpec;
+ceZoomAxesSpec = ip.Results.ZoomSpec;
 % Specifications for the zoom line specs
 ceZoomLinesSpec = cycliccell(ip.Results.ZoomLineSpec, 2);
 % Whether to draw lines from source box to target zoom box
@@ -225,17 +229,14 @@ vPos_Target_Data = [...
 vPos_Target_Norm = in_normalizeDataPosition(vPos_Target_Data, haTarget);
 
 % Create a new axes handle at the specified position
-haZoom = axes('Position', vPos_Target_Norm, 'Tag', 'ZoomBox');
+haZoom = axes('Position', vPos_Target_Norm, 'Tag', 'ZoomBox', 'XAxisLocation', 'top', 'YAxisLocation', 'right');
+
 % Set options on the zoomed axes?
 if ~isempty(ceZoomAxesSpec)
     set(haZoom, ceZoomAxesSpec{:});
 end
 % Copy all child objects of the big axes to the small axes
 hpChildren = copyobj(allchild(haTarget), haZoom);
-
-% Set x- and y-axis limits
-xlim(haZoom, [vRegion(1), vRegion(2)]);
-ylim(haZoom, [vRegion(3), vRegion(4)]);
 
 % Draw a box around the axes
 box(haZoom, 'on');
@@ -248,7 +249,7 @@ for iChild = 1:numel(hpChildren)
     % Determine which data values to keep
     alKeepFlags = stPlotInfo.XData >= vCor_Source_Data(1,1) & stPlotInfo.XData <= vCor_Source_Data(2,1);
     % Check we we have Y-Data that is within the range of the source box
-    if all(stPlotInfo.YData(alKeepFlags) <= max(vCor_Source_Data(:,2))) && all(stPlotInfo.YData(alKeepFlags) >= min(vCor_Source_Data(:,2)))
+    if any(stPlotInfo.YData(alKeepFlags) <= max(vCor_Source_Data(:,2))) && any(stPlotInfo.YData(alKeepFlags) >= min(vCor_Source_Data(:,2)))
         % Just to make sure we're not losing any data, we will also keep one
         % plot data to the left and right of the zoom region
         nFirstKeep = find(alKeepFlags, 1, 'first');
@@ -274,6 +275,10 @@ for iChild = 1:numel(hpChildren)
     end
 end
 
+% Set x- and y-axis limits
+xlim(haZoom, sort([vRegion(1), vRegion(2)]));
+ylim(haZoom, sort([vRegion(3), vRegion(4)]));
+
 % Restore the old axes handle
 axes(haTarget);
 
@@ -282,38 +287,54 @@ haLines = gobjects(2);
 
 % % Need draw zoom lines?
 if strcmp(chZoomLines, 'on')
-    % Get the center of the source data and the target data
-    vPos_Center_Source_Data = [mean(vPos_Source_Data(:,1)), mean(vPos_Source_Data(:,2))];
-    vPos_Center_Target_Data = [mean(vPos_Target_Data(:,1)), mean(vPos_Target_Data(:,2))];
+    % Get the connection lines between target box corners and source box corners
+    aCornerLines = vCor_Target_Data - vCor_Source_Data;
+    % Determine slope of all these lines
+    vSlopes = aCornerLines(:,2)./aCornerLines(:,1);
     
-    % Logical comparison of the positions of target and source: check if target
-    % is to the right and top of source
-    vRelPos = vPos_Center_Source_Data < vPos_Center_Target_Data;
+    % Empty corners
+    vCorners = zeros(2,1);
     
-    % Target is to the right and top of source || target is to the left and
-    % bottom of source
-    if all(vRelPos) || all(~vRelPos)
-        vCorners = [2, 4];
-    % Any other case
-    else
-        vCorners = [1, 3];
+    if all(~isinf(vSlopes))
+        % If all slopes are negative, the target is to the top-left or bottom-right
+        % of the source
+        if all(vSlopes < 0)
+            vCorners = [1, 3];
+        % If all slopes are positive, the target is to the top-right or bottom-left
+        % of the source
+        elseif all(vSlopes > 0)
+            vCorners = [2, 4];
+        % Top corners of target are above source, bottom corners of target are below
+        % source. Target box either left or right of source.
+            % Top corners are above 
+        elseif all(vSlopes([1, 2]) < 0)
+            vCorners = [1, 4];
+            % Top corners of target are above source, bottom corners of target are
+            % below source
+        elseif all(vSlopes([3, 4]) < 0)
+            vCorners = [2, 3];
+        end
     end
-
-    % Normalize the data for the start and end point of annotation line 1
-    vPlotL1_S_Norm = in_normalizeDataPosition([vCor_Source_Data(vCorners(1),1), vCor_Source_Data(vCorners(1),2)], haTarget);
-    vPlotL1_E_Norm = in_normalizeDataPosition([vCor_Target_Data(vCorners(1),1), vCor_Target_Data(vCorners(1),2)], haTarget);
-    % Normalize the data for the start and end point of annotation line 2
-    vPlotL2_S_Norm = in_normalizeDataPosition([vCor_Source_Data(vCorners(2),1), vCor_Source_Data(vCorners(2),2)], haTarget);
-    vPlotL2_E_Norm = in_normalizeDataPosition([vCor_Target_Data(vCorners(2),1), vCor_Target_Data(vCorners(2),2)], haTarget);
     
-    % Annotate the two lines from start to end
-    haLines(1) = annotation('line', [vPlotL1_S_Norm(1), vPlotL1_E_Norm(1)], [vPlotL1_S_Norm(2), vPlotL1_E_Norm(2)]);
-    haLines(2) = annotation('line', [vPlotL2_S_Norm(1), vPlotL2_E_Norm(1)], [vPlotL2_S_Norm(2), vPlotL2_E_Norm(2)]);
+    % Plot lines only if we have corners found. In case the target box is placed
+    % above the source box, we will not find good corners.
+    if all(vCorners)
+        % Normalize the data for the start and end point of annotation line 1
+        vPlotL1_S_Norm = in_normalizeDataPosition([vCor_Source_Data(vCorners(1),1), vCor_Source_Data(vCorners(1),2)], haTarget);
+        vPlotL1_E_Norm = in_normalizeDataPosition([vCor_Target_Data(vCorners(1),1), vCor_Target_Data(vCorners(1),2)], haTarget);
+        % Normalize the data for the start and end point of annotation line 2
+        vPlotL2_S_Norm = in_normalizeDataPosition([vCor_Source_Data(vCorners(2),1), vCor_Source_Data(vCorners(2),2)], haTarget);
+        vPlotL2_E_Norm = in_normalizeDataPosition([vCor_Target_Data(vCorners(2),1), vCor_Target_Data(vCorners(2),2)], haTarget);
 
-    % Set line specific styles?
-    if ~isempty(ceZoomLinesSpec)
-        set(haLines(1), ceZoomLinesSpec{1}{:});
-        set(haLines(2), ceZoomLinesSpec{2}{:});
+        % Annotate the two lines from start to end
+        haLines(1) = annotation('line', [vPlotL1_S_Norm(1), vPlotL1_E_Norm(1)], [vPlotL1_S_Norm(2), vPlotL1_E_Norm(2)]);
+        haLines(2) = annotation('line', [vPlotL2_S_Norm(1), vPlotL2_E_Norm(1)], [vPlotL2_S_Norm(2), vPlotL2_E_Norm(2)]);
+
+        % Set line specific styles?
+        if ~isempty(ceZoomLinesSpec)
+            set(haLines(1), ceZoomLinesSpec{1}{:});
+            set(haLines(2), ceZoomLinesSpec{2}{:});
+        end
     end
 end
 
@@ -349,21 +370,6 @@ if nargout > 2 && strcmp(chZoomLines, 'on')
     varargout{3} = haLines;
 end
 
-
-end
-
-
-
-function out = in_charToValidArgument(in)
-
-switch lower(in)
-    case {'on', 'yes', 'please'}
-        out = 'on';
-    case {'off', 'no', 'never'}
-        out = 'off';
-    otherwise
-        out = 'off';
-end
 
 end
 
