@@ -29,6 +29,8 @@ function TwinCatScope = ipanema_importscope(Filename, varargin)
 %                           "]"     => ""
 %                           "[]"    => "_"
 %                           "]["    => "_"
+%
+%   See also: datetime
 
 
 
@@ -37,8 +39,10 @@ function TwinCatScope = ipanema_importscope(Filename, varargin)
 % Date: 2016-09-13
 % Changelog:
 %   2016-09-13
-%       * Update to return time series collectionts
 %       * Rename to ipanema_importscope
+%       * Update to return time series collections
+%       * Change code to pre-determine number of lines and columns to
+%       pre-allocate memory for the variables' data
 
 
 %% Create an input parser
@@ -74,9 +78,9 @@ chFilename = fullpath(ip.Results.Filename);
 % Delimiter between fields
 chDelimiter = ip.Results.Delimiter;
 % Start row of data in CSV
-nRowStart = 19;
+% nRowStart = 19;
 % End row of data in CSV
-nRowEnd = -1;
+% nRowEnd = -1;
 
 
 
@@ -92,33 +96,45 @@ stScopeData.Data = struct();
 % Create a handle to the file
 hfSource = fopen(chFilename);
 
-% First, find lines count so we know how big all arrays will be
+% First, find number of lines of data and number of variables of data so we know
+% how big all arrays will be
 nLines = 0;
+nVariables = 0;
+% Loop over the file the frist time
 while ~feof(hfSource)
+    % Read current line
     ceLine = fgetl(hfSource);
+    % If no variables have been counted yet and we are in any but the first
+    % header lines
+    if nVariables == 0 && nLines > 7
+        % Read line
+        ceLineData = textscan(ceLine, '%s', 'Delimiter', chDelimiter);
+        % And get the number by half the cell array size
+        nVariables = numel(ceLineData{1})/2;
+    end
+    % If the cell reads 'EOF' it's TwinCats marker of the end of the file
     if strcmp(ceLine, 'EOF')
         break;
     end
+    
+    % Advance line counter
     nLines = nLines + 1;
 end
-% Calculate the number of samples from:
-% "Lines Read" - "Lines Header"
+% Calculate the number of samples from: "Lines Read" - "Lines Header"
 nSamples = nLines - 22;
-% Rewind the file pointer to the head
+% Rewind file pointer to the head of the data
 frewind(hfSource);
 
-% Counter to know how many variables we have
-nVariablesCount = 0;
 % Keeps all the sampled time data
-maSampledTime = zeros(nSamples, 0);
+aSampledTime = zeros(nSamples, nVariables);
 % Keeps all the sampled data data
-maSampledData = zeros(nSamples, 0);
+aSampledData = zeros(nSamples, nVariables);
 % Keeps the variable names
-ceVariablesNames = {};
+ceVariablesNames = cell(nVariables, 1);
 % Keeps the sampling times of each variable
-maSamplingTimes = [];
+aSamplingTimes = zeros(nVariables, 1);
 % Keeps the scaling factors of each variable
-maScaleFactors = [];
+aScaleFactors = zeros(nVariables, 1);
 % Cell array of strings to replace, one per line as {'old', 'new'}
 ceStrreps = {...
     ' ', '_'; ...
@@ -192,14 +208,7 @@ while ~feof(hfSource)
                     end
                 % Variables Names
                 case 7
-                    nVariablesCount = numel(ceLineData)/2;
-                    maSampledTime = zeros(nSamples, nVariablesCount);
-                    maSampledData = zeros(nSamples, nVariablesCount);
-                    ceVariablesNames = cell(nVariablesCount, 1);
-                    maSamplingTimes = zeros(nVariablesCount, 1);
-                    maScaleFactors = zeros(nVariablesCount, 1);
-
-                    for iVariable = 1:nVariablesCount
+                    for iVariable = 1:nVariables
                         ceVariablesNames{iVariable} = ceLineData{2*iVariable};
                     end
 
@@ -209,13 +218,13 @@ while ~feof(hfSource)
 
                 % Sampling Rates
                 case 10
-                    for iVariable = 1:nVariablesCount
-                        maSamplingTimes(iVariable) = str2double(ceLineData{2*iVariable})/1000;
+                    for iVariable = 1:nVariables
+                        aSamplingTimes(iVariable) = str2double(ceLineData{2*iVariable})/1000;
                     end
                 % Scale factors
                 case 19
-                    for iVariable = 1:nVariablesCount
-                        maScaleFactors(iVariable) = str2double(ceLineData{2*iVariable});
+                    for iVariable = 1:nVariables
+                        aScaleFactors(iVariable) = str2double(ceLineData{2*iVariable});
                     end
                 otherwise
                     continue;
@@ -234,8 +243,8 @@ while ~feof(hfSource)
             maTheSampledTime = ceLineData{1}/1000;
             maTheSampledData = ceLineData{2};
             
-            maSampledTime(iCurrLine - 22 + 1,:) = maTheSampledTime;
-            maSampledData(iCurrLine - 22 + 1,:) = maTheSampledData;
+            aSampledTime(iCurrLine - 22 + 1,:) = maTheSampledTime;
+            aSampledData(iCurrLine - 22 + 1,:) = maTheSampledData;
         end
     catch me
         warning('PHILIPPTEMPEL:MATLAB_TOOLING:IPANEMA_IMPORTSCOPE:LineProcessingFailed', 'Failed processing line %i', iCurrLine);
@@ -246,26 +255,26 @@ end
 
 %% Post processing i.e., build up the content of stScopeData.Data
 % Check for rows that contain NaN in any of the Times or Data
-[nFirstNaN, ~] = find(isnan(maSampledTime), 1, 'first');
+[nFirstNaN, ~] = find(isnan(aSampledTime), 1, 'first');
 % If we found any rows with NaN, we will make sure that we will loop until the
 % row just one before then
 if ~isempty(nFirstNaN)
     nEndIndex = nFirstNaN - 1;
 % No NaN found, so we can loop over all data samples
 else
-    nEndIndex = size(maSampledTime, 1);
+    nEndIndex = size(aSampledTime, 1);
 end
 
 % Create a time series collection for all scope data
 tcData = tscollection({}, 'Name', stScopeData.Name);
 
 % Loop over each variable and extract the allowed time and data range
-for iVariable = 1:nVariablesCount
+for iVariable = 1:nVariables
     % Create a time series object
-    tsData = timeseries(maSampledData(1:nEndIndex,iVariable), maSampledTime(1:nEndIndex,iVariable), 'Name', ceVariablesNames{iVariable});
+    tsData = timeseries(aSampledData(1:nEndIndex,iVariable), aSampledTime(1:nEndIndex,iVariable), 'Name', ceVariablesNames{iVariable});
     % Create user data for the time series
     tsData.UserData = struct();
-    tsData.UserData.SamplingTime = maSamplingTimes(iVariable);
+    tsData.UserData.SamplingTime = aSamplingTimes(iVariable);
     
     % Append the time series to the time series collection
     tcData = addts(tcData, tsData);
@@ -279,7 +288,6 @@ stScopeData.Data = tcData;
 %% Assign output quantities
 % Imported data
 TwinCatScope = stScopeData;
-
 
 
 end
