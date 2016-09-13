@@ -95,6 +95,10 @@ stScopeData.Data = struct();
 
 % Create a handle to the file
 hfSource = fopen(chFilename);
+assert(hfSource~= -1, 'PHILIPPTEMPEL:MATLAB_TOOLING:IPANEMA_IMPORTSCOPE:InvalidFid', 'Cannot open source file [%s].', escapepath(chFilename));
+
+% Create a cleanup function 
+finishup = onCleanup(@() in_oncleanup(hfSource));
 
 % First, find number of lines of data and number of variables of data so we know
 % how big all arrays will be
@@ -152,9 +156,6 @@ ceStrreps = {...
 };
 nStrreps = size(ceStrreps, 1);
 
-% Create a cleanup function 
-finishup = onCleanup(@() in_oncleanup(hfSource));
-
 % Holds a counter to the current line
 iCurrLine = 0;
 
@@ -166,9 +167,13 @@ while ~feof(hfSource)
         % Get the current line
         ceLine = deblank(fgetl(hfSource));
 
-        % Skip empty lines or last line (lsat line contains 'EOF'
-        if isempty(ceLine) || strcmp(ceLine, 'EOF')
+        % Skip empty lines
+        if isempty(ceLine)
             continue;
+        end
+        % Break loop if end of file was reached
+        if strcmp(ceLine, 'EOF')
+            break;
         end
         
         % Header lines are in the first 22 lines
