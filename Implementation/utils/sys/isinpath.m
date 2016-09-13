@@ -1,5 +1,5 @@
-function [Flag] = inpath(varargin)
-% INPATH Checks whether the given path is part of MATLAB's environment path
+function [Flag] = isinpath(varargin)
+% ISINPATH Checks whether the given path is part of MATLAB's environment path
 %
 %   Inputs:
 %
@@ -14,8 +14,10 @@ function [Flag] = inpath(varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-12
+% Date: 2016-09-13
 % Changelog:
+%   2016-09-13
+%       * Rename to 'isinpath'
 %   2016-09-12
 %       * Initial release
 
