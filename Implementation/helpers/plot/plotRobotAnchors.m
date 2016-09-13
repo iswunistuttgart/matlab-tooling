@@ -42,8 +42,12 @@ function plotRobotAnchors(Anchors, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-12
+% Date: 2016-09-13
 % Changelog:
+%   2016-09-13
+%       * Remove all plot styles but 2D and 3D
+%       * Update script to determine plot style automatically if not provided
+%       but an axes is given with hold on
 %   2016-09-12
 %       * Add parameter 'Camera' to change camera perspective of 3D plots
 %   2016-09-07
@@ -93,10 +97,9 @@ addParameter(ip, 'Labels', {}, valFcn_WinchLabels);
 valFcn_LabelSpec = @(x) validateattributes(x, {'cell', 'numeric'}, {'nonempty'}, mfilename, 'LabelSpec');
 addParameter(ip, 'LabelSpec', {}, valFcn_LabelSpec);
 
-% PlotStyle: Char. Matches {'2D', '2DXY', '2DYX', '2DYZ', '2DZY', '2DXZ',
-% '2DZX', '3D'}.
-valFcn_PlotStyle = @(x) any(validatestring(upper(x), {'2D', '2DXY', '2DYX', '2DYZ', '2DZY', '2DXZ', '2DZX', '3D'}, mfilename, 'PlotStyle'));
-addParameter(ip, 'PlotStyle', '2D', valFcn_PlotStyle);
+% PlotStyle: Char. Matches {'2D', '3D'}.
+valFcn_PlotStyle = @(x) any(validatestring(upper(x), {'2D', '3D'}, mfilename, 'PlotStyle'));
+addParameter(ip, 'PlotStyle', '', valFcn_PlotStyle);
 
 % Parameter: Camera. Char. Matches {'orthographic', 'perspective'}
 valFcn_Camera = @(x) any(validatestring(lower(x), {'orthographic', 'perspective'}, mfilename, 'Camera'));
@@ -119,10 +122,24 @@ end
 
 
 %% Parse variables of the input parser to local parser
+if ~isempty(haTarget)
+    if isplot3d(haTarget)
+        chPlotStyle = '3D';
+    else
+        chPlotStyle = '2D';
+    end
+end
 % Get a valid axes handle
 haTarget = newplot(haTarget);
 % Old hold state
 lOldHold = ishold(haTarget);
+if lOldHold
+    if isplot3d(haTarget)
+        chPlotStyle = '3D';
+    else
+        chPlotStyle = '2D';
+    end
+end
 % Tell figure to add next plots
 hold(haTarget, 'on');
 % Anchors
@@ -136,7 +153,9 @@ ceLabels = ip.Results.Labels;
 % Label specs: cell array
 ceLabelSpecs = cycliccell(ip.Results.LabelSpec, nAnchors);
 % Plot style: char
-chPlotStyle = ip.Results.PlotStyle;
+if ~isempty(ip.Results.PlotStyle) && ~exist('chPlotStyle', 'var')
+    chPlotStyle = ip.Results.PlotStyle;
+end
 % Box switch: 'on' or 'off'
 chBBox = parseswitcharg(ip.Results.BoundingBox);
 % Box specifiactions: cell array
