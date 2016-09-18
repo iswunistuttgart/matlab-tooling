@@ -82,10 +82,13 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-17
+% Date: 2016-09-18
 % ToDo:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 % Changelog:
+%   2016-09-18
+%       * Change order of arguments for StartFcn, StopFcn, UpdateFcn from
+%       (ax,idx,plt) to (ax,plt,idx)
 %   2016-09-17
 %       * Initial release
 
@@ -171,7 +174,7 @@ fhStartCallback = ip.Results.StartFcn;
 if ~isempty(fhStartCallback)
     if ischar(fhStartCallback)
         chStartCallback = fhStartCallback;
-        fhStartCallback = @(ax, idx, plt) eval(chStartCallback);
+        fhStartCallback = @(ax, plt, idx) eval(chStartCallback);
     end
 else
     fhStartCallback = @(varargin) false;
@@ -183,7 +186,7 @@ fhDeleteCallback = ip.Results.UpdateFcn;
 if ~isempty(fhDeleteCallback)
     if ischar(fhDeleteCallback)
         chDeleteCallback = fhDeleteCallback;
-        fhDeleteCallback = @(ax, idx, plt) eval(chDeleteCallback);
+        fhDeleteCallback = @(ax, plt, idx) eval(chDeleteCallback);
     end
 else
     fhDeleteCallback = @(varargin) false;
@@ -195,7 +198,7 @@ fhUpdateCallback = ip.Results.UpdateFcn;
 if ~isempty(fhUpdateCallback)
     if ischar(fhUpdateCallback)
         chUpdateCallback = fhUpdateCallback;
-        fhUpdateCallback = @(ax, idx, plt) eval(chUpdateCallback);
+        fhUpdateCallback = @(ax, plt, idx) eval(chUpdateCallback);
     end
 else
     fhUpdateCallback = @(varargin) false;
@@ -254,7 +257,7 @@ haTarget.UserData = stUserData;
 % Create a timer object
 tiUpdater = timer(...
     'ExecutionMode', 'fixedDelay' ...
-    , 'Period', round(1000/nFps)/1000 ...
+    , 'Period', round(1000/nFps)/1000 ... % Just doing this so we don't get a warning about milliseconds being striped
     , 'StartFcn', @(timer, event) cb_timerstart(haTarget, timer, event) ...
     , 'StopFcn', @(timer, event) cb_timerend(haTarget, timer, event)...
     , 'TimerFcn', @(timer, event) cb_timerupdate(haTarget, timer, event) ...
@@ -290,23 +293,33 @@ function cb_timerstart(ax, timer, event)
         stUserData = ax.UserData;
 
         % Plot the first row of data
-        stUserData.Plot = feval(ax.UserData.Fun, ax, squeeze(ax.UserData.XData(1,:,:)), squeeze(ax.UserData.YData(1,:,:)));
+        stUserData.Plot = feval(stUserData.Fun, ax, squeeze(stUserData.XData(1,:,:)), squeeze(stUserData.YData(1,:,:)));
 
         % Hold on to the axes!
         hold(ax, 'on');
         
         % And save the user data back into it
         ax.UserData = stUserData;
+        
+        % Get the limits and fallback values
+        vXLim = [min(min(min(ax.UserData.XData))), max(max(max(ax.UserData.XData)))];
+        vYLim = [min(min(min(ax.UserData.YData))), max(max(max(ax.UserData.YData)))];
+        if vXLim(1) == vXLim(2)
+            vXLim = vXLim + [-0.5, 0.5];
+        end
+        if vYLim(1) == vYLim(2)
+            vYLim = vYLim + [-0.5, 0.5];
+        end
 
         % Set the limits to the min and max of the plot data ...
-        axis(ax, [min(min(min(ax.UserData.XData))), max(max(max(ax.UserData.XData))), min(min(min(ax.UserData.YData))), max(max(max(ax.UserData.YData)))]);
+        axis(ax, [vXLim, vYLim]);
         % And then equalize the axes' aspect ratio
         axis(ax, 'square')
         % Set the axes limits to manual...
         axis(ax, 'manual');
 
         % Call the user supplied start callback
-        ax.UserData.StartFcn(ax, timer.TasksExecuted, ax.UserData.Plot);
+        ax.UserData.StartFcn(ax, ax.UserData.Plot, timer.TasksExecuted);
     catch me
         stop(timer)
         
@@ -325,7 +338,7 @@ function cb_timerupdate(ax, timer, event)
         
         % The axes children (ax.Children) can be accessed now and just need
         % their XData and YData, respectively, updated
-        for iChild = 1:ax.UserData.DataCount
+        for iChild = 1:numel(ax.Children)
             set(ax.Children(iChild) ...
                 , 'XData', squeeze(ax.UserData.XData(ax.UserData.Frame2Time(timer.TasksExecuted),:,iChild)) ...
                 , 'YData', squeeze(ax.UserData.YData(ax.UserData.Frame2Time(timer.TasksExecuted),:,iChild)) ...
@@ -333,7 +346,7 @@ function cb_timerupdate(ax, timer, event)
         end
 
         % Call the user supplied update callback
-        ax.UserData.UpdateFcn(ax, timer.TasksExecuted, ax.UserData.Plot);
+        ax.UserData.UpdateFcn(ax, ax.UserData.Plot, timer.TasksExecuted);
     catch me
         stop(timer)
         
@@ -346,7 +359,7 @@ end
 function cb_timerend(ax, timer, event)
     try
         % Call the user supplied end/stop/delete callback
-        ax.UserData.StopFcn(ax, timer.TasksExecuted, ax.UserData.Plot);
+        ax.UserData.StopFcn(ax, ax.UserData.Plot, timer.TasksExecuted);
 
         % Let go off our axes
         hold(ax, 'off');
