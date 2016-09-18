@@ -82,8 +82,11 @@ function [varargout] = anim3d(X, Y, Z, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-17
+% Date: 2016-09-18
 % Changelog:
+%   2016-09-18
+%       * Change order of arguments for StartFcn, StopFcn, UpdateFcn from
+%       (ax,idx,plt) to (ax,plt,idx)
 %   2016-09-17
 %       * Initial release
 
@@ -109,7 +112,7 @@ try
 
     % Required: Z. Numeric. Matrix; Non-empty; Columns matches columns of
     % X and Y;
-    valFcn_Z = @(x) validateattributes(x, {'numeric'}, {'3d', 'nonempty', 'finite', 'size', size(X)}, mfilename, 'Z');
+    valFcn_Z = @(x) validateattributes(x, {'numeric'}, {'3d', 'nonempty', 'finite', 'size', [size(X, 1), size(X, 2), NaN]}, mfilename, 'Z');
     addRequired(ip, 'Z', valFcn_Z);
 
     % Optional: Time. Numeric. Vector; Non-empty; Increasing; Numel matches
@@ -123,7 +126,7 @@ try
 
     % Parameter: Fun. Char; Function Handle. Non-empty;
     valFcn_Fun = @(x) validateattributes(x, {'char', 'function_handle'}, {'nonempty'}, mfilename, 'Fun');
-    addParameter(ip, 'Fun', @plot, valFcn_Fun);
+    addParameter(ip, 'Fun', @plot3, valFcn_Fun);
     
     % Parameter: StartFcn. Char; Function Handle. Non-empty;
     valFcn_StartFcn = @(x) validateattributes(x, {'char', 'function_handle'}, {'nonempty'}, mfilename, 'StartFcn');
@@ -167,7 +170,7 @@ aZData = ip.Results.Z;
 vTime = ip.Results.Time;
 % If time is empty, we will just loop over the samples of X and Y
 if isempty(vTime)
-    vTime = 1:size(aXData,1);
+    vTime = ascolumn(1:size(aXData,1));
     loLoopItems = true;
 else
     loLoopItems = false;
@@ -188,7 +191,7 @@ fhStartCallback = ip.Results.StartFcn;
 if ~isempty(fhStartCallback)
     if ischar(fhStartCallback)
         chStartCallback = fhStartCallback;
-        fhStartCallback = @(ax, idx, plt) eval(chStartCallback);
+        fhStartCallback = @(ax, plt, idx) eval(chStartCallback);
     end
 else
     fhStartCallback = @(varargin) false;
@@ -200,7 +203,7 @@ fhDeleteCallback = ip.Results.UpdateFcn;
 if ~isempty(fhDeleteCallback)
     if ischar(fhDeleteCallback)
         chDeleteCallback = fhDeleteCallback;
-        fhDeleteCallback = @(ax, idx, plt) eval(chDeleteCallback);
+        fhDeleteCallback = @(ax, plt, idx) eval(chDeleteCallback);
     end
 else
     fhDeleteCallback = @(varargin) false;
@@ -212,7 +215,7 @@ fhUpdateCallback = ip.Results.UpdateFcn;
 if ~isempty(fhUpdateCallback)
     if ischar(fhUpdateCallback)
         chUpdateCallback = fhUpdateCallback;
-        fhUpdateCallback = @(ax, idx, plt) eval(chUpdateCallback);
+        fhUpdateCallback = @(ax, plt, idx) eval(chUpdateCallback);
     end
 else
     fhUpdateCallback = @(varargin) false;
@@ -232,8 +235,16 @@ stUserData.StartFcn = fhStartCallback;
 stUserData.StopFcn = fhDeleteCallback;
 stUserData.Time = vTime;
 stUserData.UpdateFcn = fhUpdateCallback;
-stUserData.XData = aXData;
-stUserData.YData = aYData;
+if size(aXData, 3) == 1
+    stUserData.XData = repmat(aXData, 1, 1, size(aZData, 3));
+else
+    stUserData.XData = aXData;
+end
+if size(aYData, 3) == 1
+    stUserData.YData = repmat(aYData, 1, 1, size(aZData, 3));
+else
+    stUserData.YData = aYData;
+end
 stUserData.ZData = aZData;
 
 % If we loop over the items and draw them one by one, the mapping of frame
@@ -271,7 +282,7 @@ haTarget.UserData = stUserData;
 % Create a timer object
 tiUpdater = timer(...
     'ExecutionMode', 'fixedDelay' ...
-    , 'Period', round(1000/nFps)/1000 ...
+    , 'Period', round(1000/nFps)/1000 ... % Just doing this so we don't get a warning about milliseconds being striped
     , 'StartFcn', @(timer, event) cb_timerstart(haTarget, timer, event) ...
     , 'StopFcn', @(timer, event) cb_timerend(haTarget, timer, event)...
     , 'TimerFcn', @(timer, event) cb_timerupdate(haTarget, timer, event) ...
@@ -323,7 +334,7 @@ function cb_timerstart(ax, timer, event)
         axis(ax, 'manual');
 
         % Call the user supplied start callback
-        ax.UserData.StartFcn(ax, timer.TasksExecuted, ax.UserData.Plot);
+        ax.UserData.StartFcn(ax, ax.UserData.Plot, timer.TasksExecuted);
     catch me
         stop(timer)
         
@@ -341,8 +352,8 @@ function cb_timerupdate(ax, timer, event)
         axes(ax);
         
         % The axes children (ax.Children) can be accessed now and just need
-        % their XData and YData, respectively, updated
-%         for iChild = 1:ax.UserData.DataCount
+        % their XData, YData, and ZData, respectively, updated
+%         for iChild = 1:numel(ax.Children)
             set(ax.Children ...
                 , 'XData', squeeze(ax.UserData.XData(ax.UserData.Frame2Time(timer.TasksExecuted),:,:)) ...
                 , 'YData', squeeze(ax.UserData.YData(ax.UserData.Frame2Time(timer.TasksExecuted),:,:)) ...
@@ -351,7 +362,7 @@ function cb_timerupdate(ax, timer, event)
 %         end
 
         % Call the user supplied update callback
-        ax.UserData.UpdateFcn(ax, timer.TasksExecuted, ax.UserData.Plot);
+        ax.UserData.UpdateFcn(ax, ax.UserData.Plot, timer.TasksExecuted);
     catch me
         stop(timer)
         
@@ -364,7 +375,7 @@ end
 function cb_timerend(ax, timer, event)
     try
         % Call the user supplied end/stop/delete callback
-        ax.UserData.StopFcn(ax, timer.TasksExecuted, ax.UserData.Plot);
+        ax.UserData.StopFcn(ax, ax.UserData.Plot, timer.TasksExecuted);
 
         % Let go off our axes
         hold(ax, 'off');
