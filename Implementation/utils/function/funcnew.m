@@ -162,8 +162,9 @@ try
     fclose(fidSource);
 catch me
     if strcmp(me.identifier, 'MATLAB:FileIO:InvalidFid')
-        throw(MException('PHILIPPTEMPEL:FUNCNEW:invalidTemplateFid', 'Could not open source file for reading.'));
+        throwAsCaller(MException('PHILIPPTEMPEL:FUNCNEW:invalidTemplateFid', 'Could not open source file for reading.'));
     end
+    
     throwAsCaller(MException(me.identifier, me.message));
 end
 
@@ -222,8 +223,9 @@ try
     assert(fcStatus == 0);
 catch me
     if strcmp(me.identifier, 'MATLAB:FileIO:InvalidFid')
-        throw(MException('PHILIPPTEMPEL:FUNCNEW:invalidTargetFid', 'Could not open target file for writing.'));
+        throwAsCaller(MException('PHILIPPTEMPEL:FUNCNEW:invalidTargetFid', 'Could not open target file for writing.'));
     end
+    
     throwAsCaller(MException(me.identifier, me.message));
 end
 

@@ -44,7 +44,7 @@ ip.FunctionName = mfilename;
 try
     parse(ip, StructWithTime, varargin{:});
 catch me
-    throw(MException(me.identifier, me.message));
+    throwAsCaller(me);
 end
 
 

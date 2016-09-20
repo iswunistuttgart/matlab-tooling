@@ -57,7 +57,7 @@ ip.FunctionName = mfilename;
 try
     parse(ip, Dir, varargin{:});
 catch me
-    throw(MException(me.identifier, me.message));
+    throwAsCaller(me);
 end
 
 

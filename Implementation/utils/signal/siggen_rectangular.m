@@ -18,8 +18,6 @@ function [RectangularValue, varargout] = sigen_rectangular(CurrentTime, Amplitud
 %   Optional Inputs -- specified as parameter value pairs
 %
 %   Offset
-%
-%   
 
 if nargin < 2
     Amplitude = 1;
