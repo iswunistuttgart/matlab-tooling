@@ -1,23 +1,26 @@
 function fig = gpf(h)
 % GPF Get the given handles parent figure
 %
-%   FIG = GPF(H) gets the parent figure for the given handle h. Handle h can be
+%   FIG = GPF(H) gets the parent figure for the given handle H. Handle H can be
 %   anything: an axes, line, chat, even a figure itself.
 %
 %   Inputs:
 %
-%   H: a valid handle of any type
+%   H:          Valid handle of any type.
 %
 %   Outputs:
 %
-%   FIG: handle to the figure parent to H or H itself if it is already a figure
+%   FIG:        Handle to the parent figure to H or H itself, if it is already a
+%       figure.
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-06-15
+% Date: 2016-09-20
 % Changelog:
+%   2016-09-20
+%       * Comment formatting
 %   2016-06-15
 %       * Minor adjustments to error function message
 %   2016-06-10
@@ -25,7 +28,7 @@ function fig = gpf(h)
 
 
 
-%% Pre-process inputs
+%% Argument defaults
 % If no argument was given, use the current axis to determine the parent
 if nargin < 1
     h = gca;
@@ -47,14 +50,16 @@ fig = h;
 %% MATLAB, do your thing!
 % While the handle we got is not empty and its type does not compare positively
 % to 'figure'
-while ~isempty(fig) && ~strcmpi('figure', get(fig, 'type'))
-    % We will get the handle's parent
-    fig = get(fig, 'parent');
+try
+    while ~isempty(fig) && ~strcmpi('figure', get(fig, 'type'))
+        % We will get the handle's parent
+        fig = get(fig, 'parent');
+    end
+catch me
+    me = addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:GPF:ErrorFetchingParent', 'Unknown error occured trying to fetch the handle''s parent figure'));
+    
+    throwAsCaller(me);
 end
-
-
-
-%% Done
 
 
 end

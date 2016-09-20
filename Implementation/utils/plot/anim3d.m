@@ -154,7 +154,7 @@ try
     
     parse(ip, varargin{:});
 catch me
-    throwAsCaller(MException(me.identifier, me.message));
+    throwAsCaller(me);
 end
 
 

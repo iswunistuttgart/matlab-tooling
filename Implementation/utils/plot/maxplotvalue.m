@@ -9,28 +9,41 @@ function MaxValue = maxplotvalue(Axis)
 %   
 %   Inputs:
 %   
-%   AXIS: A valid axis handle to return the maximum plotted range for
+%   AXIS:       A valid axis handle to return the maximum plotted range for.
 %
 %   Outputs:
 %   
-%   MAXVALUE: An array of [maxX, maxY] or [maxX, maxY, maxZ] plot range for 2D
-%   plots or 3D plots, respectively.
-%
+%   MAXVALUE:   An array of [maxX, maxY] or [maxX, maxY, maxZ] plot range for 2D
+%       plots or 3D plots, respectively.
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-25
+% Date: 2016-09-20
 % Changelog:
-%   2016-03-25: Add help
-%   2016-03-23: Initial release
+%   2016-09-20
+%       * Comment formatting
+%   2016-03-25
+%       * Add help
+%   2016-03-23
+%       * Initial release
 
 
-%% Pre-process arguments
+
+%% Argument defaults
 % Make sure we have an axis handle
 if nargin == 0
     Axis = gca;
 end
 
+
+
+%% Actual code
+
 % Call the plotrange function and assign output
 MaxValue = plotrange(Axis, 'max');
+
 
 end
 

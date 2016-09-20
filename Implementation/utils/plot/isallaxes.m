@@ -1,28 +1,35 @@
 function result = isallaxes(h)
-% ISALLAXES Checks whether the given handle is purely axes
+% ISALLAXES Checks whether the given handle is purely axes or not
 % 
-%   ISALLAXES(h) will check everything inside h to be a valid handle or not
+%   ISALLAXES(H) will check everything inside H to be a valid handle or not.
 %   
 %   Inputs:
 %   
-%   H: Array of something, most likely should be handles
+%   H:          Array of something, most likely should be handles.
 %
 %   Outputs:
 %
-%   RES: Is true if h contains only handles, false otherwise
-%
+%   RES:        Is true if h contains only handles, false otherwise.
+
+
+
+%% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-03-25
+% Date: 2016-09-20
 % Changelog:
-%   2016-03-25: Initial release
+%   2016-09-20
+%       * Comment formatting
+%   2016-03-25
+%       * Initial release
 
 
 
-%% ------------- BEGIN OF CODE --------------
+%% Here's the code
 
 result = all(all(ishghandle(h))) && ...
          length(findobj(h,'type','axes','-depth',0)) == length(h);
 
+     
 end
 
 %------------- END OF CODE --------------

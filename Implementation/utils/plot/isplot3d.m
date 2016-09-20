@@ -1,23 +1,25 @@
 function res = isplot3d(varargin)
 % ISPLOT3D Check the given axes against being a 3D plot i.e., created by plot3()
 % 
-%   ISPLOT3D() checks the current axes against being a 3D plot
+%   ISPLOT3D() checks the current axes against being a 3D plot.
 % 
-%   ISPLOT3D(AXES) checks the given axes against being a 3D plot
+%   ISPLOT3D(AXES) checks the given axes against being a 3D plot.
 %
-%   Basically, what this function does is exam all current axes childrens
-%   whether they have valid ZData. If any of them has it will return false
+%   Basically, what this function does is exam the given axes to be not 2d
+%   plots.
 %   
 %   Inputs:
 %   
-%   AXES: Use axes AXES instead of current axes to check
+%   AXES:       Mx1 array of axes to check for being 3D.
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-13
+% Date: 2016-09-20
 % Changelog:
+%   2016-09-20
+%       * Add support for checking multiple axes at once
 %   2016-09-13
 %       * Update to new file information header
 %   2016-07-14

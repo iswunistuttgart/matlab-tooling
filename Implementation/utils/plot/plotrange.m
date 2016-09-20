@@ -13,28 +13,31 @@ function varargout = plotrange(RangeSelector, varargin)
 %   
 %   Inputs:
 %   
-%   SELECTOR: A string which must be any of the following set {'min', 'max',
-%   'min+max'}. If none is given, 'min+max' is assumed.
+%   SELECTOR:   A string which must be any of the following set {'min', 'max',
+%       'min+max'}. Defaults to 'min+max'.
 %
-%   AXIS: A valid axis handle to get the range for.
+%   AXIS:       A valid axis handle to get the range for.
 %
 %   Outputs:
 %   
-%   RANGE: Array of [minX, maxX; minY, maxY] plot ranges for 2D plots or an
-%   array of [minX, maxX; minY, maxY; minZ, maxZ] plot ranges for 3D plots.
+%   RANGE:      Array of [minX, maxX; minY, maxY] plot ranges for 2D plots or an
+%       array of [minX, maxX; minY, maxY; minZ, maxZ] plot ranges for 3D plots.
 %   
-%   MIN: Vector of [minX, minY] or [minX, minY, minZ] plot ranges for 2D plots
-%   or 3D plots, respectively.
+%   MIN:        Vector of [minX, minY] or [minX, minY, minZ] plot ranges for 2D
+%       plots or 3D plots, respectively.
 %   
-%   MAX: Vector of [maxX, maxY] or [maxX, maxY, maxZ] plot ranges for 2D plots
-%   or 3D plots, respectively.
+%   MAX:        Vector of [maxX, maxY] or [maxX, maxY, maxZ] plot ranges for 2D
+%       plots or 3D plots, respectively.
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-07-14
+% Date: 2016-09-20
 % Changelog:
+%   2016-09-20
+%       * Comment formatting
+%       * Add `axescheck`
 %   2016-07-14
 %       * Wrap IP-parse in try-catch to have nicer error display
 %       * Extend docs and update to new doc file layout
@@ -42,20 +45,6 @@ function varargout = plotrange(RangeSelector, varargin)
 %       * Add possibility to remove two return values [min, max] if requested
 %   2016-03-23
 %       * Initial release
-
-
-
-%% Preprocess inputs (allows to have the axis defined as first argument)
-% By default we don't have any axes handle
-haTarget = false;
-% Check if the first argument is an axes handle, then we just have to shift all
-% other arguments by one
-if ~isempty(varargin) && isallaxes(RangeSelector)
-    narginchk(2, Inf)
-    haTarget = RangeSelector;
-    RangeSelector = varargin{1};
-    varargin = varargin(2:end);
-end
 
 
 
@@ -75,9 +64,12 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
-    parse(ip, RangeSelector, varargin{:});
+    varargin = [{RangeSelector}, varargin];
+    [haTarget, args, ~] = axescheck(varargin{:});
+    
+    parse(ip, args{:});
 catch me
-    throw(MException(me.identifier, me.message));
+    throwAsCaller(me);
 end
 
 

@@ -5,18 +5,20 @@ function flag = isfig(H)
 %
 %   Inputs
 %
-%   H       MxN array of handles to be checked for valid type
+%   H           MxN array of handles to be checked for valid type.
 %
 %   Outputs
 %
-%   FLAG    TRUE if H is a valid figure handle, and FALSE otherwise.
+%   FLAG        TRUE if H is a valid figure handle, and FALSE otherwise.
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-09
+% Date: 2016-09-20
 % Changelog:
+%   2016-09-20
+%       * Minor comment formatting
 %   2016-08-09
 %       * Remove second argument 'All'
 %       * Update check for figure handles. It's now safer to run it, especially
@@ -26,12 +28,19 @@ function flag = isfig(H)
 
 
 
-%% Do the MATLABgic
-if isempty(H)
-    flag = ~isempty(H) && ( isa(H, 'double') || isa(H, 'matlab.ui.Figure') );
-else
-    flag = ishghandle(H, 'figure');
+%% Input assertion
+try
+    narginchk(1, 1);
+    % H: non-empty
+    assert(~isempty(H), 'PHILIPPTEMPEL:MATLAB_TOOLING:ISFIG:EmptyArgument', 'Argument [%s] must be non-empty.', 'H');
+catch me
+    throwAsCaller(me);
 end
+
+
+
+%% Do the MATLABgic
+flag = ~isempty(H) && ( isa(H, 'double') || isa(H, 'matlab.ui.Figure') );
 
 
 end
