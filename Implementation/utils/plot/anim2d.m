@@ -38,6 +38,10 @@ function [varargout] = anim2d(X, Y, varargin)
 %
 %   Optional Inputs -- specified as parameter value pairs
 %
+%   EvenX       Switch to toggle even x-axis extension 'on' or 'off'. If 'EvenX'
+%       is 'on' then the by magnitude larger x-axis limit is projected onto the
+%       other one. For example, xlims of [-3, 4] will become [-4, 4].
+%
 %   Fps         Number of frames per second to draw. This values is being
 %       used for the timer's period. Defaults to 25.
 %
@@ -51,41 +55,72 @@ function [varargout] = anim2d(X, Y, varargin)
 %       animation time is being used for animation. Additionally, this
 %       value is passed to the title of the plot to display the progress.
 %
-%   StartFcn    Name of function or function handle that shall be called
-%       after the figure is set up and before animation is started.
-%       If you specify this property using a string, when MATLAB executes
-%       the callback, it evaluates the MATLAB code contained in the string.
-%       If you specify this property using a function handle, when MATLAB
-%       executes the callback it passes the axes handle, the current time
-%       step number, and the plot handle to the callback function.
+%   Title       String to be displayed in the title. Can also be set to 'timer'
+%       to enable automatic rendering of the time in the axes' title. If a
+%       user-specific string is provided, it will be passed to `sprintf` where
+%       the current time is being parsed as first argument, the current frame
+%       index as second.
 %
-%   StopFcn     Name of function or function handle that shall be called
-%       after the figure is completely animated.
+%   StartFcn    String or function handle that shall be called after the
+%       animation is set up and before it is started.
 %       If you specify this property using a string, when MATLAB executes
-%       the callback, it evaluates the MATLAB code contained in the string.
+%       the callback, it evaluates the MATLAB code contained in the string. This
+%       code has access to the variables 'ax', 'plt', and 'idx' representing the
+%       target axes, the plot object, and the current frame index, respectively.
 %       If you specify this property using a function handle, when MATLAB
 %       executes the callback it passes the axes handle, the current time
 %       step number, and the plot handle to the callback function.
+%       If you specify this property as a cell array, you can make combinations
+%       of strings or function handles as you like.
 %
-%   UpdateFcn   Name of function or function handle that shall be called
-%       after the animation is advanced to the next time step and the data
-%       are drawn.
+%   StopFcn     String or function handle that shall be called after the
+%       animation has stopped.
 %       If you specify this property using a string, when MATLAB executes
-%       the callback, it evaluates the MATLAB code contained in the string.
+%       the callback, it evaluates the MATLAB code contained in the string. This
+%       code has access to the variables 'ax', 'plt', and 'idx' representing the
+%       target axes, the plot object, and the current frame index, respectively.
 %       If you specify this property using a function handle, when MATLAB
 %       executes the callback it passes the axes handle, the current time
 %       step number, and the plot handle to the callback function.
+%       If you specify this property as a cell array, you can make combinations
+%       of strings or function handles as you like.
+%
+%   UpdateFcn   String or function handle that shall be called after the
+%       animation is updated at each frame.
+%       If you specify this property using a string, when MATLAB executes
+%       the callback, it evaluates the MATLAB code contained in the string. This
+%       code has access to the variables 'ax', 'plt', and 'idx' representing the
+%       target axes, the plot object, and the current frame index, respectively.
+%       If you specify this property using a function handle, when MATLAB
+%       executes the callback it passes the axes handle, the current time
+%       step number, and the plot handle to the callback function.
+%       If you specify this property as a cell array, you can make combinations
+%       of strings or function handles as you like.
 %
 %   See also TIMER
+%
+%   Known Bugs:
+%
+%   Due to some weird behavior (of feval probably) the order of plots is changed
+%       i.e., X(:,:,1) is plot into plt(n) while X(:,:,n) is plot into plt(1).
+%       This is a bit unexpected behavior if you want to adjust the lines
+%       styles, colors, or markers. However, this behavior cannot be reproduced
+%       in standalone code so it is unclear where exactly it is coming from.
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-18
+% Date: 2016-09-21
 % ToDo:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 % Changelog:
+%   2016-09-21
+%       * Update 'StartFcn', 'UpdateFcn', and 'StopFcn' to support cell arrays
+%       of function handles. This way, multiple functions can be called at the
+%       same time (for as long as cellfun is "at the same time") allowing better
+%       anonymous function inclusion
+%       * Add support for displaying a title on the axes
 %   2016-09-18
 %       * Change order of arguments for StartFcn, StopFcn, UpdateFcn from
 %       (ax,idx,plt) to (ax,plt,idx)
@@ -117,25 +152,33 @@ try
     valFcn_Time = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'vector', 'increasing', 'finite', 'numel', size(X, 1)}, mfilename, 'Time');
     addOptional(ip, 'Time', [], valFcn_Time);
 
+    % Parameter: EvenX. Char. Matches {'on', 'off', 'yes' 'no'}.
+    valFcn_EvenX = @(x) any(validatestring(lower(x), {'on', 'yes', 'off', 'no'}, mfilename, 'EvenX'));
+    addParameter(ip, 'EvenX', 'off', valFcn_EvenX);
+
     % Parameter: FPS. Numeric. Non-empty; Scalar; Positive; Finite;
     valFcn_Fps = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'size', [1, 1], 'positive', 'finite'}, mfilename, 'Fps');
     addParameter(ip, 'Fps', 25, valFcn_Fps);
 
-    % Parameter: Fun. Char or Function Handle. Non-empty;
-    valFcn_Fun = @(x) validateattributes(x, {'char', 'function_handle'}, {'nonempty'}, mfilename, 'Fun');
+    % Parameter: Fun. Char; Function Handle. Non-empty;
+    valFcn_Fun = @(x) validateattributes(x, {'char', 'cell', 'function_handle'}, {'nonempty'}, mfilename, 'Fun');
     addParameter(ip, 'Fun', @plot, valFcn_Fun);
     
-    % Parameter: StartFcn. Char. Function Handle. Non-empty;
-    valFcn_StartFcn = @(x) validateattributes(x, {'char', 'function_handle'}, {'nonempty'}, mfilename, 'StartFcn');
-    addParameter(ip, 'StartFcn', '', valFcn_StartFcn);
+    % Parameter: StartFcn. Charl Function Handle. Non-empty;
+    valFcn_StartFcn = @(x) validateattributes(x, {'char', 'cell', 'function_handle'}, {'nonempty'}, mfilename, 'StartFcn');
+    addParameter(ip, 'StartFcn', {}, valFcn_StartFcn);
     
-    % Parameter: StopFcn. Char. Function Handle. Non-empty;
-    valFcn_StopFcn = @(x) validateattributes(x, {'char', 'function_handle'}, {'nonempty'}, mfilename, 'StopFcn');
-    addParameter(ip, 'StopFcn', '', valFcn_StopFcn);
+    % Parameter: StopFcn. Char; Function Handle. Non-empty;
+    valFcn_StopFcn = @(x) validateattributes(x, {'char', 'cell', 'function_handle'}, {'nonempty'}, mfilename, 'StopFcn');
+    addParameter(ip, 'StopFcn', {}, valFcn_StopFcn);
+
+    % Parameter: Title. Char. Non-empty;
+    valFcn_Title = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Title');
+    addParameter(ip, 'Title', '', valFcn_Title);
     
     % Parameter: UpdateFcn. Char. Function Handle. Non-empty;
     valFcn_UpdateFcn = @(x) validateattributes(x, {'char', 'function_handle'}, {'nonempty'}, mfilename, 'UpdateFcn');
-    addParameter(ip, 'UpdateFcn', '', valFcn_UpdateFcn);
+    addParameter(ip, 'UpdateFcn', {}, valFcn_UpdateFcn);
 
     % Configuration of input parser
     ip.KeepUnmatched = true;
@@ -168,41 +211,30 @@ nFps = ip.Results.Fps;
 mxFun = ip.Results.Fun;
 
 % Get start function callback handle
-fhStartCallback = ip.Results.StartFcn;
-% Check the start function handle is set and if it's a string, convert it
-% to a function handle
-if ~isempty(fhStartCallback)
-    if ischar(fhStartCallback)
-        chStartCallback = fhStartCallback;
-        fhStartCallback = @(ax, plt, idx) eval(chStartCallback);
-    end
-else
-    fhStartCallback = @(varargin) false;
-end
+try
+    ceStartCallbacks = in_parseCallbacks(ip.Results.StartFcn, 'StartFcn');
+catch me
+    throwAsCaller(me);
+end;
+
 % Get update function callback handle
-fhDeleteCallback = ip.Results.UpdateFcn;
-% Check the start function handle is set and if it's a string, convert it
-% to a function handle
-if ~isempty(fhDeleteCallback)
-    if ischar(fhDeleteCallback)
-        chDeleteCallback = fhDeleteCallback;
-        fhDeleteCallback = @(ax, plt, idx) eval(chDeleteCallback);
-    end
-else
-    fhDeleteCallback = @(varargin) false;
+try
+    ceUpdateCallbacks = in_parseCallbacks(ip.Results.UpdateFcn, 'UpdateFcn');
+catch me
+    throwAsCaller(me);
+end;
+
+% Get start function callback handle
+try
+    ceStopCallbacks = in_parseCallbacks(ip.Results.StopFcn, 'StopFcn');
+catch me
+    throwAsCaller(me);
 end
-% Get delete function callback handle
-fhUpdateCallback = ip.Results.UpdateFcn;
-% Check the start function handle is set and if it's a string, convert it
-% to a function handle
-if ~isempty(fhUpdateCallback)
-    if ischar(fhUpdateCallback)
-        chUpdateCallback = fhUpdateCallback;
-        fhUpdateCallback = @(ax, plt, idx) eval(chUpdateCallback);
-    end
-else
-    fhUpdateCallback = @(varargin) false;
-end
+
+% Even x-axis?
+chEvenX = parseswitcharg(ip.Results.EvenX);
+% Title of the axis
+chTitle = ip.Results.Title;
 
 % Get a valid axes handle
 haTarget = newplot(haTarget);
@@ -213,11 +245,18 @@ haTarget = newplot(haTarget);
 % Collect all data we need into one struct that we will assign to the axes
 stUserData = struct();
 stUserData.DataCount = size(aXData, 3);
+stUserData.EvenX = chEvenX;
 stUserData.Fun = mxFun;
-stUserData.StartFcn = fhStartCallback;
-stUserData.StopFcn = fhDeleteCallback;
+stUserData.StartFcn = ceStartCallbacks;
+stUserData.StopFcn = ceStopCallbacks;
 stUserData.Time = vTime;
-stUserData.UpdateFcn = fhUpdateCallback;
+stUserData.Title = '';
+if strcmpi('timer', chTitle)
+    stUserData.TitleString = 'Time: %.2f';
+else
+    stUserData.TitleString = chTitle;
+end
+stUserData.UpdateFcn = ceUpdateCallbacks;
 stUserData.XData = aXData;
 stUserData.YData = aYData;
 
@@ -304,11 +343,18 @@ function cb_timerstart(ax, timer, event)
         % Get the limits and fallback values
         vXLim = [min(min(min(ax.UserData.XData))), max(max(max(ax.UserData.XData)))];
         vYLim = [min(min(min(ax.UserData.YData))), max(max(max(ax.UserData.YData)))];
+        % If no x-axis limits are given, we wil make some of our own
         if vXLim(1) == vXLim(2)
-            vXLim = vXLim + [-0.5, 0.5];
+            vXLim = vXLim + [-1, +1];
         end
+        % If no Y-axis limits are given, we will make some of our own
         if vYLim(1) == vYLim(2)
-            vYLim = vYLim + [-0.5, 0.5];
+            vYLim = vYLim + [-1, +1];
+        end
+        
+        % Force even x-axis limits?
+        if strcmp('on', ax.UserData.EvenX)
+            vXLim = max(abs(vXLim)).*[-1, 1];
         end
 
         % Set the limits to the min and max of the plot data ...
@@ -317,9 +363,14 @@ function cb_timerstart(ax, timer, event)
         axis(ax, 'square')
         % Set the axes limits to manual...
         axis(ax, 'manual');
+        
+        % Set the title, if any title is given
+        if ~isempty(ax.UserData.TitleString)
+            ax.UserData.Title = title(ax, sprintf(ax.UserData.TitleString, 0, 1));
+        end
 
-        % Call the user supplied start callback
-        ax.UserData.StartFcn(ax, ax.UserData.Plot, timer.TasksExecuted);
+        % Call the user supplied start callback(s)
+        cellfun(@(fh) fh(ax, ax.UserData.Plot, timer.TasksExecuted), ax.UserData.StartFcn, 'UniformOutput', false);
     catch me
         stop(timer)
         
@@ -344,9 +395,14 @@ function cb_timerupdate(ax, timer, event)
                 , 'YData', squeeze(ax.UserData.YData(ax.UserData.Frame2Time(timer.TasksExecuted),:,iChild)) ...
             );
         end
-
-        % Call the user supplied update callback
-        ax.UserData.UpdateFcn(ax, ax.UserData.Plot, timer.TasksExecuted);
+        
+        % Update the title
+        if ~isempty(ax.UserData.Title)
+            ax.UserData.Title.String = sprintf(ax.UserData.TitleString, ax.UserData.Time(ax.UserData.Frame2Time(timer.TasksExecuted)));
+        end
+        
+        % Call the user supplied update callback(s)
+        cellfun(@(fh) fh(ax, ax.UserData.Plot, timer.TasksExecuted), ax.UserData.UpdateFcn, 'UniformOutput', false);
     catch me
         stop(timer)
         
@@ -359,7 +415,7 @@ end
 function cb_timerend(ax, timer, event)
     try
         % Call the user supplied end/stop/delete callback
-        ax.UserData.StopFcn(ax, ax.UserData.Plot, timer.TasksExecuted);
+        cellfun(@(fh) fh(ax, ax.UserData.Plot, timer.TasksExecuted), ax.UserData.StopFcn, 'UniformOutput', false);
 
         % Let go off our axes
         hold(ax, 'off');
@@ -385,6 +441,38 @@ function cb_cleanup(ax, event)
     if isfield(ax.UserData, 'Timer') && strcmp('on', ax.UserData.Timer.Running)
         stop(ax.UserData.Timer);
     end
+end
+
+
+function ceCallbacks = in_parseCallbacks(ceCallbackArgs, Type)
+
+% Default start callback: Does nothing
+ceCallbacks = {@(ax, plt, idx) false};
+
+if ~isempty(ceCallbackArgs)
+    ceCallbacks = cell(size(ceCallbackArgs));
+    % If given as a cell...
+    if iscell(ceCallbackArgs)
+        % Loop over every callback and check its a char or function_handle;
+        for iFh = 1:numel(ceCallbackArgs)
+            if ~ ( ischar(ceCallbackArgs{iFh}) || isa(ceCallbackArgs{iFh}, 'function_handle') )
+                throwAsCaller(MException('PHILIPPTEMPEL:MATLAB_TOOLING:ANIM2D:InvalidStartFcn', 'All %s callbacks must be char or function_handle.', Type));
+            end
+
+            % Convert char functions to actual callable functions
+            if ischar(ceCallbackArgs{iFh})
+                ceCallbacks{iFh} = @(ax, plt, idx) eval(ceCallbackArgs{iFh});
+            % Move function_handles right to the return value
+            else
+                ceCallbacks{iFh} = ceCallbackArgs{iFh};
+            end
+        end
+    % Not a cell, then make it one
+    else
+        ceCallbacks = {ceCallbackArgs};
+    end
+end
+
 end
 
 
