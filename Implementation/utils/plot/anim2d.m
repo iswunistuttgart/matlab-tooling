@@ -49,6 +49,10 @@ function [varargout] = anim2d(X, Y, varargin)
 %       'plot' will be used but this way, 'log' or 'stem' can be used to
 %       plot ALL data (line-specific plot functions are not yet supported).
 %
+%   MarkFirst   Switch to mark the first row of the plotted data. This can be
+%       useful to e.g., highlight the initial condition. Defaults to 'off'. Can
+%       be 'on' or 'off'.
+%
 %   Time        Mx1 vector of time values to use. By default, this
 %       function iterates over the first dimension of X and Y. If a time
 %       vector is given, then the row with the value closest to the current
@@ -121,6 +125,8 @@ function [varargout] = anim2d(X, Y, varargin)
 %       same time (for as long as cellfun is "at the same time") allowing better
 %       anonymous function inclusion
 %       * Add support for displaying a title on the axes
+%       * Add support for automatically displaying the initial state with dashed
+%       lines
 %   2016-09-18
 %       * Change order of arguments for StartFcn, StopFcn, UpdateFcn from
 %       (ax,idx,plt) to (ax,plt,idx)
@@ -163,6 +169,10 @@ try
     % Parameter: Fun. Char; Function Handle. Non-empty;
     valFcn_Fun = @(x) validateattributes(x, {'char', 'cell', 'function_handle'}, {'nonempty'}, mfilename, 'Fun');
     addParameter(ip, 'Fun', @plot, valFcn_Fun);
+
+    % Parameter: MarkStart. Char. Matches {'on', 'off', 'yes' 'no'}.
+    valFcn_MarkStart = @(x) any(validatestring(lower(x), {'on', 'yes', 'off', 'no'}, mfilename, 'MarkStart'));
+    addParameter(ip, 'MarkStart', 'off', valFcn_MarkStart);
     
     % Parameter: StartFcn. Charl Function Handle. Non-empty;
     valFcn_StartFcn = @(x) validateattributes(x, {'char', 'cell', 'function_handle'}, {'nonempty'}, mfilename, 'StartFcn');
@@ -177,7 +187,7 @@ try
     addParameter(ip, 'Title', '', valFcn_Title);
     
     % Parameter: UpdateFcn. Char. Function Handle. Non-empty;
-    valFcn_UpdateFcn = @(x) validateattributes(x, {'char', 'function_handle'}, {'nonempty'}, mfilename, 'UpdateFcn');
+    valFcn_UpdateFcn = @(x) validateattributes(x, {'char', 'cell', 'function_handle'}, {'nonempty'}, mfilename, 'UpdateFcn');
     addParameter(ip, 'UpdateFcn', {}, valFcn_UpdateFcn);
 
     % Configuration of input parser
@@ -235,7 +245,8 @@ end
 chEvenX = parseswitcharg(ip.Results.EvenX);
 % Title of the axis
 chTitle = ip.Results.Title;
-
+% Mark start?
+chMarkStart = parseswitcharg(ip.Results.MarkStart);
 % Get a valid axes handle
 haTarget = newplot(haTarget);
 
@@ -247,6 +258,8 @@ stUserData = struct();
 stUserData.DataCount = size(aXData, 3);
 stUserData.EvenX = chEvenX;
 stUserData.Fun = mxFun;
+stUserData.InitialPlot = [];
+stUserData.MarkStart = chMarkStart;
 stUserData.StartFcn = ceStartCallbacks;
 stUserData.StopFcn = ceStopCallbacks;
 stUserData.Time = vTime;
@@ -297,6 +310,7 @@ haTarget.UserData = stUserData;
 tiUpdater = timer(...
     'ExecutionMode', 'fixedDelay' ...
     , 'Period', round(1000/nFps)/1000 ... % Just doing this so we don't get a warning about milliseconds being striped
+    , 'StartDelay', 1 ... % Just so that the StartFcn can actually change the drawing
     , 'StartFcn', @(timer, event) cb_timerstart(haTarget, timer, event) ...
     , 'StopFcn', @(timer, event) cb_timerend(haTarget, timer, event)...
     , 'TimerFcn', @(timer, event) cb_timerupdate(haTarget, timer, event) ...
@@ -312,12 +326,17 @@ haTarget.UserData.Timer = tiUpdater;
 
 
 %% Assign outputs
+% If no return arguments are wanted
+if nargout == 0
+    % Start the timer
+    start(tiUpdater)
+end
+
+% If return arguments are wanted, this function will return the timer so the
+% user can/must start it manually
 if nargout > 0
     varargout{1} = tiUpdater;
 end
-
-% And start the timer
-start(tiUpdater)
 
 
 end
@@ -326,7 +345,7 @@ end
 function cb_timerstart(ax, timer, event)
     try
         % Make the target axes active
-        axes(ax);
+%         axes(ax);
         
         % Get the current axes' user data
         stUserData = ax.UserData;
@@ -369,13 +388,29 @@ function cb_timerstart(ax, timer, event)
             ax.UserData.Title = title(ax, sprintf(ax.UserData.TitleString, 0, 1));
         end
 
-        % Call the user supplied start callback(s)
-        cellfun(@(fh) fh(ax, ax.UserData.Plot, timer.TasksExecuted), ax.UserData.StartFcn, 'UniformOutput', false);
+        % Call the user supplied start callback(s) (we do not rely on cellfun as
+        % we do not know in what order the functions will be executed and the
+        % user might want to have their callbacks executed in a particular
+        % order).
+        % @see http://stackoverflow.com/questions/558478/how-to-execute-multiple-statements-in-a-matlab-anonymous-function#558868
+        for iSF = 1:numel(ax.UserData.StartFcn)
+            ax.UserData.StartFcn{iSF}(ax, ax.Children(1:ax.UserData.DataCount), timer.TasksExecuted);
+        end
+        
+        % Mark the initial plot?
+        if strcmp('on', stUserData.MarkStart)
+            % Copy the plot objects quickly
+            stUserData.InitialPlot = copyobj(ax.Children, ax);
+            % Adjust all 'initial state' objects to be dashed lines
+            set(ax.Children((stUserData.DataCount + 1):end), 'LineStyle', '--');
+        end
+        
+        % Update figure
+        drawnow
     catch me
         stop(timer)
         
-        me = addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:ANIM2D:AnimationStartFailed', 'Start of animation failed.'));
-        throwAsCaller(me);
+        throwAsCaller(addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:ANIM2D:AnimationStartFailed', 'Start of animation failed.')));
     end
     
     % That's it for the start
@@ -384,12 +419,10 @@ end
 
 function cb_timerupdate(ax, timer, event)
     try
-        % Make the target axes active
-        axes(ax);
-        
-        % The axes children (ax.Children) can be accessed now and just need
-        % their XData and YData, respectively, updated
-        for iChild = 1:numel(ax.Children)
+        % Update the XData and YData of each of the children but only over the
+        % data we have (this way we won't be looping of possible start or end
+        % plots of the data)`
+        for iChild = 1:ax.UserData.DataCount
             set(ax.Children(iChild) ...
                 , 'XData', squeeze(ax.UserData.XData(ax.UserData.Frame2Time(timer.TasksExecuted),:,iChild)) ...
                 , 'YData', squeeze(ax.UserData.YData(ax.UserData.Frame2Time(timer.TasksExecuted),:,iChild)) ...
@@ -402,12 +435,16 @@ function cb_timerupdate(ax, timer, event)
         end
         
         % Call the user supplied update callback(s)
-        cellfun(@(fh) fh(ax, ax.UserData.Plot, timer.TasksExecuted), ax.UserData.UpdateFcn, 'UniformOutput', false);
+        for iSF = 1:numel(ax.UserData.UpdateFcn)
+            ax.UserData.UpdateFcn{iSF}(ax, ax.Children(1:ax.UserData.DataCount), timer.TasksExecuted);
+        end
+        
+        % Update figure
+        drawnow
     catch me
         stop(timer)
         
-        me = addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:ANIM2D:AnimationUpdateFailed', 'Update of animation failed at time step %i.', timer.TasksExecuted));
-        throwAsCaller(me);
+        throwAsCaller(addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:ANIM2D:AnimationUpdateFailed', 'Update of animation failed at time step %i.', timer.TasksExecuted)));
     end
 end
 
@@ -415,7 +452,12 @@ end
 function cb_timerend(ax, timer, event)
     try
         % Call the user supplied end/stop/delete callback
-        cellfun(@(fh) fh(ax, ax.UserData.Plot, timer.TasksExecuted), ax.UserData.StopFcn, 'UniformOutput', false);
+        for iSF = 1:numel(ax.UserData.StopFcn)
+            ax.UserData.StopFcn{iSF}(ax, ax.Children(1:ax.UserData.DataCount), timer.TasksExecuted);
+        end
+        
+        % Update figure
+        drawnow
 
         % Let go off our axes
         hold(ax, 'off');
@@ -430,8 +472,7 @@ function cb_timerend(ax, timer, event)
     catch me
         stop(timer)
         
-        me = addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:ANIM2D:AnimationStopFailed', 'End of animation failed.'));
-        throwAsCaller(me);
+        throwAsCaller(addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:ANIM2D:AnimationStopFailed', 'End of animation failed.')));
     end
 end
 
