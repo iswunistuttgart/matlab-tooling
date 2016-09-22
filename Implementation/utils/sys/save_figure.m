@@ -1,14 +1,14 @@
-function saveFigure(Filename, varargin)
-% SAVEFIGURE Saves the figure under the specified filename with variable types
+function save_figure(Filename, varargin)
+% SAVE_FIGURE Saves the figure under the specified filename with variable types
 % 
-%   SAVEFIGURE(FILENAME) saves the current figure under FILENAME. If FILENAME is
-%   only a file name, then it will be relative to the current pwd. FILENAME may
-%   also be an absolute path. However, FILENAME must always end with the actual
-%   file name for the figure to be stored under without the extension such as
-%   'fig' or 'eps'.
+%   SAVE_FIGURE(FILENAME) saves the current figure under FILENAME. If FILENAME
+%   is only a file name, then it will be relative to the current pwd. FILENAME
+%   may also be an absolute path. However, FILENAME must always end with the
+%   actual file name for the figure to be stored under without the extension
+%   such as 'fig' or 'eps'.
 %   
-%   SAVEFIGURE(FILENAME, TYPES) saves the current figure with the specified file
-%   types given as a cell array Currently supported export types are:
+%   SAVE_FIGURE(FILENAME, TYPES) saves the current figure with the specified
+%   file types given as a cell array Currently supported export types are:
 %
 %       emf
 %       eps
@@ -18,16 +18,16 @@ function saveFigure(Filename, varargin)
 %       tikz
 %
 %   The default save type is {'fig'}. Also works with attribute-value key
-%   'Types'
+%   'Types'.
 %
-%   For example, SAVEFIGURE(FILENAME, {'fig', 'eps', 'png'}) saves the current
+%   For example, SAVE_FIGURE(FILENAME, {'fig', 'eps', 'png'}) saves the current
 %   figure as fig, eps, and png.
 %
-%   SAVEFIGURE(FILENAME, 'ParameterName', 'ParameterValue') allows passing
+%   SAVE_FIGURE(FILENAME, 'ParameterName', 'ParameterValue') allows passing
 %   additional supported parameter name-value pairs.
 %
-%   SAVEFIGURE(FIG, ...) stores the given figure instead of the currently active
-%   figure
+%   SAVE_FIGURE(FIG, ...) stores the given figure instead of the currently
+%   active figure.
 %   
 %   Inputs:
 %   
@@ -39,7 +39,7 @@ function saveFigure(Filename, varargin)
 %   TYPES: Cell array of file types to store figure under. Defaults to {'fig'}.
 %
 %   Optional Inputs -- specified as parameter value pairs
-%   InDir       - Ensures that each figure save is stored inside its own
+%   InDir       Ensures that each figure save is stored inside its own
 %               directory depending on the filetype i.e., 'tikz' files will be
 %               saved under 'tikz/FILENAME' whereas 'eps' files will be saved
 %               under 'eps/FILENAME'. The directory level will be the last level
@@ -47,20 +47,20 @@ function saveFigure(Filename, varargin)
 %                   'on', 'yes'     enable storing per file type
 %                   'off', 'no'     disable storing per file type (default)
 %   
-%   EpsPrint    - Pass custom print options to eps print command. Default
+%   EpsPrint    Pass custom print options to eps print command. Default
 %               command configuration is
 %               '-depsc', '-tiff', '-zbuffer', '-r200'
 %               '-dpng', '-loose', '-zbuffer', '-r200'
 %
-%   PdfPrint    - Pass custom print options to pdf print command. Default
+%   PdfPrint    Pass custom print options to pdf print command. Default
 %               command configuration is
 %               '-dpdf', '-painters', '-loose', '-zbuffer'
 %
-%   PngPrint    - Pass custom print options to png print command. Default
+%   PngPrint    Pass custom print options to png print command. Default
 %               command configuration is
 %               '-dpng', '-loose', '-zbuffer', '-r200'
 %   
-%   TikzPrint   - Pass custom print options to tikz print command.
+%   TikzPrint   Pass custom print options to tikz print command.
 %
 %
 %   See also: SAVEAS, PRINT
@@ -70,8 +70,11 @@ function saveFigure(Filename, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-11
+% Date: 2016-09-22
 % Changelog:
+%   2016-09-22
+%       * Rename to 'save_figure' as it shadows with
+%       `toolbox/matlab/graphics/saveFigure.m`
 %   2016-09-11
 %       * Add support for printing to PDF
 %   2016-08-08
@@ -93,7 +96,7 @@ hfSource = [];
 % If there's more than the required argument FILENAME and the first argument is
 % only figures, then shift arguments
 if ~isempty(varargin) && any(isfig(Filename))
-    assert(all(isfig(Filename)), 'PHILIPPTEMPEL:SAVEFIGURE:incorrectHandleType', 'All handles must be figure handles');
+    assert(all(isfig(Filename)), 'PHILIPPTEMPEL:SAVE_FIGURE:incorrectHandleType', 'All handles must be figure handles');
     hfSource = Filename;
     Filename = varargin{1};
     varargin = varargin(2:end);
@@ -234,7 +237,7 @@ for iFig = 1:nFigures
             matlab2tikz('FigureHandle', hfTheSource, 'filename', [chFilepath, '.tikz'], 'figurehandle', hfSource, 'ShowInfo', false, ceTikzConfig{:});
         end
     catch me
-        me = addCause(me, MException('PHILIPPTEMPEL:SAVEFIGURE:errorSaveFile', 'Error saving file [%s]', chFilepath));
+        me = addCause(me, MException('PHILIPPTEMPEL:SAVE_FIGURE:errorSaveFile', 'Error saving file [%s]', chFilepath));
         
         throwAsCaller(me);
     end
