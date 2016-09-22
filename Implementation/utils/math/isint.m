@@ -1,23 +1,25 @@
 function flag = isint(A)
-% ISINT True for arrays of integer type (not the machine integer type).
+% ISINT checks the given value to be of natural numbers
 %
-%   ISINT(A) returns true if A is an array of natural numbers.
+%   ISINT(A) returns true where A is a value of natural numbers.
 %
 %   Inputs:
 %
-%       A   Array to be checked for integer value.
+%       A       Array to be checked for integer value.
 %
 %   Outputs:
 %
-%       FLAG    TRUE if all of array is integers (i.e., natural numbers), FALSE
-%               otherwise.
+%       FLAG    TRUE where A is int and FALSE otherwise.
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-06-14
+% Date: 2016-09-22
 % Changelog:
+%   2016-09-22
+%       * Remove `all` from the checks so that it can be used to identify values
+%       of an array that are int and ones that are not
 %   2016-06-14
 %       * Initial release
 
@@ -25,7 +27,7 @@ function flag = isint(A)
 
 %% Magic, do your thing
 
-flag = all(isnumeric(A(:))) && all(mod(A(:), 1.0) == 0);
+flag = isnumeric(A(:)) & ( 0 == mod(A(:), 1.0) );
 
 
 end
