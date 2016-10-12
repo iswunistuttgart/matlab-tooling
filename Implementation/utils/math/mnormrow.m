@@ -11,7 +11,6 @@ function Mn = mnormrow(M)%#codegen
 %   Outputs:
 %
 %   MN: Matrix with each row's norm being one.
-%
 
 
 

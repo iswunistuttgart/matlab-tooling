@@ -11,7 +11,6 @@ function Mn = mnormcol(M)%#codegen
 %   Outputs:
 %
 %   MN: Matrix with each column's norm being one.
-%
 
 
 
