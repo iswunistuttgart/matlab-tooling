@@ -3,8 +3,8 @@ function startup
 chPath = fileparts(mfilename('fullpath'));
 
 cePaths = {
-    fullfile(chPath, 'Implementation');
-    genpath(fullfile(chPath, 'Implementation', 'utils'));
+    chPath;
+    genpath(fullfile(chPath, 'utils'));
 };
 
 registerPaths(cePaths{:});
