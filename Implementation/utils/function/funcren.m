@@ -15,8 +15,11 @@ function funcren(Old, New, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-25
+% Date: 2016-10-08
 % Changelog:
+%   2016-10-08
+%       * Fix bug when file-extension was given in old filename and new file
+%       content would be without replaced function name in text inside
 %   2016-08-25
 %       * Add option 'Silent' to silent renaming i.e., to not open file
 %       afterwards
@@ -72,11 +75,14 @@ chSilent = in_charToValidArgument(ip.Results.Silent);
 chOld_Filepath = which(chName_Old);
 assert(~isempty(chOld_Filepath), 'PHILIPPTEMPEL:renFunc:InvalidFuncName', 'Could not find function %s anywhere in your path', chName_Old);
 
-[chOld_Path, ~, chOld_Ext] = fileparts(chOld_Filepath);
+% Get the path parts of the old and new file
+[chOld_Path, chOld_Name, chOld_Ext] = fileparts(chOld_Filepath);
+[~, chNew_Name, ~] = fileparts(chName_New);
+% Create path parts for the new file
 chNew_Path = chOld_Path;
-chNew_Name = chName_New;
 chNew_Ext = chOld_Ext;
 
+% Create path of new file
 chNew_Filepath = fullfile(chNew_Path, sprintf('%s%s', chNew_Name, chNew_Ext));
 
 % Try copying the file
@@ -100,7 +106,7 @@ end
 
 % Replace the function name
 ceReplacers = {
-    chName_Old, chName_New;
+    chOld_Name, chNew_Name;
     upper(chName_Old), upper(chName_New);
 };
 % Replace all placeholders with their respective content
