@@ -49,7 +49,7 @@ function [varargout] = anim2d(X, Y, varargin)
 %       'plot' will be used but this way, 'log' or 'stem' can be used to
 %       plot ALL data (line-specific plot functions are not yet supported).
 %
-%   MarkFirst   Switch to mark the first row of the plotted data. This can be
+%   MarkStart   Switch to mark the first row of the plotted data. This can be
 %       useful to e.g., highlight the initial condition. Defaults to 'off'. Can
 %       be 'on' or 'off'.
 %
@@ -115,10 +115,13 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-21
+% Date: 2016-10-14
 % ToDo:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 % Changelog:
+%   2016-10-14
+%       * Fix wrong name/value pair description in help
+%       * Fix error when removing field `Timer` in timer end callback
 %   2016-09-21
 %       * Update 'StartFcn', 'UpdateFcn', and 'StopFcn' to support cell arrays
 %       of function handles. This way, multiple functions can be called at the
@@ -385,7 +388,7 @@ function cb_timerstart(ax, timer, event)
         
         % Set the title, if any title is given
         if ~isempty(ax.UserData.TitleString)
-            ax.UserData.Title = title(ax, sprintf(ax.UserData.TitleString, 0, 1));
+            ax.UserData.Title = title(ax, sprintf(ax.UserData.TitleString, ax.UserData.Time(ax.UserData.Frame2Time(1))));
         end
 
         % Call the user supplied start callback(s) (we do not rely on cellfun as
@@ -465,7 +468,9 @@ function cb_timerend(ax, timer, event)
         % Try deleting the timer and removing it from the workspace
         try
             delete(timer);
-            ax.UserData = rmfield(ax.UserData, 'Timer');
+            if isfield(ax.UserData, 'Timer')
+                ax.UserData = rmfield(ax.UserData, 'Timer');
+            end
         catch me
             warning(me.identifier, me.message);
         end
@@ -515,7 +520,6 @@ if ~isempty(ceCallbackArgs)
 end
 
 end
-
 
 %------------- END OF CODE --------------
 % Please send suggestions for improvement of this file to the original author as
