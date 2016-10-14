@@ -4,7 +4,7 @@ function [] = stopalltimers()
 %   STOPALLTIMERS stops all currently running timers regardless their
 %   visibility. Displays a warning if a timer could not be stopped.
 %
-%   See also: timerfinall stop
+%   See also: timerfindall stop
 
 
 
