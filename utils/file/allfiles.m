@@ -40,8 +40,10 @@ function Files = allfiles(varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-09
+% Date: 2016-10-18
 % Changelog:
+%   2016-10-18
+%       * Change name/value pair 'Extension' from optional to parameter
 %   2016-09-09
 %       * Update logic to work correctly and a bit more efficiently
 %       * Rename parameter 'IncludeSystem' to 'IncludeHidden' to make it more
@@ -57,23 +59,23 @@ function Files = allfiles(varargin)
 %% Define the input parser
 ip = inputParser;
 
-% Require: Marks. Must be a 3xN array
+% Optional: Directory. Char. Non-empty.
 valFcn_Dir = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Dir');
 addOptional(ip, 'Dir', pwd, valFcn_Dir);
 
-% Include system files like '.', or '..'?
+% Parameter: Extension. Char. Non-empty.
 valFcn_Extension = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Extension');
-addParameter(ip, 'Extension', '*', valFcn_Extension);
+addOptional(ip, 'Extension', '*', valFcn_Extension);
 
-% Include system files like '.', or '..'?
+% Paramter: Prefix. Char. Non-empty.
 valFcn_Prefix = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Prefix');
 addParameter(ip, 'Prefix', '', valFcn_Prefix);
 
-% Include system files like '.', or '..'?
+% Parameter: Suffix. Char. Non-empty.
 valFcn_Suffix = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Suffix');
 addParameter(ip, 'Suffix', '', valFcn_Suffix);
 
-% Include system files like '.', or '..'?
+% Parameter: IncludeHidden. Char. Matches {on, yes, off, no}
 valFcn_IncludeHidden = @(x) any(validatestring(lower(x), {'on', 'yes', 'off', 'no'}, mfilename, 'IncludeHidden'));
 addParameter(ip, 'IncludeHidden', 'off', valFcn_IncludeHidden);
 
