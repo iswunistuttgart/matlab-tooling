@@ -16,8 +16,11 @@ function W = quat2ratem(q)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-10
+% Date: 2016-10-19
 % Changelog:
+%   2016-10-19
+%       * Add check for `numeric` and `sym` argument types
+%       * Add support for symbolic variables
 %   2016-05-10
 %       * Add codegen-directive
 %   2016-04-29
@@ -29,9 +32,9 @@ function W = quat2ratem(q)%#codegen
 
 %% Assertion
 % Input must be of type double or symbolic
-% assert(isa(q, 'double'), 'Input must be of type double');
+assert(isa(q, 'numeric') || isa(q, 'sym'), 'PHILIPPTEMPEL:MATLABTOOLING:MATH:QUAT2RATEM:InvalidType', 'Input must be numeric or symbolic');
 % Input must be of size Nx4
-assert(size(q, 2) == 4, 'Number of columns must be qual to 4');
+assert(size(q, 2) == 4, 'PHILIPPTEMPEL:MATLABTOOLING:MATH:QUAT2RATEM:InvalidSize', 'Number of columns must be qual to 4');
 
 
 
@@ -40,8 +43,11 @@ assert(size(q, 2) == 4, 'Number of columns must be qual to 4');
 aQuaternions = q;
 % Number of quaternions
 nQuaternions = size(aQuaternions, 1);
-% Normalize quaternions i.e., each row of the matrix of quaternions
-aQuaternions = transpose(mnormrow(aQuaternions));
+% Normalize quaternions if not symbolic i.e., each row of the matrix of quaternions
+if isa(aQuaternions, 'numeric')
+    aQuaternions = mnormrow(aQuaternions);
+end
+aQuaternions = transpose(aQuaternions);
 
 
 
