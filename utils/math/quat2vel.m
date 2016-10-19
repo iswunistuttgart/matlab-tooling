@@ -4,18 +4,16 @@ function omega = quat2vel(q, q_dot)%#codegen
 %   OMEGA = QUAT2VEL(Q, Qdot) calculates the angular velocity vector OMEGA from
 %   the quaternion position and velocity vectors Q and Qdot, respectively.
 %
-%
 %   Inputs:
 % 
-%   Q: 4x1 vector of quaternion in vector notation with the real entry at the
-%   first index.
+%   Q               1x4 vector of quaternion in vector notation with the real
+%       entry at the first index.
 %
-%   Qdot: 4x1 vector of quaternion velocity.
+%   Qdot            1x4 vector of quaternion velocity.
 % 
 %   Outputs:
 % 
-%   OMEGA: 3x1 angular velocity
-%
+%   OMEGA           3x1 vector of angular velocities.
 
 
 

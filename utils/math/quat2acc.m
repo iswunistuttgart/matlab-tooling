@@ -6,20 +6,18 @@ function alpha = quat2acc(q, q_dot, q_ddot)%#codegen
 %   the quaternion position Q, quaternion velocity Qdot, and quaternion
 %   acceleration Qddot.
 %
-%
 %   Inputs:
 % 
-%   Q: 4x1 vector of quaternion in vector notation with the real entry at the
-%   first index.
+%   Q               1x4 vector of quaternion in vector notation with the real
+%       entry at the first index.
 %
-%   Qdot: 4x1 vector of quaternion velocity.
+%   Qdot            1x4 vector of quaternion velocity.
 %
-%   Qddot: 4x1 vector of quaternion acceleration.
+%   Qddot           1x4 vector of quaternion acceleration.
 % 
 %   Outputs:
 % 
-%   ALPHA: 3x1 angular acceleration
-%
+%   ALPHA           3x1 vector of angular accelerations.
 
 
 
@@ -38,6 +36,7 @@ function alpha = quat2acc(q, q_dot, q_ddot)%#codegen
 
 % alpha = 2*quat2ratem(asrow(q_dot))*ascolumn(q_dot) + 2*quat2ratem(asrow(q))*ascolumn(q_ddot);
 alpha = 2*quat2ratem(asrow(q_dot))*ascolumn(q_ddot);
+
 
 end
 

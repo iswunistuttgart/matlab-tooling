@@ -4,15 +4,13 @@ function W = quat2ratem(q)%#codegen
 %   T = QUAT2RATEM(Q) determines the quaternion rate matrices of size 3x4xN for
 %   each quaternion in Q.
 %
-%   
 %   Inputs:
 %   
-%   Q: Nx4 matrix of quaternions to get rate matrice from.
+%   Q               Nx4 matrix of quaternions to get rate matrice from.
 %
 %   Outputs:
 %
-%   T: 3x4xN matrix of quaternion rate matrix.
-%
+%   T               3x4xN matrix of quaternion rate matrix.
 
 
 
