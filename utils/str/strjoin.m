@@ -1,5 +1,5 @@
 function output = strjoin(input, separator)
-%STRJOIN Concatenate an array into a single string.
+% STRJOIN Concatenate an array into a single string.
 %
 %     S = strjoin(C)
 %     S = strjoin(C, separator)

@@ -1,5 +1,5 @@
-function [RectangularValue, varargout] = sigen_rectangular(CurrentTime, Amplitude, Period, Offset)
-% SIGEN_RECTANGULAR generates a rectangular signal
+function [RectangularValue, varargout] = siggen_rectangular(CurrentTime, Amplitude, Period, Offset)
+% SIGGEN_RECTANGULAR generates a rectangular signal
 %
 %   SIG = SIGEN_RECTANGULAR() generates a rectangular signal over time
 %   t = [0, 1] with amplitude 1 and rising edge at t = 0.5.

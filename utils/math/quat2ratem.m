@@ -32,9 +32,9 @@ function W = quat2ratem(q)%#codegen
 
 %% Assertion
 % Input must be of type double or symbolic
-assert(isa(q, 'numeric') || isa(q, 'sym'), 'PHILIPPTEMPEL:MATLABTOOLING:MATH:QUAT2RATEM:InvalidType', 'Input must be numeric or symbolic');
+assert(isa(q, 'numeric') || isa(q, 'sym'), 'PHILIPPTEMPEL:MATLAB_TOOLING:MATH:QUAT2RATEM:InvalidType', 'Input must be numeric or symbolic');
 % Input must be of size Nx4
-assert(size(q, 2) == 4, 'PHILIPPTEMPEL:MATLABTOOLING:MATH:QUAT2RATEM:InvalidSize', 'Number of columns must be qual to 4');
+assert(size(q, 2) == 4, 'PHILIPPTEMPEL:MATLAB_TOOLING:MATH:QUAT2RATEM:InvalidSize', 'Number of columns must be qual to 4');
 
 
 

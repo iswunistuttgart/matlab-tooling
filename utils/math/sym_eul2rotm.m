@@ -1,7 +1,5 @@
-function R = sym_eul2rotm( eul, varargin )
-%SYM_EUL2ROTM Convert symbolic Euler angles to rotation matrix
-
-%#codegen
+function R = sym_eul2rotm(eul, varargin)%#codegen
+% SYM_EUL2ROTM Convert symbolic Euler angles to rotation matrix
 
 seq = robotics.internal.validation.validateEulerSequence(varargin{:});
 

@@ -106,7 +106,6 @@ chIncludeHidden = parseswitcharg(ip.Results.IncludeHidden);
 
 
 
-
 %% Magic, collect the files
 chPath = sprintf('%s%s%s*%s.%s', chDir, filesep, chPrefix, chSuffix, chExtension);
 
@@ -124,7 +123,7 @@ if ~isempty(stFiles)
     % Do we need to filter the system files like '.' and '..'?
     if strcmpi('off', chIncludeHidden)
         % Remove all directories from the found items
-        stFiles(find(1 == cell2mat(regexp({stFiles(:).name}, '^\..*')))) = [];
+        stFiles(1 == cell2mat(regexp({stFiles(:).name}, '^\..*'))) = [];
     end
 end
 

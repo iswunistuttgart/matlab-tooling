@@ -1,5 +1,6 @@
 function varargout = datestr8601(DVN,varargin)
-% Convert a Date Vector or Serial Date Number to an ISO 8601 formatted Date String (timestamp).
+% DATESTR8601 Convert a Date Vector or Serial Date Number to an ISO 8601
+% formatted Date String (timestamp).
 %
 % (c) 2015 Stephen Cobeldick
 %

@@ -1,5 +1,6 @@
 function monotonic = ismonotonic(x, strict, direction, dim)
-% ISMONOTONIC(X) returns a boolean value indicating whether or not a vector is monotonic.  
+% ISMONOTONIC returns a boolean value indicating whether or not a vector is monotonic.  
+% 
 % By default, ISMONOTONIC returns true for non-strictly monotonic vectors,
 % and both monotonic increasing and monotonic decreasing vectors. For
 % matrices and N-D arrays, ISMONOTONIC returns a value for each column in
