@@ -116,7 +116,7 @@ function [varargout] = anim2d(X, Y, varargin)
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
 % Date: 2016-10-14
-% ToDo:
+% TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 % Changelog:
 %   2016-10-14
