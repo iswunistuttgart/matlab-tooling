@@ -31,7 +31,7 @@ function [R] = quat2rotm(q)
 %% Do your code magic here
 
 % Normalize and transpose the quaternions
-q = tramspose(mnormrow(q));
+q = transpose(mnormrow(q));
 
 % Reshape the quaternions in the depth dimension
 q2 = reshape(q, [4 1 size(q, 2)]);
