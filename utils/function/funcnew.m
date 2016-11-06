@@ -38,23 +38,26 @@ function funcnew(Name, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-02
+% Date: 2016-11-06
 % Changelog:
+%   2016-11-06
+%       * Fix that square brackets were placed around a single output argument
+%       where it actually is not needed
 %   2016-09-02
 %       * Fix bug in description parsing when only {'varargin'} or {'varargout'}
-%       was given for 'ArgIn' or 'ArgOut', respectively.
-%       * Tweak the checking for file existance and overwrite flag.
+%       was given for 'ArgIn' or 'ArgOut', respectively
+%       * Tweak checking for file existance and overwrite flag
 %   2016-09-01
 %       * Prevent function from overwriting already existing functions unless
-%       overwriting is explicitely enforced.
-%       * Fix bug in determination of longest in or out argument name causing a
-%       warning to be emitted by MATLAB.
+%       overwriting is explicitely enforced
+%       * Fix bug in determination of longest ON or OUT argument name causing a
+%       warning to be emitted by MATLAB
 %   2016-08-25
 %       * Add support for input and output arguments appearing in the help part
-%       of the script.
+%       of the script
 %       * Change option 'Open' to 'Silent' to have argument make more sense (A
 %       toggle should always be FALSE by default and only TRUE by request.
-%       Previously, that was not the case).
+%       Previously, that was not the case)
 %    2016-08-04
 %       * Change default value of option 'Open' to 'on'
 %   2016-08-02
@@ -192,6 +195,10 @@ if ~isempty(ceArgOut)
 end
 % Join the output arguments
 chArgOut = strjoin(ceArgOut, ', ');
+% Wrap output argumets in square brackets if there are more than one
+if numel(ceArgOut) > 1
+    chArgOut = sprintf('[%s]', chArgOut);
+end
 
 % Description string
 chDescription = in_createDescription(chDescription, ceArgIn, ceArgOut);

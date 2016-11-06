@@ -63,11 +63,15 @@ function varargout = plot_markers(varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-06
+% Date: 2016-11-01
 % TODO:
 %   * If a legend can be found in the plot, we should extract the lines' legend
 %   entries from these values... somehow
 % Changelog:
+%   2016-11-01
+%       * Update input argument checking to be more robust
+%       * Allow function to be called with either ORDER or SPACING as second
+%       argument
 %   2016-09-06
 %       * Update types of arguments from Parameter to Optional
 %   2016-08-02
@@ -88,20 +92,34 @@ function varargout = plot_markers(varargin)
 
 
 
+%% Pre-process arguments
+% Allow the second argument to be both the SPACING and ORDER argument
+if nargin > 1
+    % If the second argument matches any valid spacing option, we will move it
+    % to the third position i.e., shift everything right by one
+    if any(strcmpi(varargin{2}, {'x', 'curve', 'logx'}))
+        varargin = [varargin{1}, 'o|+|*|x', varargin(2:end)];
+    end
+end
+
+
+
 %% Define the input parser
 ip = inputParser;
 
 % Let user decide on the plot style
 % Plot style can be chosen anything from the list below
-valFcn_Count = @(x) validateattributes(x, {'numeric'}, {'row', '>=', 1}, mfilename, 'Count');
+valFcn_Count = @(x) validateattributes(x, {'numeric'}, {'row', '>=', 1}, mfilename, 'Count', 1);
 addOptional(ip, 'Count', '25', valFcn_Count);
 
 % Optional 2: Markers to set or order of markers
-valFcn_Order = @(x) assert(all(ismember(strsplit(x, '|'), {'o', '+', '*', '.', 'x', 's', 'd', '^', 'v', '>', '<', 'p', 'h'})));
+% valFcn_Order = @(x) assert(all(ismember(strsplit(x, '|'), {'o', '+', '*', '.', 'x', 's', 'd', '^', 'v', '>', '<', 'p', 'h'})));
+valFcn_Order = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Order', 2);
 addOptional(ip, 'Order', 'o|+|*|x', valFcn_Order);
 
 % Optional 3: Spacing between the markers
-valFcn_Spacing = @(x) assert(any(validatestring(x, {'x', 'curve', 'logx'}, mfilename, 'Spacing')));
+% valFcn_Spacing = @(x) assert(any(validatestring(lower(x), {'x', 'curve', 'logx'}, mfilename, 'Spacing', 3)));
+valFcn_Spacing = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Spacing', 3);
 addOptional(ip, 'Spacing', 'x', valFcn_Spacing);
 
 % Configuration of input parser
@@ -130,10 +148,15 @@ hold(haTarget, 'on');
 vMarkersCount = ip.Results.Count;
 % The default order style
 chMarkerOrder = ip.Results.Order;
-assert(length(chMarkerOrder) == 1 | any(strfind(chMarkerOrder, '|')), 'Invalid format for marker order given. Multiple markers must be separated by a |');
+% Assert the given marker order
+assert(length(chMarkerOrder) == 1 | any(strfind(chMarkerOrder, '|')), 'PHILIPPTEMPEL:MATLAB_TOOLING:PLOT_MARKERS:InvalidOrderSeparator', 'Invalid format for marker order given. Multiple markers must be separated by a |');
+assert(all(ismember(strsplit(chMarkerOrder, '|'), {'o', '+', '*', '.', 'x', 's', 'd', '^', 'v', '>', '<', 'p', 'h'})), 'PHILIPPTEMPEL:MATLAB_TOOLING:PLOT_MARKERS:InvalidOrderType', 'Invalid order type given.');
+% Get the marker order
 ceMarkerOrder = strsplit(chMarkerOrder, '|');
 % Get the spacing as reqeusted by the user
 chSpacing = lower(ip.Results.Spacing);
+% Assert spacing
+validatestring(chSpacing, {'x', 'curve', 'logx'}, mfilename, 'Spacing', 3);
 
 % Currently, we only allow adding markers to the following plot types
 ceSupportedPlotTypesSelector = {'Type', 'line'};
