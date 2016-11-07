@@ -177,7 +177,7 @@ end
 nFigures = numel(hfSource);
 
 % Check the filename is a valid file i.e., starts with a directory
-chFileTarget = GetFullPath(chFileTarget);
+chFileTarget = fullpath(chFileTarget);
 [chPath, chFilename, ~] = fileparts(chFileTarget);
 
 % Loop over all figures

@@ -10,14 +10,24 @@ function [Style] = isw_ppt_style(Layout, varargin)
 %       STYLE.Format = 'jpeg';
 %       HGEXPORT(gcf, FILENAME, STYLE);
 %
+%   STYLE = ISW_PPT_STYLE(LAYOUT, 'Name', 'Value', ...) allows setting optional
+%   inputs using name/value pairs.
+%
 %   Inputs:
 %
-%   LAYOUT      ame of the layout that shall be used for creating the struct
+%   LAYOUT      Name of the layout that shall be used for creating the struct.
+%       Possible values are:
+%           'Inhalt'            Creates a figure over the full page width.
+%           'Zwei Inhalte'      Creates a figure over the half page width.
+%
+%   Optional Inputs -- specified as parameter value pairs
+%
+%   Format      Page format of the presentation which is either '4:3' or '16:9'.
 %
 %   Outputs:
 %
 %   STYLE       Structure of figure export configuration that can be used for
-%   HGEXPORT
+%       HGEXPORT.
 %
 %   See also: HGEXPORT
 
@@ -25,8 +35,12 @@ function [Style] = isw_ppt_style(Layout, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-10-12
+% Date: 2016-11-07
 % Changelog:
+%   2016-11-07
+%       * Update help section to include info on which layouts are available and
+%       that there is a Format option, too
+%       * Add semi-colon on L:121 to prevent output
 %   2016-10-12
 %       * Initial release
 
@@ -104,7 +118,7 @@ stStyle = struct('Version', '1' ...
 
 %% Off we go
 % Create a string for the switch so we do not have a nested switch
-chSwitch = sprintf('%s|%s', chLayout, chFormat)
+chSwitch = sprintf('%s|%s', chLayout, chFormat);
 
 % Switch according to layout and format
 switch chSwitch
@@ -123,6 +137,7 @@ end
 %% Assign outputs
 % First output: Style structure
 Style = stStyle;
+
 
 end
 
