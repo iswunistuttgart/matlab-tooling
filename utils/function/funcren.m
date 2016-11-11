@@ -15,8 +15,11 @@ function funcren(Old, New, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-10-08
+% Date: 2016-11-11
 % Changelog:
+%   2016-11-11
+%       * Adjust message identifiers of MExceptions
+%       * Replace `in_charToValidArgument` with `parseswitcharg`
 %   2016-10-08
 %       * Fix bug when file-extension was given in old filename and new file
 %       content would be without replaced function name in text inside
@@ -65,7 +68,7 @@ chName_Old = ip.Results.Old;
 % New function name
 chName_New = ip.Results.New;
 % Silent creation?
-chSilent = in_charToValidArgument(ip.Results.Silent);
+chSilent = parseswitcharg(ip.Results.Silent);
 
 
 
@@ -99,7 +102,7 @@ try
     fclose(fidSource);
 catch me
     if strcmp(me.identifier, 'MATLAB:FileIO:InvalidFid')
-        throw(MException('PHILIPPTEMPEL:NewFunction:InvalidFid', 'Could not open source file for reading.'));
+        throw(MException('PHILIPPTEMPEL:MATLAB_TOOLING:FUNCREN:InvalidFid', 'Could not open source file for reading.'));
     end
     throwAsCaller(MException(me.identifier, me.message));
 end
@@ -123,7 +126,7 @@ try
     assert(fcStatus == 0);
 catch me
     if strcmp(me.identifier, 'MATLAB:FileIO:InvalidFid')
-        throw(MException('PHILIPPTEMPEL:NewFunction:InvalidFid', 'Could not open target file for writing.'));
+        throw(MException('PHILIPPTEMPEL:MATLAB_TOOLING:FUNCREN:InvalidFid', 'Could not open target file for writing.'));
     end
     throwAsCaller(MException(me.identifier, me.message));
 end
@@ -137,21 +140,6 @@ if strcmp('off', chSilent)
     open(chNew_Filepath);
 end
 
-
-end
-
-
-
-function out = in_charToValidArgument(in)
-
-switch lower(in)
-    case {'on', 'yes', 'please'}
-        out = 'on';
-    case {'off', 'no', 'never'}
-        out = 'off';
-    otherwise
-        out = 'off';
-end
 
 end
 
