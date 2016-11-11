@@ -38,8 +38,12 @@ function funcnew(Name, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-11-06
+% Date: 2016-11-11
 % Changelog:
+%   2016-11-11
+%       * Update handling of no return arguments causing an empty equal sign to
+%       appear and break code highlighting
+%       * Fix message identifiers used in MException
 %   2016-11-06
 %       * Fix that square brackets were placed around a single output argument
 %       where it actually is not needed
@@ -151,7 +155,7 @@ chFunction_FullFile = fullfile(chFunction_Path, sprintf('%s%s', chFunction_Name 
 
 %% Assert variables
 % Assert we have a valid function template filepath
-assert(2 == exist(chTemplateFilepath, 'file'), 'PHILIPPTEMPEL:FUNCNEW:functionTemplateNotFound', 'Function template cannot be found at %s.', chTemplateFilepath);
+assert(2 == exist(chTemplateFilepath, 'file'), 'PHILIPPTEMPEL:MATLAB_TOOLING:FUNCNEW:functionTemplateNotFound', 'Function template cannot be found at %s.', chTemplateFilepath);
 % Assert the target file does not exist yet
 assert(2 == exist(chFunction_FullFile, 'file') && strcmp(chOverwrite, 'on') || 0 == exist(chFunction_FullFile, 'file'), 'PHILIPPTEMPEL:FUNCNEW:functionExists', 'Function already exists. Will not overwrite unless forced to do so.');
 
@@ -165,7 +169,7 @@ try
     fclose(fidSource);
 catch me
     if strcmp(me.identifier, 'MATLAB:FileIO:InvalidFid')
-        throwAsCaller(MException('PHILIPPTEMPEL:FUNCNEW:invalidTemplateFid', 'Could not open source file for reading.'));
+        throwAsCaller(MException('PHILIPPTEMPEL:MATLAB_TOOLING:FUNCNEW:invalidTemplateFid', 'Could not open source file for reading.'));
     end
     
     throwAsCaller(MException(me.identifier, me.message));
@@ -196,8 +200,12 @@ end
 % Join the output arguments
 chArgOut = strjoin(ceArgOut, ', ');
 % Wrap output argumets in square brackets if there are more than one
-if numel(ceArgOut) > 1
-    chArgOut = sprintf('[%s]', chArgOut);
+if numel(ceArgOut) > 0
+    if numel(ceArgOut) > 1
+        chArgOut = sprintf('[%s]', chArgOut);
+    end
+    
+    chArgOut = sprintf('%s = ', chArgOut);
 end
 
 % Description string
@@ -230,7 +238,7 @@ try
     assert(fcStatus == 0);
 catch me
     if strcmp(me.identifier, 'MATLAB:FileIO:InvalidFid')
-        throwAsCaller(MException('PHILIPPTEMPEL:FUNCNEW:invalidTargetFid', 'Could not open target file for writing.'));
+        throwAsCaller(MException('PHILIPPTEMPEL:MATLAB_TOOLING:FUNCNEW:invalidTargetFid', 'Could not open target file for writing.'));
     end
     
     throwAsCaller(MException(me.identifier, me.message));
