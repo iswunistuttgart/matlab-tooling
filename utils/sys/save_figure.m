@@ -70,8 +70,11 @@ function save_figure(Filename, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-22
+% Date: 2016-11-11
 % Changelog:
+%   2016-11-11
+%       * Adjust message identifiers of MExceptions
+%       * Replace `in_charToValidArgument` with `parseswitcharg`
 %   2016-09-22
 %       * Rename to 'save_figure' as it shadows with
 %       `toolbox/matlab/graphics/saveFigure.m`
@@ -155,7 +158,7 @@ chFileTarget = ip.Results.Filename;
 % Types
 ceOutputTypes = ip.Results.Types;
 % Create dirs for each type
-chInDir = inCharToValidArgument(ip.Results.InDir);
+chInDir = parseswitcharg(ip.Results.InDir);
 % Custom eps print options
 ceEpsConfig = ip.Results.EpsPrint;
 % Custom tikz print options
@@ -237,7 +240,7 @@ for iFig = 1:nFigures
             matlab2tikz('FigureHandle', hfTheSource, 'filename', [chFilepath, '.tikz'], 'figurehandle', hfSource, 'ShowInfo', false, ceTikzConfig{:});
         end
     catch me
-        me = addCause(me, MException('PHILIPPTEMPEL:SAVE_FIGURE:errorSaveFile', 'Error saving file [%s]', chFilepath));
+        me = addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:SAVE_FIGURE:errorSaveFile', 'Error saving file [%s]', chFilepath));
         
         throwAsCaller(me);
     end
@@ -254,19 +257,6 @@ end
         chTargetPath = fullfile(chTargetPath, chFilename);
     end
 
-
-end
-
-function out = inCharToValidArgument(in)
-
-switch lower(in)
-    case {'on', 'yes', 'please'}
-        out = 'on';
-    case {'off', 'no', 'never'}
-        out = 'off';
-    otherwise
-        out = 'off';
-end
 
 end
 
