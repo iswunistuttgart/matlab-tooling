@@ -38,8 +38,12 @@ function funcnew(Name, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-11-11
+% Date: 2016-11-13
 % Changelog:
+%   2016-11-13
+%       * Minor tweaking of determination of column to start argument
+%       description in. Now is at least at column 21 if no longer argument names
+%       are found
 %   2016-11-11
 %       * Update handling of no return arguments causing an empty equal sign to
 %       appear and break code highlighting
@@ -270,21 +274,25 @@ end
         ceArgIn_List = cell(numel(ceArgIn), min(numel(ceArgIn), 1));
         ceArgOut_List = cell(numel(ceArgOut), min(numel(ceArgOut), 1));
         
-        % Determine longest argument name
+        % Determine longest argument name for input
         nCharsLongestArg_In = max(cellfun(@(x) length(x), ceArgIn));
         if isempty(nCharsLongestArg_In)
             nCharsLongestArg_In = 0;
         end
+        % and output
         nCharsLongestArg_Out = max(cellfun(@(x) length(x), ceArgOut));
         if isempty(nCharsLongestArg_Out)
             nCharsLongestArg_Out = 0;
         end
-        nCharsLongestArg = max(nCharsLongestArg_In, nCharsLongestArg_Out) + 4;
+        
+        % Determine the longer argument names: input or output?
+        nCharsLongestArg = max([nCharsLongestArg_In, nCharsLongestArg_Out]) + 4;
+        % Get the index of the next column (dividable by 4) but be at least at
+        % column 21
+        nNextColumn = max([21, 4*ceil((nCharsLongestArg + 1)/4)]);
         
         % First, create a lits of in arguments
         if ~isempty(ceArgIn)
-            % Get the index of the next column (dividable by 4)
-            nNextColumn = 4*ceil((nCharsLongestArg + 1)/4);
             % Prepend comment char and whitespace before uppercased argument
             % name, append whitespace up to filling column and a placeholder at
             % the end
@@ -293,8 +301,6 @@ end
         
         % Second, create a lits of out arguments
         if ~isempty(ceArgOut)
-            % Get the index of the next column (dividable by 4)
-            nNextColumn = 4*ceil((nCharsLongestArg + 1)/4);
             % Prepend comment char and whitespace before uppercased argument
             % name, append whitespace up to filling column and a placeholder at
             % the end
