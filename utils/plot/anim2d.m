@@ -115,10 +115,16 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-10-14
+% Date: 2016-11-13
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 % Changelog:
+%   2016-11-13
+%       * Remove need for X and Y to be finite. Now, `animd2d` supports plotting
+%       of differently sized plots e.g., two lines with 10 plot points and one
+%       line with length of 14. Just set the values that should not be plotted
+%       to `NaN` and the plotting command will handle the rest (the plot
+%       commands by default do not plot values of NaN)
 %   2016-10-14
 %       * Fix wrong name/value pair description in help
 %       * Fix error when removing field `Timer` in timer end callback
@@ -148,12 +154,12 @@ varargin = [{X}, {Y}, varargin];
 try
     % Required: X. Numeric. Matrix; Non-empty; Columns matches columns of
     % Y;
-    valFcn_X = @(x) validateattributes(x, {'numeric'}, {'3d', 'nonempty', 'finite', 'size', size(Y)}, mfilename, 'X');
+    valFcn_X = @(x) validateattributes(x, {'numeric'}, {'3d', 'nonempty', 'size', size(Y)}, mfilename, 'X');
     addRequired(ip, 'X', valFcn_X);
 
     % Required: Y. Numeric. Matrix; Non-empty; Columns matches columns of
     % X;
-    valFcn_Y = @(x) validateattributes(x, {'numeric'}, {'3d', 'nonempty', 'finite', 'size', size(X)}, mfilename, 'X');
+    valFcn_Y = @(x) validateattributes(x, {'numeric'}, {'3d', 'nonempty', 'size', size(X)}, mfilename, 'X');
     addRequired(ip, 'Y', valFcn_Y);
 
     % Optional: Time. Numeric. Vector; Non-empty; Increasing; Numel matches
