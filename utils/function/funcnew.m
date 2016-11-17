@@ -38,8 +38,13 @@ function funcnew(Name, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-11-13
+% Date: 2016-11-17
 % Changelog:
+%   2016-11-17
+%       * Add validation of input and output argument formats such that these
+%       will be valid MATLAB identifiers (make use of matlab.lang.makeValidName)
+%       * Remove inline function in_charToValidArgument and replace with
+%       parseswitcharg
 %   2016-11-13
 %       * Minor tweaking of determination of column to start argument
 %       description in. Now is at least at column 21 if no longer argument names
@@ -143,9 +148,9 @@ chDescription = ip.Results.Description;
 % Author name
 chAuthor = ip.Results.Author;
 % Silent creation?
-chSilent = in_charToValidArgument(ip.Results.Silent);
+chSilent = parseswitcharg(ip.Results.Silent);
 % Overwrite existing?
-chOverwrite = in_charToValidArgument(ip.Results.Overwrite);
+chOverwrite = parseswitcharg(ip.Results.Overwrite);
 
 %%% Local variables
 % Path to function template file
@@ -189,8 +194,7 @@ if ~isempty(ceArgIn)
     end
 end
 % Join the input arguments
-chArgIn = strjoin(ceArgIn, ', ');
-% ceFunction_Contents = cellfun(@(x) iif(strcmp(x, '{{ARGIN}}'), chArgIn, true, x), 'Uniform', false);
+chArgsIn = strjoin(cellfun(@(chArg) matlab.lang.makeValidName(chArg), ceArgIn, 'UniformOutput', false), ', ');
 
 % String of output arguments
 if ~isempty(ceArgOut)
@@ -202,26 +206,25 @@ if ~isempty(ceArgOut)
     end
 end
 % Join the output arguments
-chArgOut = strjoin(ceArgOut, ', ');
+chArgsOut = strjoin(cellfun(@(chArg) matlab.lang.makeValidName(chArg), ceArgOut, 'UniformOutput', false), ', ');
 % Wrap output argumets in square brackets if there are more than one
 if numel(ceArgOut) > 0
     if numel(ceArgOut) > 1
-        chArgOut = sprintf('[%s]', chArgOut);
+        chArgsOut = sprintf('[%s]', chArgsOut);
     end
     
-    chArgOut = sprintf('%s = ', chArgOut);
+    chArgsOut = sprintf('%s = ', chArgsOut);
 end
 
 % Description string
 chDescription = in_createDescription(chDescription, ceArgIn, ceArgOut);
-% chDescription = sprintf('%s %s', upper(chFunction_Name), chDescription);
 
 % Define the set of placeholders to replace here
 ceReplacers = {...
     'FUNCTION', chFunction_Name; ...
     'FUNCTION_UPPER', upper(chFunction_Name); ...
-    'ARGIN', chArgIn; ...
-    'ARGOUT', chArgOut; ...
+    'ARGIN', chArgsIn; ...
+    'ARGOUT', chArgsOut; ...
     'DESCRIPTION', chDescription; ...
     'AUTHOR', chAuthor; ...
     'DATE', chDate;
@@ -321,21 +324,6 @@ end
         end
     end
 
-
-end
-
-
-
-function out = in_charToValidArgument(in)
-
-switch lower(in)
-    case {'on', 'yes', 'please'}
-        out = 'on';
-    case {'off', 'no', 'never'}
-        out = 'off';
-    otherwise
-        out = 'off';
-end
 
 end
 
