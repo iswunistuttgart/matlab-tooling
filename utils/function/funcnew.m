@@ -194,7 +194,7 @@ if ~isempty(ceArgIn)
     end
 end
 % Join the input arguments
-chArgsIn = strjoin(cellfun(@(chArg) matlab.lang.makeValidName(chArg), ceArgIn), ', ');
+chArgsIn = strjoin(cellfun(@(chArg) matlab.lang.makeValidName(chArg), ceArgIn, 'UniformOutput', false), ', ');
 
 % String of output arguments
 if ~isempty(ceArgOut)
@@ -206,7 +206,7 @@ if ~isempty(ceArgOut)
     end
 end
 % Join the output arguments
-chArgsOut = strjoin(cellfun(@(chArg) matlab.lang.makeValidName(chArg), ceArgOut), ', ');
+chArgsOut = strjoin(cellfun(@(chArg) matlab.lang.makeValidName(chArg), ceArgOut, 'UniformOutput', false), ', ');
 % Wrap output argumets in square brackets if there are more than one
 if numel(ceArgOut) > 0
     if numel(ceArgOut) > 1
