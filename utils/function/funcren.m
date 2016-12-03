@@ -15,8 +15,13 @@ function funcren(Old, New, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-11-11
+% Date: 2016-12-03
 % Changelog:
+%   2016-12-03
+%       * Fix bug that would prevent function name to be replaced if the full
+%       filename was given i.e., `funcren('oldname.m', 'newname.,')` would not
+%       have renamed any occurence of `OLDNAME` in the script but only of
+%       `OLDNAME.M`
 %   2016-11-11
 %       * Adjust message identifiers of MExceptions
 %       * Replace `in_charToValidArgument` with `parseswitcharg`
@@ -110,7 +115,7 @@ end
 % Replace the function name
 ceReplacers = {
     chOld_Name, chNew_Name;
-    upper(chName_Old), upper(chName_New);
+    upper(chOld_Name), upper(chNew_Name);
 };
 % Replace all placeholders with their respective content
 for iReplace = 1:size(ceReplacers, 1)
