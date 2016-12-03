@@ -9,4 +9,6 @@ cePaths = {
 
 registerPaths(cePaths{:});
 
+setrng()
+
 end
