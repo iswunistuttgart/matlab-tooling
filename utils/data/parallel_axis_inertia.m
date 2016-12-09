@@ -25,8 +25,10 @@ function [Inertia_O] = parallel_axis_inertia(Inertia_C, Mass, Offset)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-12
+% Date: 2016-12-09
 % Changelog:
+%   2016-12-09
+%       * Propagate rename of function `ascolumn` to `ascol`
 %   2016-09-12
 %       * Modify assertion because inertia matrix can be negative, too
 %       * Add assertion for finite values of all values
@@ -55,7 +57,7 @@ assert(all(~isinf(Offset)), 'PHILIPPTEMPEL:MATLAB_TOOLING:PARALLEL_AXIS_INERTIA:
 
 % Parallel axis theorem: $I_{O} = I_{C} + m \cdot \tilde{a}^{\intercal}$
 Inertia_O = Inertia_C + Mass.*transpose(vec2skew(asrow(Offset)))*vec2skew(asrow(Offset));
-% Inertia_O = Inertia_C + Mass.*(asrow(Offset)*ascolumn(Offset)*eye(3) - ascolumn(Offset)*asrow(Offset));
+% Inertia_O = Inertia_C + Mass.*(asrow(Offset)*ascol(Offset)*eye(3) - ascol(Offset)*asrow(Offset));
 
 
 end

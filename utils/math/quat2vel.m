@@ -19,8 +19,10 @@ function omega = quat2vel(q, q_dot)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-10
+% Date: 2016-12-09
 % Changelog:
+%   2016-12-09
+%       * Propagate rename of function `ascolumn` to `ascol`
 %   2016-05-10
 %       * Add help doc
 %   2016-04-08
@@ -29,7 +31,7 @@ function omega = quat2vel(q, q_dot)%#codegen
 
 
 %% Magic
-omega = 2*quat2ratem(asrow(q))*ascolumn(q_dot);
+omega = 2*quat2ratem(asrow(q))*ascol(q_dot);
 
 
 end

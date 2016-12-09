@@ -43,8 +43,10 @@ function [varargout] = ruler(Axis, Position, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-07
+% Date: 2016-12-09
 % Changelog:
+%   2016-12-09
+%       * Propagate rename of function `ascolumn` to `ascol`
 %   2016-09-07
 %       * Fix bug with cycliccell not being created correctly
 %   2016-08-02
@@ -93,7 +95,7 @@ hold(haTarget, 'on');
 % Axis to plot as ruler
 chAxis = ip.Results.Axis;
 % Positions to plot
-vPositions = ascolumn(ip.Results.Position);
+vPositions = ascol(ip.Results.Position);
 % Holds the rulers' plot handles
 hpRulers = gobjects(numel(vPositions), 1);
 % Plot style for the rulers

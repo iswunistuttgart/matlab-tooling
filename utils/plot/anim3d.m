@@ -82,8 +82,10 @@ function [varargout] = anim3d(X, Y, Z, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-18
+% Date: 2016-12-09
 % Changelog:
+%   2016-12-09
+%       * Propagate rename of function `ascolumn` to `ascol`
 %   2016-09-18
 %       * Change order of arguments for StartFcn, StopFcn, UpdateFcn from
 %       (ax,idx,plt) to (ax,plt,idx)
@@ -170,7 +172,7 @@ aZData = ip.Results.Z;
 vTime = ip.Results.Time;
 % If time is empty, we will just loop over the samples of X and Y
 if isempty(vTime)
-    vTime = ascolumn(1:size(aXData,1));
+    vTime = ascol(1:size(aXData,1));
     loLoopItems = true;
 else
     loLoopItems = false;
