@@ -23,8 +23,10 @@ function alpha = quat2acc(q, q_dot, q_ddot)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-10
+% Date: 2016-12-09
 % Changelog:
+%   2016-12-09
+%       * Propagate rename of function `ascolumn` to `ascol`
 %   2016-05-10
 %       * Add help doc
 %   2016-04-08
@@ -34,8 +36,8 @@ function alpha = quat2acc(q, q_dot, q_ddot)%#codegen
 
 %% Calculation
 
-% alpha = 2*quat2ratem(asrow(q_dot))*ascolumn(q_dot) + 2*quat2ratem(asrow(q))*ascolumn(q_ddot);
-alpha = 2*quat2ratem(asrow(q_dot))*ascolumn(q_ddot);
+% alpha = 2*quat2ratem(asrow(q_dot))*ascol(q_dot) + 2*quat2ratem(asrow(q))*ascol(q_ddot);
+alpha = 2*quat2ratem(asrow(q_dot))*ascol(q_ddot);
 
 
 end

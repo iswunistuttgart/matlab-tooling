@@ -38,8 +38,11 @@ function funcnew(Name, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-11-17
+% Date: 2016-12-03
 % Changelog:
+%   2016-12-03
+%       * Fix incorrect determination of the next major column depending on the
+%       length of the input arguments and dividable by 4
 %   2016-11-17
 %       * Add validation of input and output argument formats such that these
 %       will be valid MATLAB identifiers (make use of matlab.lang.makeValidName)
@@ -289,10 +292,10 @@ end
         end
         
         % Determine the longer argument names: input or output?
-        nCharsLongestArg = max([nCharsLongestArg_In, nCharsLongestArg_Out]) + 4;
+        nCharsLongestArg = max([nCharsLongestArg_In, nCharsLongestArg_Out]);
         % Get the index of the next column (dividable by 4) but be at least at
         % column 21
-        nNextColumn = max([21, 4*ceil((nCharsLongestArg + 1)/4)]);
+        nNextColumn = max([21, 4*ceil((nCharsLongestArg + 1)/4) + 1]);
         
         % First, create a lits of in arguments
         if ~isempty(ceArgIn)
