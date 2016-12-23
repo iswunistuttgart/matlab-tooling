@@ -23,6 +23,12 @@ function flag = isnatural(A)
 
 
 
+%% Assert arguments
+narginchk(1, 1);
+nargoutchk(0, 1);
+
+
+
 %% Magic, do your thing
 
 flag = all(isint(A(:))) && all(A(:)) > 0;

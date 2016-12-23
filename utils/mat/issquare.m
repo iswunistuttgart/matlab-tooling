@@ -23,8 +23,10 @@ function flag = issquare(A, n)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-01
+% Date: 2016-12-23
 % Changelog:
+%   2016-12-23
+%       * Add narginchk and nargoutck
 %   2016-05-01
 %       * Add input argument N
 %       * Add new file information block
@@ -33,6 +35,12 @@ function flag = issquare(A, n)%#codegen
 %       * Advance checking of matrix A
 %   2015-04-22
 %       * Initial release
+
+
+
+%% Assert arguments
+narginchk(1, 2);
+nargoutchk(0, 1);
 
 
 
