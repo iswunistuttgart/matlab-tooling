@@ -23,8 +23,10 @@ function flag = issize(A, r, c)
 
 %% File Information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-10
+% Date: 2016-12-23
 % Changelog:
+%   2016-12-23
+%       * Add narginchk and nargoutchk
 %   2016-05-10
 %       * Add general `File Information` block
 %       * Update inline documentation
@@ -36,6 +38,12 @@ function flag = issize(A, r, c)
 %       ```isequal``` (slight improvement of readability and speed)
 %   2015-04-22
 %       * Initial release
+
+
+
+%% Assert arguments
+narginchk(3, 3);
+nargoutchk(0, 1);
 
 
 

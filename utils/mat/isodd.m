@@ -19,8 +19,10 @@ function flag = isodd(x)
 %% File information
 % Author: Peter J. Acklam <pjacklam@online.no>
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-12-04
+% Date: 2016-12-23
 % Changelog:
+%   2016-12-23
+%       * Change from nargchk to narginchk
 %   2016-12-04
 %       * Merge with Peter J. Acklam's implementation supporting different
 %       classes for X
@@ -29,14 +31,16 @@ function flag = isodd(x)
 
 
 
+%% Assert arguments
+narginchk(1, 1);
+nargoutchk(0, 1);
+
+
+
 %% Do your code magic here
-error(nargchk(1, 1, nargin));
 if ~isnumeric(x)
     error('Argument must be a numeric array.');
 end
-
-% Class of input argument
-chClassX = class(x);
 
 % Return empty array of same class
 if isempty(x)

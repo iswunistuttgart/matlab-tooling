@@ -46,6 +46,12 @@ function monotonic = ismonotonic(x, strict, direction, dim)
 % $ Author: Richie Cotton $     $ Date: 2010/01/20 $    $ Version: 1.2 $
 
 
+
+%% Assert arguments
+narginchk(1, 4);
+nargoutchk(0, 1);
+
+
 %% Basic error checking & default setup
 if ~isreal(x) || ~isnumeric(x)
    warning('ismonotonic:badXValue', ...

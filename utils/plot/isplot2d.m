@@ -18,8 +18,11 @@ function res = isplot2d(varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-20
+% Date: 2016-12-23
 % Changelog:
+%   2016-12-23
+%       * Speed up process by making use of `axis` which returns a 1x4 vector if
+%       the given axis is 2D and a 1x6 vector otherwise
 %   2016-09-20
 %       * Add support for checking multiple axes at once
 %   2016-09-13
@@ -53,27 +56,17 @@ if ~ishandle(haTarget)
     haTarget = gca;
 end
 
-% Stores the azimuths and elevations of each axis
-vAzimuths = zeros(numel(haTarget), 1);
-vElevations = zeros(numel(haTarget), 1);
-
 
 
 %% Checking
 % Loop over all given axes
-for iAx = 1:numel(haTarget)
-    % Get azimuth and elevation of current viewport
-    [vAzimuths(iAx), vElevations(iAx)] = view(haTarget(iAx));
-end
+% for iAx = 1:numel(haTarget)
+%     vAxisNumel(iAx) = numel(axis(haTarget(iAx)));
+% end
 
-% If the azimuth is 0+/-n*90 or the elevation is 0+/-n*90, it is no 3D plot
-% bIsPlot2d = isequaln(rem([vAzimuths, vElevations], 90), [0,0]);
-bIsPlot2d = all(rem([vAzimuths, vElevations], 90) == repmat([0, 0], numel(haTarget), 1), 2);
-
-
-
-%% Output assignment
-res = bIsPlot2d;
+% The plot is a 2D plot if the numel of its axis size is 4, otherwise it is a 3D
+% plot
+res = cellfun(@(x) numel(x) == 4, axis(haTarget));
 
 
 end

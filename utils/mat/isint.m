@@ -16,8 +16,10 @@ function flag = isint(x)
 %% File information
 % Author: Peter J. Acklam <pjacklam@online.no>
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-12-04
+% Date: 2016-12-23
 % Changelog:
+%   2016-12-23
+%       * Add narginchk and nargoutchk
 %   2016-12-04
 %       * Merge with Peter J. Acklam's isint implementation which supports
 %       different types of data
@@ -26,6 +28,12 @@ function flag = isint(x)
 %       of an array that are int and ones that are not
 %   2016-06-14
 %       * Initial release
+
+
+
+%% Assert arguments
+narginchk(1, 1);
+nargoutchk(0, 1);
 
 
 
