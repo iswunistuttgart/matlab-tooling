@@ -1,16 +1,53 @@
 function varargout = mat2tex(m, varargin)
-% MAT2TEX converts a matrix to LaTeX compatible syntax
+% MAT2TEX converts a matrix to LaTeX compatible tabular syntax
+%
+%   MAT2TEX(MAT) creates LaTeX-syntax for the NxM matrix MAT.
+%
+%   MAT2TEX(MAT, 'Name', 'Value', ...) allows setting optional inputs using
+%   name/value pairs.
+%
+%   Optional Inputs -- specified as parameter value pairs
+%
+%   File                Name or path to file into which to write the content of
+%       the created LaTeX syntax. Must be a character array.
+%
+%   Table               Switch to enable wrapping the tabular environment into a
+%       table environment. Is automatically switched to 'on' if a CAPTION or
+%       LABEL is given. Defaults to 'off'. Possible options are:
+%           'on', 'yes'         Wrap 'tabular' into a 'table' environment
+%           'off', 'no'         Only return the 'tabular' environment
+%
+%   Caption             Caption to write for the table. According to best
+%       practices the caption is typeset above the table. Must be a character
+%       array.
+%
+%   Label               Tag of label to be typeset into the table environment.
+%       Will be set above the tabular and below a possible caption. Must be a
+%       character array.
+%
+%   ColNames            1xM cell array of column names that should automatically
+%       be typeset i.e., prepended to the table.
+%
+%   RowNames            1xN cell array of row names that should automatically
+%       be typeset i.e., prepended to the table.
+%
+%   ColumnAlignment     1x1 or 1xN cell array of alignments for all cells or
+%       each cell respectively. Will not be checked for valid LaTeX syntax as
+%       there are just too many possible column alignments availab.e
 %
 %   Inputs:
 %
-%   M                   Matrix to be exported to a LaTeX table
+%   MAT                 Matrix to be exported to a LaTeX tabular.
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-12-28
+% Date: 2016-12-30
 % Changelog:
+%   2016-12-30
+%       * Add option 'Table'
+%       * Update help doc
 %   2016-12-28
 %       * Initial release
 
@@ -30,7 +67,11 @@ addRequired(ip, 'Matrix', valFcn_Matrix);
 
 % File: optional; cell; non-empty
 valFcn_File = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'File');
-addOptional(ip, 'File', {}, valFcn_File);
+addParameter(ip, 'File', '', valFcn_File);
+
+% Table: parameter; char; matches {'on', 'off', 'yes', 'no'}
+valFcn_TableEnv = @(x) any(validatestring(lower(x), {'on', 'off', 'yes', 'no'}, mfilename, 'Table'));
+addParameter(ip, 'Table', 'off', valFcn_TableEnv);
 
 % Caption: parameter; char; non-empty
 valFcn_Caption = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Caption');
@@ -49,7 +90,7 @@ valFcn_RowNames = @(x) validateattributes(x, {'cell'}, {'nonempty', 'row', 'nume
 addParameter(ip, 'RowNames', {}, valFcn_RowNames);
 
 % ColumnAlignment: parameter; cell; non-empty
-valFcn_ColumnAlignment = @(x) validateattributes(x, {'char', 'cell'}, {'nonempty', 'numel', size(m, 2)}, mfilename, 'ColumnAlignment');
+valFcn_ColumnAlignment = @(x) validateattributes(x, {'char', 'cell'}, {'nonempty'}, mfilename, 'ColumnAlignment');
 addParameter(ip, 'ColumnAlignment', {}, valFcn_ColumnAlignment);
 
 % Configuration of input parser
@@ -82,6 +123,8 @@ ceRowNames = ip.Results.RowNames;
 ceColNames = ip.Results.ColNames;
 % Get the column alignment
 ceColumnAlignment = ip.Results.ColumnAlignment;
+% Wrap into 'table' env or keep a plain 'tabular'?
+chTableEnv = parseswitcharg(ip.Results.Table);
 
 
 
@@ -113,7 +156,9 @@ if ~isempty(ceRowNames)
 end
 % Prepare the column alignment
 if isempty(ceColumnAlignment)
-    ceColumnAlignment = repmat('l', nCols + ~isempty(ceRowNames), 1);
+    ceColumnAlignment = repmat({'l'}, nCols + ~isempty(ceRowNames), 1);
+elseif numel(ceColumnAlignment) < nCols
+    ceColumnAlignment = repmat(ceColumnAlignment, 1, ceil(nCols/numel(ceColumnAlignment)));
 end
 
 
@@ -143,10 +188,14 @@ end
 % Now the table cell contains all the table data in itself, so we can create the
 % table and tabular environment
 
+chTable = '';
+
 % Open the table environment
-chTable = sprintf('%s\n', '\begin{table}');
-% Make the table centered
-chTable = [chTable, sprintf('  %s\n', '\centering')];
+if strcmp(chTableEnv, 'on')
+    chTable = sprintf('%s\n', '\begin{table}');
+    % Make the table centered
+    chTable = [chTable, sprintf('  %s\n', '\centering')];
+end
 % Write a caption?
 if ~isempty(chCaption)
     chTable = [chTable, sprintf('  %s\n', sprintf('  \caption{%s}', chCaption))];
@@ -157,16 +206,18 @@ if ~isempty(chLabel)
 end
 
 % Open the tabular
-chTable = [chTable, sprintf('  %s{%s}\n', '\begin{tabular}', strjoin(ceColumnAlignment, ''))];
+chTable = [chTable, repmat(' ', 1, 2*strcmp(chTableEnv, 'on')), sprintf('%s{%s}\n', '\begin{tabular}', strjoin(ceColumnAlignment, ' '))];
 
 % Plug in the tabular content
-chTable = [chTable, sprintf('    %s \\\\\n', strjoin(ceTabular, ' \\\\\n    '))];
+chTable = [chTable, repmat(' ', 1, 2*(1 + strcmp(chTableEnv, 'on'))), sprintf('%s \\\\\n', strjoin(ceTabular, [' \\\\\n', repmat(' ', 1, 2*(1 + strcmp(chTableEnv, 'on')))]))];
 
 % Close the tabular
-chTable = [chTable, sprintf('  %s\n', '\end{tabular}')];
+chTable = [chTable, repmat(' ', 1, 2*strcmp(chTableEnv, 'on')), sprintf('%s\n', '\end{tabular}')];
 
-% Close the table
-chTable = [chTable, sprintf('%s\n', '\end{table}')];
+if strcmp(chTableEnv, 'on')
+    % Close the table
+    chTable = [chTable, sprintf('%s\n', '\end{table}')];
+end
 
 % If no arguments are to be returned, we will display the table (write later on)
 if nargout == 0 && isempty(chFilename)
@@ -198,13 +249,17 @@ end
 
 
 function cl = in_processCell(cl)
-    
+
 if iscell(cl)
-    cl = sprintf('%s', cl{:});
+    cl = cl{:};
+end
+    
+if ischar(cl)
+    cl = sprintf('%s', cl);
 elseif isnan(cl)
     cl = 'NaN';
 elseif isnumeric(cl)
-    cl = sprintf('$ %f $', cl);
+    cl = num2str(cl, '$%.3f$');
 end
 
 end
