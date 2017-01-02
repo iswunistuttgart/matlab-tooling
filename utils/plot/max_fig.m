@@ -19,6 +19,8 @@ function max_fig(Fig, varargin)
 % Changelog:
 %   2017-01-02
 %       * Fix incorrect use of `isfig`
+%       * Make MAX_FIG allow gobjects to be passed or an array of doubles
+%       representing the handle ID's
 %   2016-09-22
 %       * Rename to `max_fig`
 %   2016-06-15
@@ -57,16 +59,16 @@ warning('off','MATLAB:HandleGraphics:ObsoletedProperty:JavaFrame');
 % Loop over all given figures
 for iFigure = 1:numel(hfTarget)
     % Select that figure
-    figure(hfTarget(iFigure))
+    hf = handle(figure(hfTarget(iFigure)));
 
     % Make figure visible;
-    hfTarget(iFigure).Visible = 'on';
+    hf.Visible = 'on';
 
     % Make sure it's drawn otherwise we will get java.lang.NullPointerException
     drawnow
 
     % Get the figure's java fram
-    jFrame = get(handle(hfTarget(iFigure)), 'JavaFrame');
+    jFrame = get(hf, 'JavaFrame');
     % Maximize it
     jFrame.setMaximized(true);
 
