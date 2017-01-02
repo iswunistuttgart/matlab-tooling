@@ -15,8 +15,10 @@ function max_fig(Fig, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-22
+% Date: 2017-01-02
 % Changelog:
+%   2017-01-02
+%       * Fix incorrect use of `isfig`
 %   2016-09-22
 %       * Rename to `max_fig`
 %   2016-06-15
@@ -28,7 +30,7 @@ function max_fig(Fig, varargin)
 
 
 %% Argument defaults
-if nargin < 1
+if nargin < 1 || isempty(Fig)
     Fig = gcf;
 end
 
@@ -36,7 +38,7 @@ end
 
 %% Assert arguments
 assert(all(ishandle(Fig)), 'Argument [Fig] provided must be a valid handle');
-assert(isfig(Fig, true), 'Argument [Fig] must be a valid figure handle (or array of valid figure handles)');
+assert(all(isfig(Fig)), 'Argument [Fig] must be a valid figure handle (or array of valid figure handles)');
 
 
 
