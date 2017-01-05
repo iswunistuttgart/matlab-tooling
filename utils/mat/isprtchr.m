@@ -11,14 +11,15 @@ function t = isprtchr(c)
 %   Time-stamp:  2002-03-03 13:50:57 +0100
 %   E-mail:      pjacklam@online.no
 %   URL:         http://home.online.no/~pjacklam
+narginchk(1, 1);
 
-   error(nargchk(1, 1, nargin));
-
-   t = ischar(c) & (   ( (  32 <= c ) & ( c <= 126 ) ) ...
-                     | ( ( 159 <= c ) & ( c <= 255 ) ) );
+t = ischar(c) & (   ( (  32 <= c ) & ( c <= 126 ) ) ...
+                 | ( ( 159 <= c ) & ( c <= 255 ) ) );
 
    % whether this is correct depends on the coding system used
 %   if strncmp(computer, 'PC', 2)
 %      t = t | ( ( 130 <= c ) & ( c <= 140 ) ) ...
 %            | ( ( 145 <= c ) & ( c <= 156 ) );
 %   end
+
+end

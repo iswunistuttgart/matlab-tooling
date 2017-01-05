@@ -12,4 +12,6 @@ function t = iscolvector(x)
 %   E-mail:      pjacklam@online.no
 %   URL:         http://home.online.no/~pjacklam
 
-   t = ndims(x) == 2 & size(x, 2) == 1;
+t = ndims(x) == 2 & size(x, 2) == 1;
+
+end

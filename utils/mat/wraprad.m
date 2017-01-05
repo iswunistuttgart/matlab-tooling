@@ -1,4 +1,4 @@
-function b = wraprad(a)
+function b = wraprad(a)%#codegen
 %WRAPRAD Map angles measured in radians to the interval [-pi,pi).
 %
 %   B = WRAPRAD(A) maps the angles in A to their equivalent in the interval
@@ -11,10 +11,12 @@ function b = wraprad(a)
 %   E-mail:      pjacklam@online.no
 %   URL:         http://home.online.no/~pjacklam
 
-   % check number of input arguments
-   error(nargchk(1, 1, nargin));
+% check number of input arguments
+narginchk(1, 1);
 
-   PI = pi;
-   TWOPI = 2*PI;
+PI = pi;
+TWOPI = 2*PI;
 
-   b = a - TWOPI * floor((a + PI) / TWOPI);
+b = a - TWOPI * floor((a + PI) / TWOPI);
+
+end

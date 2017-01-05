@@ -11,6 +11,8 @@ function t = isalpha(c)
 %   E-mail:      pjacklam@online.no
 %   URL:         http://home.online.no/~pjacklam
 
-   error(nargchk(1, 1, nargin));
+narginchk(1, 1);
 
-   t = isletter(c);
+t = isletter(c);
+
+end
