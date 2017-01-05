@@ -6,8 +6,12 @@ function create_docs()
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-10-23
+% Date: 2017-01-05
 % Changelog:
+%   2017-01-05
+%       * Update to support other formats of H1 lines such as
+%           `%funcname`
+%           `% funcname`
 %   2016-10-23
 %       * Initial release
 
@@ -179,6 +183,9 @@ end
 iCurrLine = 0;
 iLineH1 = 2;
 
+% Cleanup objects are nicer than manually dealing with errors and open files
+coCleanup = onCleanup(@() fclose(fidFunction));
+
 % Loop over the lines of the file
 while ~feof(fidFunction)
     % Advance the line counter
@@ -220,12 +227,12 @@ if ~isempty(chH1Comment)
     ceH1Comment(strcmpi('%', ceH1Comment)) = [];
     % H1 line contains the function name? Then remove it
     ceH1Comment(strcmpi(chFunction_Name, ceH1Comment)) = [];
+    % H1 line contains the function name directly preceeded with a
+    % comment-character? Then remove it
+    ceH1Comment(strcmpi(['%' , chFunction_Name], ceH1Comment)) = [];
     % Join H1 line cell array back to a char array
     chH1Comment = strjoin(ceH1Comment, ' ');
 end
-
-% And close the file finally
-fclose(fidFunction);
 
 
 end
