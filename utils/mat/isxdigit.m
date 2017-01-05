@@ -14,8 +14,10 @@ function t = isxdigit(c)
 %   E-mail:      pjacklam@online.no
 %   URL:         http://home.online.no/~pjacklam
 
-   error(nargchk(1, 1, nargin));
+narginchk(1, 1);
 
-   t = ischar(c) & (   ( ( '0' <= c ) & ( c <= '9' ) ) ...
-                     | ( ( 'A' <= c ) & ( c <= 'F' ) ) ...
-                     | ( ( 'a' <= c ) & ( c <= 'f' ) ) );
+t = ischar(c) & (   ( ( '0' <= c ) & ( c <= '9' ) ) ...
+                 | ( ( 'A' <= c ) & ( c <= 'F' ) ) ...
+                 | ( ( 'a' <= c ) & ( c <= 'f' ) ) );
+
+end

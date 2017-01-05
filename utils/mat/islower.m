@@ -11,6 +11,8 @@ function t = islower(c)
 %   E-mail:      pjacklam@online.no
 %   URL:         http://home.online.no/~pjacklam
 
-   error(nargchk(1, 1, nargin));
+narginchk(1, 1)
 
-   t = isletter(c) & (c == lower(c));
+t = isletter(c) & (c == lower(c));
+
+end
