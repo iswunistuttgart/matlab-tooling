@@ -114,10 +114,14 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-11-13
+% Date: 2017-01-21
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 % Changelog:
+%   2017-01-21
+%       * Fix DeleteFcn callback on axes not working properly. Now, when the
+%       figure with the axes is being closed/deleted, this axes timer will be
+%       stopped and deleted
 %   2017-01-14
 %       * Fix double error when closing a running animation by removing deleting
 %       the timer object when it is being stopped. This now also allows for
@@ -331,7 +335,10 @@ tiUpdater = timer(...
 );
 
 % Create a close function on the current axis
-haTarget.DeleteFcn = @cb_cleanup;
+% haTarget.DeleteFcn = @cb_cleanup;
+% haTarget.DeleteFcn = 'disp(''hello world'')';
+hfParent = gpf(haTarget);
+hfParent.DeleteFcn = {@cb_cleanup, haTarget};
 
 % Add the timer to the axes, too
 haTarget.UserData.Timer = tiUpdater;
@@ -501,16 +508,29 @@ end
 end
 
 
-function cb_cleanup(ax, event)
+function cb_cleanup(ax, ~, hax)
+
+% Default third argument
+if nargin < 3
+    hax = [];
+end
+
+% If there is a third argument, this function is called from the axes parent's
+% DeleteFcn, so the actual axes is passed as the third argument
+if ~isempty(hax)
+    ax = hax;
+end
 
 % Don't do anything if the axes is not a valid handle
 if ~ishandle(ax)
     return
 end
 
-% If the timer exists in the axes and is running, we will stop if
+% If the timer exists in the axes and is running, we will stop it
 if isfield(ax.UserData, 'Timer') && strcmp('on', ax.UserData.Timer.Running)
     stop(ax.UserData.Timer);
+    
+    delete(ax.UserData.Timer);
 end
 
 end
