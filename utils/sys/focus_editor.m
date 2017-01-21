@@ -5,8 +5,11 @@ function focus_editor()
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-01-02
+% Date: 2017-01-05
 % Changelog:
+%   2017-01-05
+%       * Rename variable `desktop` to `desk` so it won't interfer with built-in
+%       function `DESKTOP`
 %   2017-01-02
 %       * Initial release
 
@@ -16,8 +19,8 @@ function focus_editor()
 
 try
     % Matlab 7
-    desktop = com.mathworks.mde.desk.MLDesktop.getInstance;
-    jEditor = desktop.getGroupContainer('Editor').getTopLevelAncestor;
+    desk = com.mathworks.mde.desk.MLDesktop.getInstance;
+    jEditor = desk.getGroupContainer('Editor').getTopLevelAncestor;
     % we get a com.mathworks.mde.desk.MLMultipleClientFrame object
 catch
     % Matlab 6

@@ -10,8 +10,10 @@ function [] = stopalltimers()
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-02
+% Date: 2017-01-21
 % Changelog:
+%   2017-01-21
+%       * Make use of arrayfun over simple loops
 %   2016-09-02
 %       * Initial release
 
@@ -21,28 +23,11 @@ function [] = stopalltimers()
 % Get all timers
 tiTimers = timerfindall;
 
-% If we have timers
-if ~isempty(tiTimers)
-    % Loop over each timer
-    for iTimer = 1:numel(tiTimers)
-        % Stop the timer
-        stop(tiTimers(iTimer))
-        
-        % Make sure the timer is stopped ...
-        try
-            % ... by asserting its 'Running' property is set to 'off'
-            assert(strcmp('off', tiTimers(iTimer).Running));
-        % Stopping failed, so display a warning
-        catch me
-            warning('PHILIPPTEMPEL:STOPALLTIMERS:failedStoppingTimer', 'Failed stopping timer %i', iTimer);
-            
-            continue;
-        end
+% Filter running timers
+tiTimers = tiTimers(cell2mat(arrayfun(@(ti) strcmp(ti.Running, 'on'), tiTimers, 'UniformOutput', false)));
 
-        % Delete timer object from memory
-        delete(tiTimers(iTimer));
-    end
-end
+% Loop over running fiters and stop each of these
+arrayfun(@(ti) stop(ti), tiTimers, 'UniformOutput', false);
 
 
 end

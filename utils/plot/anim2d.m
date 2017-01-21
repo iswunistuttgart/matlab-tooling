@@ -103,8 +103,7 @@ function [varargout] = anim2d(X, Y, varargin)
 %
 %   See also TIMER
 %
-%   Known Bugs:
-%
+%   KNOWN BUGS:
 %   Due to some weird behavior (of feval probably) the order of plots is changed
 %       i.e., X(:,:,1) is plot into plt(n) while X(:,:,n) is plot into plt(1).
 %       This is a bit unexpected behavior if you want to adjust the lines
@@ -115,10 +114,19 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-11-13
+% Date: 2017-01-21
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 % Changelog:
+%   2017-01-21
+%       * Fix DeleteFcn callback on axes not working properly. Now, when the
+%       figure with the axes is being closed/deleted, this axes timer will be
+%       stopped and deleted
+%   2017-01-14
+%       * Fix double error when closing a running animation by removing deleting
+%       the timer object when it is being stopped. This now also allows for
+%       continuing the timer once it has been stopped
+%       * Slight little bit of code cleanup
 %   2016-11-13
 %       * Remove need for X and Y to be finite. Now, `animd2d` supports plotting
 %       of differently sized plots e.g., two lines with 10 plot points and one
@@ -327,7 +335,10 @@ tiUpdater = timer(...
 );
 
 % Create a close function on the current axis
-haTarget.DeleteFcn = @cb_cleanup;
+% haTarget.DeleteFcn = @cb_cleanup;
+% haTarget.DeleteFcn = 'disp(''hello world'')';
+hfParent = gpf(haTarget);
+hfParent.DeleteFcn = {@cb_cleanup, haTarget};
 
 % Add the timer to the axes, too
 haTarget.UserData.Timer = tiUpdater;
@@ -352,147 +363,176 @@ end
 
 
 function cb_timerstart(ax, timer, event)
-    try
-        % Make the target axes active
-%         axes(ax);
-        
-        % Get the current axes' user data
-        stUserData = ax.UserData;
 
-        % Plot the first row of data
-        stUserData.Plot = feval(stUserData.Fun, ax, squeeze(stUserData.XData(1,:,:)), squeeze(stUserData.YData(1,:,:)));
+% Don't do anything if the axes is not a valid handle
+if ~ishandle(ax)
+    return
+end
 
-        % Hold on to the axes!
-        hold(ax, 'on');
-        
-        % And save the user data back into it
-        ax.UserData = stUserData;
-        
-        % Get the limits and fallback values
-        vXLim = [min(min(min(ax.UserData.XData))), max(max(max(ax.UserData.XData)))];
-        vYLim = [min(min(min(ax.UserData.YData))), max(max(max(ax.UserData.YData)))];
-        % If no x-axis limits are given, we wil make some of our own
-        if vXLim(1) == vXLim(2)
-            vXLim = vXLim + [-1, +1];
-        end
-        % If no Y-axis limits are given, we will make some of our own
-        if vYLim(1) == vYLim(2)
-            vYLim = vYLim + [-1, +1];
-        end
-        
-        % Force even x-axis limits?
-        if strcmp('on', ax.UserData.EvenX)
-            vXLim = max(abs(vXLim)).*[-1, 1];
-        end
+try
+    % Make the target axes active
+%     axes(ax);
 
-        % Set the limits to the min and max of the plot data ...
-        axis(ax, [vXLim, vYLim]);
-        % And then equalize the axes' aspect ratio
-        axis(ax, 'square')
-        % Set the axes limits to manual...
-        axis(ax, 'manual');
-        
-        % Set the title, if any title is given
-        if ~isempty(ax.UserData.TitleString)
-            ax.UserData.Title = title(ax, sprintf(ax.UserData.TitleString, ax.UserData.Time(ax.UserData.Frame2Time(1))));
-        end
+    % Get the current axes' user data
+    stUserData = ax.UserData;
 
-        % Call the user supplied start callback(s) (we do not rely on cellfun as
-        % we do not know in what order the functions will be executed and the
-        % user might want to have their callbacks executed in a particular
-        % order).
-        % @see http://stackoverflow.com/questions/558478/how-to-execute-multiple-statements-in-a-matlab-anonymous-function#558868
-        for iSF = 1:numel(ax.UserData.StartFcn)
-            ax.UserData.StartFcn{iSF}(ax, ax.Children(1:ax.UserData.DataCount), timer.TasksExecuted);
-        end
-        
-        % Mark the initial plot?
-        if strcmp('on', stUserData.MarkStart)
-            % Copy the plot objects quickly
-            stUserData.InitialPlot = copyobj(ax.Children, ax);
-            % Adjust all 'initial state' objects to be dashed lines
-            set(ax.Children((stUserData.DataCount + 1):end), 'LineStyle', '--');
-        end
-        
-        % Update figure
-        drawnow
-    catch me
-        stop(timer)
-        
-        throwAsCaller(addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:ANIM2D:AnimationStartFailed', 'Start of animation failed.')));
+    % Plot the first row of data
+    stUserData.Plot = feval(stUserData.Fun, ax, squeeze(stUserData.XData(1,:,:)), squeeze(stUserData.YData(1,:,:)));
+
+    % Hold on to the axes!
+    hold(ax, 'on');
+
+    % And save the user data back into it
+    ax.UserData = stUserData;
+
+    % Get the limits and fallback values
+    vXLim = [min(min(min(ax.UserData.XData))), max(max(max(ax.UserData.XData)))];
+    vYLim = [min(min(min(ax.UserData.YData))), max(max(max(ax.UserData.YData)))];
+    % If no x-axis limits are given, we wil make some of our own
+    if vXLim(1) == vXLim(2)
+        vXLim = vXLim + [-1, +1];
     end
-    
-    % That's it for the start
+    % If no Y-axis limits are given, we will make some of our own
+    if vYLim(1) == vYLim(2)
+        vYLim = vYLim + [-1, +1];
+    end
+
+    % Force even x-axis limits?
+    if strcmp('on', ax.UserData.EvenX)
+        vXLim = max(abs(vXLim)).*[-1, 1];
+    end
+
+    % Set the limits to the min and max of the plot data ...
+    axis(ax, [vXLim, vYLim]);
+    % And then equalize the axes' aspect ratio
+    axis(ax, 'square')
+    % Set the axes limits to manual...
+    axis(ax, 'manual');
+
+    % Set the title, if any title is given
+    if ~isempty(ax.UserData.TitleString)
+        ax.UserData.Title = title(ax, sprintf(ax.UserData.TitleString, ax.UserData.Time(ax.UserData.Frame2Time(1))));
+    end
+
+    % Call the user supplied start callback(s) (we do not rely on cellfun as
+    % we do not know in what order the functions will be executed and the
+    % user might want to have their callbacks executed in a particular
+    % order).
+    % @see http://stackoverflow.com/questions/558478/how-to-execute-multiple-statements-in-a-matlab-anonymous-function#558868
+    for iSF = 1:numel(ax.UserData.StartFcn)
+        ax.UserData.StartFcn{iSF}(ax, ax.Children(1:ax.UserData.DataCount), timer.TasksExecuted);
+    end
+
+    % Mark the initial plot?
+    if strcmp('on', stUserData.MarkStart)
+        % Copy the plot objects quickly
+        stUserData.InitialPlot = copyobj(ax.Children, ax);
+        % Adjust all 'initial state' objects to be dashed lines
+        set(ax.Children((stUserData.DataCount + 1):end), 'LineStyle', '--');
+    end
+
+    % Update figure
+    drawnow
+catch me
+    stop(timer)
+
+    throwAsCaller(addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:ANIM2D:AnimationStartFailed', 'Starting of animation failed.')));
+end
+
+% That's it for the start
+
 end
 
 
 function cb_timerupdate(ax, timer, event)
-    try
-        % Update the XData and YData of each of the children but only over the
-        % data we have (this way we won't be looping of possible start or end
-        % plots of the data)`
-        for iChild = 1:ax.UserData.DataCount
-            set(ax.Children(iChild) ...
-                , 'XData', squeeze(ax.UserData.XData(ax.UserData.Frame2Time(timer.TasksExecuted),:,iChild)) ...
-                , 'YData', squeeze(ax.UserData.YData(ax.UserData.Frame2Time(timer.TasksExecuted),:,iChild)) ...
-            );
-        end
-        
-        % Update the title
-        if ~isempty(ax.UserData.Title)
-            ax.UserData.Title.String = sprintf(ax.UserData.TitleString, ax.UserData.Time(ax.UserData.Frame2Time(timer.TasksExecuted)));
-        end
-        
-        % Call the user supplied update callback(s)
-        for iSF = 1:numel(ax.UserData.UpdateFcn)
-            ax.UserData.UpdateFcn{iSF}(ax, ax.Children(1:ax.UserData.DataCount), timer.TasksExecuted);
-        end
-        
-        % Update figure
-        drawnow
-    catch me
-        stop(timer)
-        
-        throwAsCaller(addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:ANIM2D:AnimationUpdateFailed', 'Update of animation failed at time step %i.', timer.TasksExecuted)));
+
+% Don't do anything if the axes is not a valid handle
+if ~ishandle(ax)
+    return
+end
+
+try
+    % Update the XData and YData of each of the children but only over the
+    % data we have (this way we won't be looping of possible start or end
+    % plots of the data)`
+    for iChild = 1:ax.UserData.DataCount
+        set(ax.Children(iChild) ...
+            , 'XData', squeeze(ax.UserData.XData(ax.UserData.Frame2Time(timer.TasksExecuted),:,iChild)) ...
+            , 'YData', squeeze(ax.UserData.YData(ax.UserData.Frame2Time(timer.TasksExecuted),:,iChild)) ...
+        );
     end
+
+    % Update the title
+    if ~isempty(ax.UserData.Title)
+        ax.UserData.Title.String = sprintf(ax.UserData.TitleString, ax.UserData.Time(ax.UserData.Frame2Time(timer.TasksExecuted)));
+    end
+
+    % Call the user supplied update callback(s)
+    for iSF = 1:numel(ax.UserData.UpdateFcn)
+        ax.UserData.UpdateFcn{iSF}(ax, ax.Children(1:ax.UserData.DataCount), timer.TasksExecuted);
+    end
+
+    % Update figure
+    drawnow
+catch me
+    stop(timer)
+
+    throwAsCaller(addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:ANIM2D:AnimationUpdateFailed', 'Update of animation failed at time step %i.', timer.TasksExecuted)));
+end
+
 end
 
 
 function cb_timerend(ax, timer, event)
-    try
-        % Call the user supplied end/stop/delete callback
-        for iSF = 1:numel(ax.UserData.StopFcn)
-            ax.UserData.StopFcn{iSF}(ax, ax.Children(1:ax.UserData.DataCount), timer.TasksExecuted);
-        end
-        
-        % Update figure
-        drawnow
 
-        % Let go off our axes
-        hold(ax, 'off');
+% Don't do anything if the axes is not a valid handle
+if ~ishandle(ax)
+    return
+end
 
-        % Try deleting the timer and removing it from the workspace
-        try
-            delete(timer);
-            if isfield(ax.UserData, 'Timer')
-                ax.UserData = rmfield(ax.UserData, 'Timer');
-            end
-        catch me
-            warning(me.identifier, me.message);
-        end
-    catch me
-        stop(timer)
-        
-        throwAsCaller(addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:ANIM2D:AnimationStopFailed', 'End of animation failed.')));
+try
+    % Call the user supplied end/stop callbacks
+    for iSF = 1:numel(ax.UserData.StopFcn)
+        ax.UserData.StopFcn{iSF}(ax, ax.Children(1:ax.UserData.DataCount), timer.TasksExecuted);
     end
+
+    % Update figure
+    drawnow
+
+    % Let go off our axes
+    hold(ax, 'off');
+catch me
+    throwAsCaller(addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:ANIM2D:AnimationStopFailed', 'Stopping of animation failed.')));
+end
+
 end
 
 
-function cb_cleanup(ax, event)
-    % If the timer exists in the axes and is running, we will stop if
-    if isfield(ax.UserData, 'Timer') && strcmp('on', ax.UserData.Timer.Running)
-        stop(ax.UserData.Timer);
-    end
+function cb_cleanup(ax, ~, hax)
+
+% Default third argument
+if nargin < 3
+    hax = [];
+end
+
+% If there is a third argument, this function is called from the axes parent's
+% DeleteFcn, so the actual axes is passed as the third argument
+if ~isempty(hax)
+    ax = hax;
+end
+
+% Don't do anything if the axes is not a valid handle
+if ~ishandle(ax)
+    return
+end
+
+% If the timer exists in the axes and is running, we will stop it
+if isfield(ax.UserData, 'Timer') && strcmp('on', ax.UserData.Timer.Running)
+    stop(ax.UserData.Timer);
+    
+    delete(ax.UserData.Timer);
+end
+
 end
 
 
