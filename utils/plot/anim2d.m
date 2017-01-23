@@ -38,6 +38,8 @@ function [varargout] = anim2d(X, Y, varargin)
 %
 %   Optional Inputs -- specified as parameter value pairs
 %
+%   Axis        Define a custom axis to plot into.
+%
 %   EvenX       Switch to toggle even x-axis extension 'on' or 'off'. If 'EvenX'
 %       is 'on' then the by magnitude larger x-axis limit is projected onto the
 %       other one. For example, xlims of [-3, 4] will become [-4, 4].
@@ -122,6 +124,7 @@ function [varargout] = anim2d(X, Y, varargin)
 %       * Fix DeleteFcn callback on axes not working properly. Now, when the
 %       figure with the axes is being closed/deleted, this axes timer will be
 %       stopped and deleted
+%       * Add option 'Axis' as explicit option
 %   2017-01-14
 %       * Fix double error when closing a running animation by removing deleting
 %       the timer object when it is being stopped. This now also allows for
@@ -174,6 +177,10 @@ try
     % numel X and Y;
     valFcn_Time = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'vector', 'increasing', 'finite', 'numel', size(X, 1)}, mfilename, 'Time');
     addOptional(ip, 'Time', [], valFcn_Time);
+    
+    % Parameter: Axis. Handle. Non-empty
+    valFcn_Axes = @(x) validateattributes(x, {'matlab.graphics.axis.Axes'}, {'nonempty', 'scalar'}, mfilename, 'Axes');
+    addParameter(ip, 'Axes', [], valFcn_Axes);
 
     % Parameter: EvenX. Char. Matches {'on', 'off', 'yes' 'no'}.
     valFcn_EvenX = @(x) any(validatestring(lower(x), {'on', 'yes', 'off', 'no'}, mfilename, 'EvenX'));
@@ -260,11 +267,14 @@ end
 
 % Even x-axis?
 chEvenX = parseswitcharg(ip.Results.EvenX);
-% Title of the axis
+% Title of the axes
 chTitle = ip.Results.Title;
 % Mark start?
 chMarkStart = parseswitcharg(ip.Results.MarkStart);
 % Get a valid axes handle
+if ~isempty(ip.Results.Axes)
+    haTarget = ip.Results.Axes;
+end
 haTarget = newplot(haTarget);
 
 
