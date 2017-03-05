@@ -1,30 +1,41 @@
-function R = rot2(t)
-% ROT2 creates the 2D rotation matrix of angle T.
+function R = rot2(a)
+% ROT2 creates the 2D rotation matrix of angles A
 %
 %   Inputs:
 %
-%   T                   Angle of rotation given in degree.
+%   A                   Nx1 vector of angles in radian to turn into rotation
+%                       matrices.
 %
 %   Outputs:
 %
-%   R                   2x2 rotation matrix in space.
+%   R                   2x2xN rotation matrix for each agle.
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-01-03
+% Date: 2017-03-05
 % Changelog:
+%   2017-03-05
+%       * Add support for multiple angles in A. Now returns a 2x2xN matrix for
+%       Nx1 vector A
 %   2017-01-03
 %       * Initial release
 
 
 
 %% Do your code magic here
+% Pre-calculate the sine and cosine of the arguments
+st = sind(a);
+ct = cosd(a);
 
-R = [cosd(t), -sind(t) ; ...
-    sind(t), cosd(t) ...
-];
+% Initialize matrix
+R = zeros(2, 2, numel(a), 'like', a);
+
+R(1,1,:) = ct;
+R(1,2,:) = -st;
+R(2,1,:) = st;
+R(2,2,:) = ct;
 
 
 end
