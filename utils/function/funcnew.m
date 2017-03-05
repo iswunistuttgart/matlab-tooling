@@ -38,8 +38,11 @@ function funcnew(Name, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-12-03
+% Date: 2017-03-05
 % Changelog:
+%   2017-03-05
+%       * Really fix incorrcet determination of the next major column depending
+%       on the length of the input arguments and dividable by 4
 %   2016-12-03
 %       * Fix incorrect determination of the next major column depending on the
 %       length of the input arguments and dividable by 4
@@ -302,7 +305,7 @@ end
             % Prepend comment char and whitespace before uppercased argument
             % name, append whitespace up to filling column and a placeholder at
             % the end
-            ceArgIn_List = cellfun(@(x) sprintf('%%   %s%s%s %s', upper(x), repmat(' ', 1, nNextColumn - length(x)), 'Description of argument', upper(x)), ceArgIn, 'Uniform', false);
+            ceArgIn_List = cellfun(@(x) sprintf('%%   %s%s%s %s', upper(x), repmat(' ', 1, nNextColumn - length(x) - 1), 'Description of argument', upper(x)), ceArgIn, 'Uniform', false);
         end
         
         % Second, create a lits of out arguments
@@ -310,7 +313,7 @@ end
             % Prepend comment char and whitespace before uppercased argument
             % name, append whitespace up to filling column and a placeholder at
             % the end
-            ceArgOut_List = cellfun(@(x) sprintf('%%   %s%s%s %s', upper(x), repmat(' ', 1, nNextColumn - length(x)), 'Description of argument', upper(x)), ceArgOut, 'Uniform', false);
+            ceArgOut_List = cellfun(@(x) sprintf('%%   %s%s%s %s', upper(x), repmat(' ', 1, nNextColumn - length(x) - 1), 'Description of argument', upper(x)), ceArgOut, 'Uniform', false);
         end
         
         % Create the description first from the text given by the user

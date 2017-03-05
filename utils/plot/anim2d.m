@@ -44,64 +44,67 @@ function [varargout] = anim2d(X, Y, varargin)
 %       is 'on' then the by magnitude larger x-axis limit is projected onto the
 %       other one. For example, xlims of [-3, 4] will become [-4, 4].
 %
-%   Fps         Number of frames per second to draw. This values is being
-%       used for the timer's period. Defaults to 25.
+%   Fps         Number of frames per second to draw. This values is being used
+%       for the timer's period. Defaults to 25.
 %
-%   Fun         Function to be used for plotting the data. By default,
-%       'plot' will be used but this way, 'log' or 'stem' can be used to
-%       plot ALL data (line-specific plot functions are not yet supported).
+%   Fun         Function to be used for plotting the data. By default, 'plot'
+%       will be used but this way, 'log' or 'stem' can be used to plot ALL data
+%       (line-specific plot functions are not yet supported).
 %
 %   MarkStart   Switch to mark the first row of the plotted data. This can be
 %       useful to e.g., highlight the initial condition. Defaults to 'off'. Can
 %       be 'on' or 'off'.
 %
-%   Time        Mx1 vector of time values to use. By default, this
-%       function iterates over the first dimension of X and Y. If a time
-%       vector is given, then the row with the value closest to the current
-%       animation time is being used for animation. Additionally, this
-%       value is passed to the title of the plot to display the progress.
+%   Time        Mx1 vector of time values to use. By default, this function
+%       iterates over the first dimension of X and Y. If a time vector is given,
+%       then the row with the value closest to the current animation time is
+%       being used for animation. Additionally, this value is passed to the
+%       title of the plot to display the progress.
 %
 %   Title       String to be displayed in the title. Can also be set to 'timer'
-%       to enable automatic rendering of the time in the axes' title. If a
-%       user-specific string is provided, it will be passed to `sprintf` where
-%       the current time is being parsed as first argument, the current frame
-%       index as second.
+%       to enable automatic rendering of the time in the axes' title.
+%       If a user-specific string is provided, it will be passed to `sprintf`
+%       where the current time is being parsed as first argument, the current
+%       frame index as second.
+%       If you specify this property using a function handle, when MATLAB
+%       executes the callback it passes the axes handle and the current time to
+%       the callbak function.
 %
-%   StartFcn    String or function handle that shall be called after the
+%   StartFcn    String or function handle that shall be called after the animati
 %       animation is set up and before it is started.
-%       If you specify this property using a string, when MATLAB executes
-%       the callback, it evaluates the MATLAB code contained in the string. This
+%       If you specify this property using a string, when MATLAB executes the
+%       callback, it evaluates the MATLAB code contained in the string. This
 %       code has access to the variables 'ax', 'plt', and 'idx' representing the
 %       target axes, the plot object, and the current frame index, respectively.
 %       If you specify this property using a function handle, when MATLAB
-%       executes the callback it passes the axes handle, the current time
-%       step number, and the plot handle to the callback function.
-%       If you specify this property as a cell array, you can make combinations
-%       of strings or function handles as you like.
+%       executes the callback it passes the axes handle, the current time step
+%       number, and the plot handle to the callback function. If you specify
+%       this property as a cell array, you can make combinations of strings or
+%       function handles as you like.
 %
 %   StopFcn     String or function handle that shall be called after the
 %       animation has stopped.
-%       If you specify this property using a string, when MATLAB executes
-%       the callback, it evaluates the MATLAB code contained in the string. This
+%       If you specify this property using a string, when MATLAB executes the
+%       callback, it evaluates the MATLAB code contained in the string. This
 %       code has access to the variables 'ax', 'plt', and 'idx' representing the
 %       target axes, the plot object, and the current frame index, respectively.
 %       If you specify this property using a function handle, when MATLAB
-%       executes the callback it passes the axes handle, the current time
-%       step number, and the plot handle to the callback function.
-%       If you specify this property as a cell array, you can make combinations
-%       of strings or function handles as you like.
+%       executes the callback it passes the axes handle, the current time step
+%       number, and the plot handle to the callback function. If you specify
+%       this property as a cell array, you can make combinations of strings or
+%       function handles as you like.
 %
 %   UpdateFcn   String or function handle that shall be called after the
 %       animation is updated at each frame.
-%       If you specify this property using a string, when MATLAB executes
-%       the callback, it evaluates the MATLAB code contained in the string. This
+%       If you specify this property using a string, when MATLAB executes the
+%       callback, it evaluates the MATLAB code contained in the string. This
 %       code has access to the variables 'ax', 'plt', and 'idx' representing the
 %       target axes, the plot object, and the current frame index, respectively.
 %       If you specify this property using a function handle, when MATLAB
-%       executes the callback it passes the axes handle, the current time
-%       step number, and the plot handle to the callback function.
-%       If you specify this property as a cell array, you can make combinations
-%       of strings or function handles as you like.
+%       executes the callback it passes the axes handle, the current time step
+%       number, and the plot handle to the callback function. If you specify
+%       this property as a cell array, you can make combinations of strings or
+%       function handles as you like.
 %
 %   See also TIMER
 %
@@ -116,10 +119,16 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-01-21
+% Date: 2017-03-05
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 % Changelog:
+%   2017-03-05
+%       * Fix argument parsing to now support an array of axes to be passed as
+%       the first argument. This also makes the argument parsing of the IP
+%       instance more robust
+%       * Generally improve argument parsing to catch more unwanted input
+%       arguments
 %   2017-01-21
 %       * Fix DeleteFcn callback on axes not working properly. Now, when the
 %       figure with the axes is being closed/deleted, this axes timer will be
@@ -159,27 +168,27 @@ function [varargout] = anim2d(X, Y, varargin)
 ip = inputParser;
 
 % Parse the provided inputs
-varargin = [{X}, {Y}, varargin];
-[haTarget, varargin, ~] = axescheck(varargin{:});
+args = [{X}, {Y}, varargin];
+[haTarget, args, ~] = axescheck(args{:});
 
 try
     % Required: X. Numeric. Matrix; Non-empty; Columns matches columns of
     % Y;
-    valFcn_X = @(x) validateattributes(x, {'numeric'}, {'3d', 'nonempty', 'size', size(Y)}, mfilename, 'X');
+    valFcn_X = @(x) validateattributes(x, {'numeric'}, {'3d', 'nonempty', 'size', size(args{2})}, mfilename, 'X');
     addRequired(ip, 'X', valFcn_X);
 
     % Required: Y. Numeric. Matrix; Non-empty; Columns matches columns of
     % X;
-    valFcn_Y = @(x) validateattributes(x, {'numeric'}, {'3d', 'nonempty', 'size', size(X)}, mfilename, 'X');
+    valFcn_Y = @(x) validateattributes(x, {'numeric'}, {'3d', 'nonempty', 'size', size(args{1})}, mfilename, 'X');
     addRequired(ip, 'Y', valFcn_Y);
 
     % Optional: Time. Numeric. Vector; Non-empty; Increasing; Numel matches
     % numel X and Y;
-    valFcn_Time = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'vector', 'increasing', 'finite', 'numel', size(X, 1)}, mfilename, 'Time');
+    valFcn_Time = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'vector', 'increasing', 'finite', 'numel', size(args{1}, 1)}, mfilename, 'Time');
     addOptional(ip, 'Time', [], valFcn_Time);
     
     % Parameter: Axis. Handle. Non-empty
-    valFcn_Axes = @(x) validateattributes(x, {'matlab.graphics.axis.Axes'}, {'nonempty', 'scalar'}, mfilename, 'Axes');
+    valFcn_Axes = @(x) validateattributes(x, {'matlab.graphics.axis.Axes'}, {'nonempty', 'vector'}, mfilename, 'Axes');
     addParameter(ip, 'Axes', [], valFcn_Axes);
 
     % Parameter: EvenX. Char. Matches {'on', 'off', 'yes' 'no'}.
@@ -187,7 +196,7 @@ try
     addParameter(ip, 'EvenX', 'off', valFcn_EvenX);
 
     % Parameter: FPS. Numeric. Non-empty; Scalar; Positive; Finite;
-    valFcn_Fps = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'size', [1, 1], 'positive', 'finite'}, mfilename, 'Fps');
+    valFcn_Fps = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'positive', 'finite', 'nonsparse'}, mfilename, 'Fps');
     addParameter(ip, 'Fps', 25, valFcn_Fps);
 
     % Parameter: Fun. Char; Function Handle. Non-empty;
@@ -206,8 +215,8 @@ try
     valFcn_StopFcn = @(x) validateattributes(x, {'char', 'cell', 'function_handle'}, {'nonempty'}, mfilename, 'StopFcn');
     addParameter(ip, 'StopFcn', {}, valFcn_StopFcn);
 
-    % Parameter: Title. Char. Non-empty;
-    valFcn_Title = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Title');
+    % Parameter: Title. Char; Function Handle. Non-empty;
+    valFcn_Title = @(x) validateattributes(x, {'char', 'function_handle'}, {'nonempty'}, mfilename, 'Title');
     addParameter(ip, 'Title', '', valFcn_Title);
     
     % Parameter: UpdateFcn. Char. Function Handle. Non-empty;
@@ -218,7 +227,7 @@ try
     ip.KeepUnmatched = true;
     ip.FunctionName = mfilename;
     
-    parse(ip, varargin{:});
+    parse(ip, args{:});
 catch me
     throwAsCaller(me);
 end
@@ -249,14 +258,14 @@ try
     ceStartCallbacks = in_parseCallbacks(ip.Results.StartFcn, 'StartFcn');
 catch me
     throwAsCaller(me);
-end;
+end
 
 % Get update function callback handle
 try
     ceUpdateCallbacks = in_parseCallbacks(ip.Results.UpdateFcn, 'UpdateFcn');
 catch me
     throwAsCaller(me);
-end;
+end
 
 % Get start function callback handle
 try
@@ -268,7 +277,7 @@ end
 % Even x-axis?
 chEvenX = parseswitcharg(ip.Results.EvenX);
 % Title of the axes
-chTitle = ip.Results.Title;
+mxTitle = ip.Results.Title;
 % Mark start?
 chMarkStart = parseswitcharg(ip.Results.MarkStart);
 % Get a valid axes handle
@@ -290,11 +299,16 @@ stUserData.MarkStart = chMarkStart;
 stUserData.StartFcn = ceStartCallbacks;
 stUserData.StopFcn = ceStopCallbacks;
 stUserData.Time = vTime;
-stUserData.Title = '';
-if strcmpi('timer', chTitle)
-    stUserData.TitleString = 'Time: %.2f';
-else
-    stUserData.TitleString = chTitle;
+stUserData.TitleFcn = '';
+% Parse function handles as title
+if isa(mxTitle, 'function_handle')
+    stUserData.TitleFcn = mxTitle;
+% Parse 'timer' as axes title
+elseif strcmp('timer', mxTitle)
+    stUserData.TitleFcn = @(ax, t) sprintf('Time: %.2f', t);
+% Parse regular chars as axes title
+elseif isa(mxTitle, 'char')
+    stUserData.TitleFcn = @(ax, t) eval(mxTitle);
 end
 stUserData.UpdateFcn = ceUpdateCallbacks;
 stUserData.XData = aXData;
@@ -420,8 +434,9 @@ try
     axis(ax, 'manual');
 
     % Set the title, if any title is given
-    if ~isempty(ax.UserData.TitleString)
-        ax.UserData.Title = title(ax, sprintf(ax.UserData.TitleString, ax.UserData.Time(ax.UserData.Frame2Time(1))));
+    if ~isempty(ax.UserData.TitleFcn)
+        ax.UserData.Title = title(ax, ax.UserData.TitleFcn(ax, ax.UserData.Time(ax.UserData.Frame2Time(1))));
+%         ax.UserData.Title = title(ax, sprintf(ax.UserData.TitleString, ax.UserData.Time(ax.UserData.Frame2Time(1))));
     end
 
     % Call the user supplied start callback(s) (we do not rely on cellfun as
@@ -474,7 +489,9 @@ try
 
     % Update the title
     if ~isempty(ax.UserData.Title)
-        ax.UserData.Title.String = sprintf(ax.UserData.TitleString, ax.UserData.Time(ax.UserData.Frame2Time(timer.TasksExecuted)));
+        ax.UserData.Title = title(ax, ax.UserData.TitleFcn(ax, ax.UserData.Time(ax.UserData.Frame2Time(timer.TasksExecuted))));
+%         ax.UserData.Title = title(ax, ax.UserData.Title(ax, ax.UserData.Time(ax.UserData.Frame2Time(timer.TasksExecuted))));
+%         ax.UserData.Title.String = sprintf(ax.UserData.TitleString, ax.UserData.Time(ax.UserData.Frame2Time(timer.TasksExecuted)));
     end
 
     % Call the user supplied update callback(s)
