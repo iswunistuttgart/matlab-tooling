@@ -14,8 +14,10 @@ function R = rot2(a)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-03-05
+% Date: 2017-03-06
 % Changelog:
+%   2017-03-06
+%       * Fix use of degree to radian
 %   2017-03-05
 %       * Add support for multiple angles in A. Now returns a 2x2xN matrix for
 %       Nx1 vector A
@@ -26,8 +28,8 @@ function R = rot2(a)
 
 %% Do your code magic here
 % Pre-calculate the sine and cosine of the arguments
-st = sind(a);
-ct = cosd(a);
+st = sin(a);
+ct = cos(a);
 
 % Initialize matrix
 R = zeros(2, 2, numel(a), 'like', a);
