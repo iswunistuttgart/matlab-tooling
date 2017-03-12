@@ -28,7 +28,7 @@ if nargout > 0
     P = path;
 end
 
-% Get the paths to be added
+% Get the paths to be removed
 cePaths = varargin;
 % Get list of all paths registered
 cePathList = regexp(path, pathsep, 'Split');
@@ -39,7 +39,7 @@ stStack = dbstack('-completenames');
 % Get all the filenames from the current stack so that access later on is easier
 ceFileStack = {stStack.file};
 
-% Loop over every path-to-be-added
+% Loop over every path-to-be-removed
 for iPath = numel(cePaths):-1:1
     % Extract current path form list of paths (faster because we'll be needing
     % it a few more times)
@@ -51,7 +51,7 @@ for iPath = numel(cePaths):-1:1
         % Split this path into each of its subpaths
         cePathPathList = regexp(chPath, pathsep, 'Split');
         
-        % Try adding each of the paths inside this path list separately
+        % Try removing each of the paths inside this path list separately
         try
             rmpaths(cePathPathList{:});
         catch ME
@@ -65,17 +65,17 @@ for iPath = numel(cePaths):-1:1
         jFile = java.io.File(chPath);
         chPath = char(jFile.getCanonicalPath);
 
-        % Only add the path if it isn't already added
-        if ( ~all(ismember(chPath, cePathList)) && 0 ~= exist(chPath, 'dir') )
-            % Try adding the folder to the path. If things fail here, we'll be save
-            % because we're just TRYing to add the folder so a failure won't break
-            % the whole script
+        % Only remove the path if it is on the path
+        if any(ismember(chPath, cePathList)) && 7 == exist(chPath, 'dir')
+            % Try removing the folder from the path. If things fail here, we'll
+            % be save because we're just TRYing to remove the folder so a
+            % failure won't break the whole script
             try
-                % Add the path
+                % Remove the path
                 rmpath(chPath);
                 % Startup file path
                 chFinishFile = fullfile(chPath, 'finish.m');
-                % Startup file exists and we're not calling the same startup file
+                % Finish file exists and we're not calling the same finish file
                 % that we are currently being called from?
                 if 0 ~= exist(chFinishFile, 'file') && ~ismember(chFinishFile, ceFileStack)
                     % Execute it
