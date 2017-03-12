@@ -1,5 +1,5 @@
-function startup()
-% STARTUP starts this project
+function finish()
+% FINISH Shuts down this project
 
 
 
@@ -14,9 +14,7 @@ function startup()
 
 %% Do your code magic here
 
-addpath(genpath(fullfile(fileparts(mfilename('fullpath')), 'utils')));
-
-setrng()
+rmpath(genpath(fullfile(fileparts(mfilename('fullpath')), 'utils')));
 
 
 end
