@@ -19,8 +19,10 @@ function [s] = mergestructs(varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-21
+% Date: 2017-03-18
 % Changelog:
+%   2017-03-18
+%       * Allow all structs to be empty
 %   2016-09-21
 %       * Initial release
 
@@ -31,7 +33,7 @@ narginchk(1, Inf);
 % All arguments must be struct
 assert(all(cellfun(@(x) isstruct(x), varargin)), 'PHILIPPTEMPEL:MATLAB_TOOLING:MERGESTRUCTS:InvalidType', 'All arguments must be struct');
 % Any argument must be non-empty
-assert(any(cellfun(@(x) ~isempty(fieldnames(x)), varargin)), 'PHILIPPTEMPEL:MATLAB_TOOLING:MERGESTRUCTS:EmptyStructs', 'At least one struct must be non-empty.');
+% assert(any(cellfun(@(x) ~isempty(fieldnames(x)), varargin)), 'PHILIPPTEMPEL:MATLAB_TOOLING:MERGESTRUCTS:EmptyStructs', 'At least one struct must be non-empty.');
 
 
 
