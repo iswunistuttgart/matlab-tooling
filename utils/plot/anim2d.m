@@ -38,8 +38,6 @@ function [varargout] = anim2d(X, Y, varargin)
 %
 %   Optional Inputs -- specified as parameter value pairs
 %
-%   Axis        Define a custom axis to plot into.
-%
 %   EvenX       Switch to toggle even x-axis extension 'on' or 'off'. If 'EvenX'
 %       is 'on' then the by magnitude larger x-axis limit is projected onto the
 %       other one. For example, xlims of [-3, 4] will become [-4, 4].
@@ -119,10 +117,14 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-03-05
+% Date: 2017-03-14
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 % Changelog:
+%   2017-03-14
+%       * Remove name/value pair 'Axes'
+%       * Add support for calling with `anim2d` on a custom axes with an object
+%       that implements its own anim2d function
 %   2017-03-05
 %       * Fix argument parsing to now support an array of axes to be passed as
 %       the first argument. This also makes the argument parsing of the IP
@@ -163,6 +165,11 @@ function [varargout] = anim2d(X, Y, varargin)
 %       * Initial release
 
 
+%% Assert arguments
+narginchk(2, Inf);
+nargoutchk(0, 1);
+
+
 
 %% Define the input parser
 ip = inputParser;
@@ -170,6 +177,35 @@ ip = inputParser;
 % Parse the provided inputs
 args = [{X}, {Y}, varargin];
 [haTarget, args, ~] = axescheck(args{:});
+
+% If the first real argument i.e., non-axes argument, is an object, we will
+% check whether this implements the 'anim2d' function, then we'll call this
+% object's `anim2d` function
+if isobject(args{1}) && ismethod(args{1}, 'anim2d')
+    % Create a new axes handle or select the given one
+    haTarget = newplot(haTarget);
+    
+    % Add the target axes to the list of arguments
+    args = [args, {'Axes'}, {haTarget}];
+    
+    % Call the animation on the object
+    ht = deal(anim2d(args{:}));
+    
+    % If no return arguments are wanted
+    if nargout == 0
+        % Start the timer
+        start(ht)
+    end
+
+    % If return arguments are wanted, this function will return the timer so the
+    % user can/must start it manually
+    if nargout > 0
+        varargout{1} = ht;
+    end
+    
+    % Skip the rest of the function
+    return
+end
 
 try
     % Required: X. Numeric. Matrix; Non-empty; Columns matches columns of
@@ -187,7 +223,7 @@ try
     valFcn_Time = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'vector', 'increasing', 'finite', 'numel', size(args{1}, 1)}, mfilename, 'Time');
     addOptional(ip, 'Time', [], valFcn_Time);
     
-    % Parameter: Axis. Handle. Non-empty
+    % Parameter: Axes. Handle. Non-empty
     valFcn_Axes = @(x) validateattributes(x, {'matlab.graphics.axis.Axes'}, {'nonempty', 'vector'}, mfilename, 'Axes');
     addParameter(ip, 'Axes', [], valFcn_Axes);
 
