@@ -16,15 +16,20 @@ function Mn = mnormrow(M)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-04-04
+% Date: 2017-04-14
 % Changelog:
+%   2017-04-14
+%       * Change assertion from ```assert``` to ```validateattributes```
 %   2016-04-04
 %       * Initial release
 
 
 
-%% Assertion
-assert(isa(M, 'double'), 'Input must be of type double');
+%% Assert arguments
+narginchk(1, 1);
+nargoutchk(0, 1);
+
+validateattributes(M, {'numeric'}, {'2d', 'nonempty', 'finite'}, mfilename, 'M');
 
 
 
