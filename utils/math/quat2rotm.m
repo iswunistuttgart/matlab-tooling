@@ -21,10 +21,20 @@ function [R] = quat2rotm(q)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-10-23
+% Date: 2017-04-14
 % Changelog:
+%   2017-04-14
+%       * Change assertion from ```assert``` to ```validateattributes```
 %   2016-10-23
 %       * Initial release
+
+
+
+%% Assert arguments
+narginchk(1, 1);
+nargoutchk(0, 1);
+
+validateattributes(q, {'numeric'}, {'2d', 'nonempty', 'real', 'ncols', 4}, mfilename, 'q');
 
 
 
