@@ -20,10 +20,20 @@ function Row = rotm2row(Matrix)%#codegen
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
 % Date: 2016-05-10
 % Changelog:
+%   2017-04-17
+%       * Add argument assertion
 %   2016-05-10
 %       * Add END OF CODE block
 %   2016-05-09
 %       * Initial release
+
+
+
+%% Assert arguments
+narginchk(1, 1);
+nargoutchk(0, 1);
+
+validateattributes(Matrix, {'numeric'}, {'3d', 'size', [3, 3, NaN], 'nonnan', 'nonsparse', 'finite', '<=', 1, '>=', -1}, mfilename, 'Col');
 
 
 
