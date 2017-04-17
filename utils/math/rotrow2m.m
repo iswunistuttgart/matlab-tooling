@@ -21,12 +21,22 @@ function Matrix = rotrow2m(Row)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-10
+% Date: 2017-04-17
 % Changelog:
+%   2017-04-17
+%       * Add argument assertion
 %   2016-05-10
 %       * Add END OF CODE block
 %   2016-05-09
 %       * Initial release
+
+
+
+%% Assert arguments
+narginchk(1, 1);
+nargoutchk(0, 1);
+
+validateattributes(Row, {'numeric'}, {'2d', 'ncols', 9, 'nonnan', 'nonsparse', 'finite', '<=', 1, '>=', -1}, mfilename, 'Row');
 
 
 
