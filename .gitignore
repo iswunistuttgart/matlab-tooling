@@ -1,6 +1,9 @@
 *codegen*
 wiki/
 
+# Worktree folders
+wt-*
+worktree*
 
 
 # Created by https://www.gitignore.io/api/windows
