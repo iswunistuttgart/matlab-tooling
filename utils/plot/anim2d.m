@@ -117,10 +117,16 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-03-14
+% Date: 2017-05-16
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 % Changelog:
+%   2017-05-16
+%       * Fix bug when no explicit title was set on the plot causing MATLAB to
+%       state that "The statement is incomplete" without any further display.
+%       Now, the axes can have no title and it will run perfectly (even though I
+%       recommend setting the title to at least the value 'timer' so that you
+%       can see the progress
 %   2017-03-14
 %       * Remove name/value pair 'Axes'
 %       * Add support for calling with `anim2d` on a custom axes with an object
@@ -320,7 +326,12 @@ chMarkStart = parseswitcharg(ip.Results.MarkStart);
 if ~isempty(ip.Results.Axes)
     haTarget = ip.Results.Axes;
 end
+loHideAxes = isempty(haTarget);
 haTarget = newplot(haTarget);
+if loHideAxes
+    hfFigure = gpf(haTarget);
+    hfFigure.Visible = 'off';
+end
 
 
 
@@ -344,7 +355,11 @@ elseif strcmp('timer', mxTitle)
     stUserData.TitleFcn = @(ax, t) sprintf('Time: %.2f', t);
 % Parse regular chars as axes title
 elseif isa(mxTitle, 'char')
-    stUserData.TitleFcn = @(ax, t) eval(mxTitle);
+    if ~isempty(mxTitle)
+        stUserData.TitleFcn = @(ax, t) eval(mxTitle);
+    else
+        stUserData.TitleFcn = [];
+    end
 end
 stUserData.UpdateFcn = ceUpdateCallbacks;
 stUserData.XData = aXData;
@@ -379,6 +394,8 @@ if ~loLoopItems
     stUserData.Frame2Time = vFrame2Time;
 end
 
+% Store the axes parent figure locally so we can access it further down, too
+stUserData.Parent = gpf(haTarget);
 
 % Assign user data to the axes
 haTarget.UserData = stUserData;
@@ -432,6 +449,8 @@ end
 try
     % Make the target axes active
 %     axes(ax);
+    
+    ax.UserData.Parent.Visible = 'on';
 
     % Get the current axes' user data
     stUserData = ax.UserData;
@@ -469,10 +488,9 @@ try
     % Set the axes limits to manual...
     axis(ax, 'manual');
 
-    % Set the title, if any title is given
+    % Set the title, if a title function callback exists
     if ~isempty(ax.UserData.TitleFcn)
-        ax.UserData.Title = title(ax, ax.UserData.TitleFcn(ax, ax.UserData.Time(ax.UserData.Frame2Time(1))));
-%         ax.UserData.Title = title(ax, sprintf(ax.UserData.TitleString, ax.UserData.Time(ax.UserData.Frame2Time(1))));
+        title(ax, ax.UserData.TitleFcn(ax, ax.UserData.Time(ax.UserData.Frame2Time(1))));
     end
 
     % Call the user supplied start callback(s) (we do not rely on cellfun as
@@ -523,11 +541,9 @@ try
         );
     end
 
-    % Update the title
-    if ~isempty(ax.UserData.Title)
-        ax.UserData.Title = title(ax, ax.UserData.TitleFcn(ax, ax.UserData.Time(ax.UserData.Frame2Time(timer.TasksExecuted))));
-%         ax.UserData.Title = title(ax, ax.UserData.Title(ax, ax.UserData.Time(ax.UserData.Frame2Time(timer.TasksExecuted))));
-%         ax.UserData.Title.String = sprintf(ax.UserData.TitleString, ax.UserData.Time(ax.UserData.Frame2Time(timer.TasksExecuted)));
+    % Update the title, if it previously was set and if there is a callback
+     if ~ ( isempty(ax.Title.String) && isempty(ax.UserData.TitleFcn) )
+        ax.Title.String = ax.UserData.TitleFcn(ax, ax.UserData.Time(ax.UserData.Frame2Time(timer.TasksExecuted)));
     end
 
     % Call the user supplied update callback(s)
@@ -602,7 +618,7 @@ end
 function ceCallbacks = in_parseCallbacks(ceCallbackArgs, Type)
 
 % Default start callback: Does nothing
-ceCallbacks = {@(ax, plt, idx) false};
+ceCallbacks = {};
 
 if ~isempty(ceCallbackArgs)
     ceCallbacks = cell(size(ceCallbackArgs));
