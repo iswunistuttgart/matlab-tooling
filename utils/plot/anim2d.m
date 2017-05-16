@@ -141,6 +141,8 @@ function [varargout] = anim2d(X, Y, varargin)
 %       results
 %       * Change call order in start function so that, if the start should be
 %       marked, this will be done BEFORE any user-given callbacks are executed
+%       * Remove `axis 'equal'` from code because that should be up to the user
+%       to decide how they want their axes ratio
 %   2017-03-14
 %       * Remove name/value pair 'Axes'
 %       * Add support for calling with `anim2d` on a custom axes with an object
@@ -541,12 +543,10 @@ try
         vXLim = max(abs(vXLim)).*[-1, 1];
     end
 
-    % Set the limits to the min and max of the plot data ...
-    axis(ax, [vXLim, vYLim]);
-    % And then equalize the axes' aspect ratio
-    axis(ax, 'square')
     % Set the axes limits to manual...
     axis(ax, 'manual');
+    % Set the limits to the min and max of the plot data ...
+    axis(ax, [vXLim, vYLim]);
 
     % Set the title, if a title function callback exists
     if ~isempty(ax.UserData.TitleFcn)
