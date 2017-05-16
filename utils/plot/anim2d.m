@@ -404,13 +404,15 @@ if loFileOutput
     
         % Set the frame rate
         stUserData.VideoObject.FrameRate = nFps;
-        % Set the quality of the video
-        stUserData.VideoObject.Quality = 100;
+        if any(strcmpi({'MPEG-4', 'Motion JPEG AVI'}, chVideoProfile))
+            % Set the quality of the video
+            stUserData.VideoObject.Quality = 100;
+        end
         
         % Try to open the video file for writing
         open(stUserData.VideoObject);
     catch me
-        throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLABTOOLING:ANIM2D:ErrorOpeningVideoFile', 'Error opening video file at %s with reason\n%s.', escapepath(chOutputFile), me.message), me));
+        throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLABTOOLING:ANIM2D:ErrorOpeningVideoFile', 'Error opening video file at %s.', escapepath(chOutputFile)), me));
     end
     
     % We know we are writing to a file and have a valid video writer object, so
