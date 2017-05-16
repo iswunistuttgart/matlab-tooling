@@ -385,7 +385,7 @@ if isa(mxTitle, 'function_handle')
     stUserData.TitleFcn = mxTitle;
 % Parse 'timer' as axes title
 elseif strcmp('timer', mxTitle)
-    stUserData.TitleFcn = @(ax, t) sprintf('Time: %.2f', t);
+    stUserData.TitleFcn = @(ax, t) sprintf('Time: %.2fs', t);
 % Parse regular chars as axes title
 elseif isa(mxTitle, 'char')
     if ~isempty(mxTitle)
