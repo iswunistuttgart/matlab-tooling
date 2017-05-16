@@ -30,37 +30,42 @@ function [varargout] = anim2d(X, Y, varargin)
 %
 %   Inputs:
 %
-%   X       MxNxP matrix or MxN matrix of X-data of plots. Defines P lines
-%       to be plotted with N nodes over at most M items.
+%   X       MxNxP matrix or MxN matrix of X-data of plots. Defines P lines to be
+%           plotted with N nodes over at most M items.
 %
-%   Y       MxNxP matrix or MxN matrix of Y-data of plots. Defines P lines
-%       to be plotted with N nodes over at most M items.
+%   Y       MxNxP matrix or MxN matrix of Y-data of plots. Defines P lines to be
+%           plotted with N nodes over at most M items.
 %
 %   Optional Inputs -- specified as parameter value pairs
 %
-%   EvenX       Switch to toggle even x-axis extension 'on' or 'off'. If 'EvenX'
-%       is 'on' then the by magnitude larger x-axis limit is projected onto the
-%       other one. For example, xlims of [-3, 4] will become [-4, 4].
+%   EvenX           Switch to toggle even x-axis extension 'on' or 'off'. If
+%       'EvenX' is 'on' then the by magnitude larger x-axis limit is projected
+%       onto the other one. For example, xlims of [-3, 4] will become [-4, 4].
 %
-%   Fps         Number of frames per second to draw. This values is being used
-%       for the timer's period. Defaults to 25.
+%   Fps             Number of frames per second to draw. This values is being
+%       used for the timer's period. Defaults to 25.
 %
-%   Fun         Function to be used for plotting the data. By default, 'plot'
-%       will be used but this way, 'log' or 'stem' can be used to plot ALL data
-%       (line-specific plot functions are not yet supported).
+%   Fun             Function to be used for plotting the data. By default,
+%       'plot' will be used but this way, 'log' or 'stem' can be used to plot
+%       ALL data (line-specific plot functions are not yet supported).
 %
-%   MarkStart   Switch to mark the first row of the plotted data. This can be
-%       useful to e.g., highlight the initial condition. Defaults to 'off'. Can
-%       be 'on' or 'off'.
+%   MarkStart       Switch to mark the first row of the plotted data. This can
+%       be useful to e.g., highlight the initial condition. Defaults to 'off'.
+%       Can be 'on' or 'off'.
 %
-%   Time        Mx1 vector of time values to use. By default, this function
+%   Output          Char argument representing the name (or path) of a file to
+%       write content to. The name/path should contain the correct file
+%       type/extension to avoid creation of incorrect files. See also argument
+%       'VideoProfile'
+%
+%   Time            Mx1 vector of time values to use. By default, this function
 %       iterates over the first dimension of X and Y. If a time vector is given,
 %       then the row with the value closest to the current animation time is
 %       being used for animation. Additionally, this value is passed to the
 %       title of the plot to display the progress.
 %
-%   Title       String to be displayed in the title. Can also be set to 'timer'
-%       to enable automatic rendering of the time in the axes' title.
+%   Title           String to be displayed in the title. Can also be set to
+%       'timer' to enable automatic rendering of the time in the axes' title.
 %       If a user-specific string is provided, it will be passed to `sprintf`
 %       where the current time is being parsed as first argument, the current
 %       frame index as second.
@@ -68,7 +73,7 @@ function [varargout] = anim2d(X, Y, varargin)
 %       executes the callback it passes the axes handle and the current time to
 %       the callbak function.
 %
-%   StartFcn    String or function handle that shall be called after the animati
+%   StartFcn        String or function handle that shall be called after the
 %       animation is set up and before it is started.
 %       If you specify this property using a string, when MATLAB executes the
 %       callback, it evaluates the MATLAB code contained in the string. This
@@ -80,7 +85,7 @@ function [varargout] = anim2d(X, Y, varargin)
 %       this property as a cell array, you can make combinations of strings or
 %       function handles as you like.
 %
-%   StopFcn     String or function handle that shall be called after the
+%   StopFcn         String or function handle that shall be called after the
 %       animation has stopped.
 %       If you specify this property using a string, when MATLAB executes the
 %       callback, it evaluates the MATLAB code contained in the string. This
@@ -92,7 +97,7 @@ function [varargout] = anim2d(X, Y, varargin)
 %       this property as a cell array, you can make combinations of strings or
 %       function handles as you like.
 %
-%   UpdateFcn   String or function handle that shall be called after the
+%   UpdateFcn       String or function handle that shall be called after the
 %       animation is updated at each frame.
 %       If you specify this property using a string, when MATLAB executes the
 %       callback, it evaluates the MATLAB code contained in the string. This
@@ -104,7 +109,11 @@ function [varargout] = anim2d(X, Y, varargin)
 %       this property as a cell array, you can make combinations of strings or
 %       function handles as you like.
 %
-%   See also TIMER
+%   VideoProfile    Profile to be used to write video file. Must be matching the
+%       video file extension/type, otherwise it won't work. Allowed values can
+%       be inferred from VideoWriter
+%
+%   See also TIMER VIDEOWRITER WRITEVIDEO GETFRAME
 %
 %   KNOWN BUGS:
 %   Due to some weird behavior (of feval probably) the order of plots is changed
@@ -117,10 +126,23 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-03-14
+% Date: 2017-05-16
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 % Changelog:
+%   2017-05-16
+%       * Fix bug when no explicit title was set on the plot causing MATLAB to
+%       state that "The statement is incomplete" without any further display.
+%       Now, the axes can have no title and it will run perfectly (even though I
+%       recommend setting the title to at least the value 'timer' so that you
+%       can see the progress
+%       * Add argument 'Output' and 'VideoProfile' to export the axes frame to.
+%       This can come in very handy when creating visualizations for scientific
+%       results
+%       * Change call order in start function so that, if the start should be
+%       marked, this will be done BEFORE any user-given callbacks are executed
+%       * Remove `axis 'equal'` from code because that should be up to the user
+%       to decide how they want their axes ratio
 %   2017-03-14
 %       * Remove name/value pair 'Axes'
 %       * Add support for calling with `anim2d` on a custom axes with an object
@@ -163,6 +185,7 @@ function [varargout] = anim2d(X, Y, varargin)
 %       (ax,idx,plt) to (ax,plt,idx)
 %   2016-09-17
 %       * Initial release
+
 
 
 %% Assert arguments
@@ -231,6 +254,10 @@ try
     valFcn_EvenX = @(x) any(validatestring(lower(x), {'on', 'yes', 'off', 'no'}, mfilename, 'EvenX'));
     addParameter(ip, 'EvenX', 'off', valFcn_EvenX);
 
+    % Parameter: Output. Char. Non-empty
+    valFcn_Output = @(x) validateattributes(x, {'char', 'nonempty'}, {'nonempty'}, mfilename, 'Output');
+    addParameter(ip, 'Output', '', valFcn_Output);
+
     % Parameter: FPS. Numeric. Non-empty; Scalar; Positive; Finite;
     valFcn_Fps = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'scalar', 'positive', 'finite', 'nonsparse'}, mfilename, 'Fps');
     addParameter(ip, 'Fps', 25, valFcn_Fps);
@@ -258,6 +285,10 @@ try
     % Parameter: UpdateFcn. Char. Function Handle. Non-empty;
     valFcn_UpdateFcn = @(x) validateattributes(x, {'char', 'cell', 'function_handle'}, {'nonempty'}, mfilename, 'UpdateFcn');
     addParameter(ip, 'UpdateFcn', {}, valFcn_UpdateFcn);
+
+    % Parameter: VideoProfile. Char. Non-empty;
+    valFcn_VideoProfile = @(x) validateattributes(x, {'char', 'nonempty'}, {'nonempty'}, mfilename, 'VideoProfile');
+    addParameter(ip, 'VideoProfile', 'Motion JPEG AVI', valFcn_VideoProfile);
 
     % Configuration of input parser
     ip.KeepUnmatched = true;
@@ -310,6 +341,13 @@ catch me
     throwAsCaller(me);
 end
 
+% Get filename for output (if given)
+chOutputFile = ip.Results.Output;
+% Write to file?
+loFileOutput = ~isempty(chOutputFile);
+% Profile of the video
+chVideoProfile = ip.Results.VideoProfile;
+
 % Even x-axis?
 chEvenX = parseswitcharg(ip.Results.EvenX);
 % Title of the axes
@@ -320,7 +358,12 @@ chMarkStart = parseswitcharg(ip.Results.MarkStart);
 if ~isempty(ip.Results.Axes)
     haTarget = ip.Results.Axes;
 end
+loHideAxes = isempty(haTarget);
 haTarget = newplot(haTarget);
+if loHideAxes
+    hfFigure = gpf(haTarget);
+    hfFigure.Visible = 'off';
+end
 
 
 
@@ -329,6 +372,7 @@ haTarget = newplot(haTarget);
 stUserData = struct();
 stUserData.DataCount = size(aXData, 3);
 stUserData.EvenX = chEvenX;
+stUserData.File = chOutputFile;
 stUserData.Fun = mxFun;
 stUserData.InitialPlot = [];
 stUserData.MarkStart = chMarkStart;
@@ -341,14 +385,46 @@ if isa(mxTitle, 'function_handle')
     stUserData.TitleFcn = mxTitle;
 % Parse 'timer' as axes title
 elseif strcmp('timer', mxTitle)
-    stUserData.TitleFcn = @(ax, t) sprintf('Time: %.2f', t);
+    stUserData.TitleFcn = @(ax, t) sprintf('Time: %.2fs', t);
 % Parse regular chars as axes title
 elseif isa(mxTitle, 'char')
-    stUserData.TitleFcn = @(ax, t) eval(mxTitle);
+    if ~isempty(mxTitle)
+        stUserData.TitleFcn = @(ax, t) eval(mxTitle);
+    else
+        stUserData.TitleFcn = [];
+    end
 end
 stUserData.UpdateFcn = ceUpdateCallbacks;
+stUserData.VideoObject = [];
+stUserData.WriteFile = loFileOutput;
 stUserData.XData = aXData;
 stUserData.YData = aYData;
+
+% Create a video writer object if the output should be sent to a file
+if loFileOutput
+    try
+        % Create a video writer object
+        stUserData.VideoObject = VideoWriter(chOutputFile, chVideoProfile);
+    
+        % Set the frame rate
+        stUserData.VideoObject.FrameRate = nFps;
+        if any(strcmpi({'MPEG-4', 'Motion JPEG AVI'}, chVideoProfile))
+            % Set the quality of the video
+            stUserData.VideoObject.Quality = 100;
+        end
+        
+        % Try to open the video file for writing
+        open(stUserData.VideoObject);
+    catch me
+        throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLABTOOLING:ANIM2D:ErrorOpeningVideoFile', 'Error opening video file at %s.', escapepath(chOutputFile)), me));
+    end
+    
+    % We know we are writing to a file and have a valid video writer object, so
+    % now we will create the callbacks that will extract the current frame and
+    % pass it to the video writer
+    stUserData.UpdateFcn{end+1} = @cb_update_writeVideo;
+    stUserData.StopFcn{end+1} = @cb_stop_writeVideo;
+end
 
 % If we loop over the items and draw them one by one, the mapping of frame
 % to time is simple:
@@ -379,8 +455,12 @@ if ~loLoopItems
     stUserData.Frame2Time = vFrame2Time;
 end
 
+% Store the axes parent figure locally so we can access it further down, too,
+% e.g., during starting the animation or during exporting a video
+stUserData.Figure = gpf(haTarget);
 
-% Assign user data to the axes
+
+% Assign our user data to the axes
 haTarget.UserData = stUserData;
 
 % Create a timer object
@@ -397,8 +477,8 @@ tiUpdater = timer(...
 % Create a close function on the current axis
 % haTarget.DeleteFcn = @cb_cleanup;
 % haTarget.DeleteFcn = 'disp(''hello world'')';
-hfParent = gpf(haTarget);
-hfParent.DeleteFcn = {@cb_cleanup, haTarget};
+hfFigure = gpf(haTarget);
+hfFigure.DeleteFcn = {@cb_cleanup, haTarget};
 
 % Add the timer to the axes, too
 haTarget.UserData.Timer = tiUpdater;
@@ -429,9 +509,10 @@ if ~ishandle(ax)
     return
 end
 
-try
-    % Make the target axes active
-%     axes(ax);
+try 
+    % Make the axes' figure visible again (it might have been made invisible if
+    % a new axes was created by calling this function)
+    ax.UserData.Figure.Visible = 'on';
 
     % Get the current axes' user data
     stUserData = ax.UserData;
@@ -462,26 +543,14 @@ try
         vXLim = max(abs(vXLim)).*[-1, 1];
     end
 
-    % Set the limits to the min and max of the plot data ...
-    axis(ax, [vXLim, vYLim]);
-    % And then equalize the axes' aspect ratio
-    axis(ax, 'square')
     % Set the axes limits to manual...
     axis(ax, 'manual');
+    % Set the limits to the min and max of the plot data ...
+    axis(ax, [vXLim, vYLim]);
 
-    % Set the title, if any title is given
+    % Set the title, if a title function callback exists
     if ~isempty(ax.UserData.TitleFcn)
-        ax.UserData.Title = title(ax, ax.UserData.TitleFcn(ax, ax.UserData.Time(ax.UserData.Frame2Time(1))));
-%         ax.UserData.Title = title(ax, sprintf(ax.UserData.TitleString, ax.UserData.Time(ax.UserData.Frame2Time(1))));
-    end
-
-    % Call the user supplied start callback(s) (we do not rely on cellfun as
-    % we do not know in what order the functions will be executed and the
-    % user might want to have their callbacks executed in a particular
-    % order).
-    % @see http://stackoverflow.com/questions/558478/how-to-execute-multiple-statements-in-a-matlab-anonymous-function#558868
-    for iSF = 1:numel(ax.UserData.StartFcn)
-        ax.UserData.StartFcn{iSF}(ax, ax.Children(1:ax.UserData.DataCount), timer.TasksExecuted);
+        title(ax, ax.UserData.TitleFcn(ax, ax.UserData.Time(ax.UserData.Frame2Time(1))));
     end
 
     % Mark the initial plot?
@@ -490,6 +559,16 @@ try
         stUserData.InitialPlot = copyobj(ax.Children, ax);
         % Adjust all 'initial state' objects to be dashed lines
         set(ax.Children((stUserData.DataCount + 1):end), 'LineStyle', '--');
+    end
+
+    % Call the user supplied start callback(s) (we do not rely on cellfun as we
+    % do not know in what order the functions will be executed and the user
+    % might want to have their callbacks executed in a particular order).
+    % 
+    % @see
+    % http://stackoverflow.com/questions/558478/how-to-execute-multiple-statements-in-a-matlab-anonymous-function#558868
+    for iSF = 1:numel(ax.UserData.StartFcn)
+        ax.UserData.StartFcn{iSF}(ax, ax.Children(1:ax.UserData.DataCount), timer.TasksExecuted);
     end
 
     % Update figure
@@ -523,11 +602,9 @@ try
         );
     end
 
-    % Update the title
-    if ~isempty(ax.UserData.Title)
-        ax.UserData.Title = title(ax, ax.UserData.TitleFcn(ax, ax.UserData.Time(ax.UserData.Frame2Time(timer.TasksExecuted))));
-%         ax.UserData.Title = title(ax, ax.UserData.Title(ax, ax.UserData.Time(ax.UserData.Frame2Time(timer.TasksExecuted))));
-%         ax.UserData.Title.String = sprintf(ax.UserData.TitleString, ax.UserData.Time(ax.UserData.Frame2Time(timer.TasksExecuted)));
+    % Update the title, if it previously was set and if there is a callback
+     if ~ ( isempty(ax.Title.String) && isempty(ax.UserData.TitleFcn) )
+        ax.Title.String = ax.UserData.TitleFcn(ax, ax.UserData.Time(ax.UserData.Frame2Time(timer.TasksExecuted)));
     end
 
     % Call the user supplied update callback(s)
@@ -601,8 +678,8 @@ end
 
 function ceCallbacks = in_parseCallbacks(ceCallbackArgs, Type)
 
-% Default start callback: Does nothing
-ceCallbacks = {@(ax, plt, idx) false};
+% Default start callback: empty/does nothing
+ceCallbacks = {};
 
 if ~isempty(ceCallbackArgs)
     ceCallbacks = cell(size(ceCallbackArgs));
@@ -626,6 +703,31 @@ if ~isempty(ceCallbackArgs)
     else
         ceCallbacks = {ceCallbackArgs};
     end
+end
+
+end
+
+
+function cb_update_writeVideo(ax, plt, idx)
+%% IN_UPDATECALLBACK_WRITEVIDEO writes the current frame to the video object
+
+% Write the current frame to the video object
+try
+    writeVideo(ax.UserData.VideoObject, getframe(ax.UserData.Figure));
+catch me
+    warning(me.message, me.identifier);
+end
+
+end
+
+
+function cb_stop_writeVideo(ax, plt, idx)
+%% IN_STOPCALLBACK_WRITEVIDEO closes the video object
+
+try
+    close(ax.UserData.VideoObject);
+catch me
+    warning(me.message, me.identifier);
 end
 
 end
