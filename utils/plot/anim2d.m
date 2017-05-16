@@ -139,6 +139,8 @@ function [varargout] = anim2d(X, Y, varargin)
 %       * Add argument 'Output' and 'VideoProfile' to export the axes frame to.
 %       This can come in very handy when creating visualizations for scientific
 %       results
+%       * Change call order in start function so that, if the start should be
+%       marked, this will be done BEFORE any user-given callbacks are executed
 %   2017-03-14
 %       * Remove name/value pair 'Axes'
 %       * Add support for calling with `anim2d` on a custom axes with an object
@@ -505,10 +507,7 @@ if ~ishandle(ax)
     return
 end
 
-try
-    % Make the target axes active
-%     axes(ax);
-    
+try 
     % Make the axes' figure visible again (it might have been made invisible if
     % a new axes was created by calling this function)
     ax.UserData.Figure.Visible = 'on';
@@ -554,11 +553,12 @@ try
         title(ax, ax.UserData.TitleFcn(ax, ax.UserData.Time(ax.UserData.Frame2Time(1))));
     end
 
-    % Call the user supplied start callback(s) (we do not rely on cellfun as
-    % we do not know in what order the functions will be executed and the
-    % user might want to have their callbacks executed in a particular
-    % order).
-    % @see http://stackoverflow.com/questions/558478/how-to-execute-multiple-statements-in-a-matlab-anonymous-function#558868
+    % Call the user supplied start callback(s) (we do not rely on cellfun as we
+    % do not know in what order the functions will be executed and the user
+    % might want to have their callbacks executed in a particular order).
+    % 
+    % @see
+    % http://stackoverflow.com/questions/558478/how-to-execute-multiple-statements-in-a-matlab-anonymous-function#558868
     for iSF = 1:numel(ax.UserData.StartFcn)
         ax.UserData.StartFcn{iSF}(ax, ax.Children(1:ax.UserData.DataCount), timer.TasksExecuted);
     end
