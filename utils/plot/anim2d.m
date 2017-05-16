@@ -553,6 +553,14 @@ try
         title(ax, ax.UserData.TitleFcn(ax, ax.UserData.Time(ax.UserData.Frame2Time(1))));
     end
 
+    % Mark the initial plot?
+    if strcmp('on', stUserData.MarkStart)
+        % Copy the plot objects quickly
+        stUserData.InitialPlot = copyobj(ax.Children, ax);
+        % Adjust all 'initial state' objects to be dashed lines
+        set(ax.Children((stUserData.DataCount + 1):end), 'LineStyle', '--');
+    end
+
     % Call the user supplied start callback(s) (we do not rely on cellfun as we
     % do not know in what order the functions will be executed and the user
     % might want to have their callbacks executed in a particular order).
@@ -561,14 +569,6 @@ try
     % http://stackoverflow.com/questions/558478/how-to-execute-multiple-statements-in-a-matlab-anonymous-function#558868
     for iSF = 1:numel(ax.UserData.StartFcn)
         ax.UserData.StartFcn{iSF}(ax, ax.Children(1:ax.UserData.DataCount), timer.TasksExecuted);
-    end
-
-    % Mark the initial plot?
-    if strcmp('on', stUserData.MarkStart)
-        % Copy the plot objects quickly
-        stUserData.InitialPlot = copyobj(ax.Children, ax);
-        % Adjust all 'initial state' objects to be dashed lines
-        set(ax.Children((stUserData.DataCount + 1):end), 'LineStyle', '--');
     end
 
     % Update figure
