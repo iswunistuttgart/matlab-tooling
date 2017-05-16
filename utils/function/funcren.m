@@ -15,8 +15,14 @@ function funcren(Old, New, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-12-03
+% Date: 2017-01-10
+% TODO:
+%   * Need to be able to handle packaged function names. For the old function
+%   name it seems to work, but for the new function name it does (somehow
+%   magically, but not really) work.
 % Changelog:
+%   2017-01-10
+%       * Add TODO to handle packaged functions
 %   2016-12-03
 %       * Fix bug that would prevent function name to be replaced if the full
 %       filename was given i.e., `funcren('oldname.m', 'newname.,')` would not
@@ -89,6 +95,10 @@ assert(~isempty(chOld_Filepath), 'PHILIPPTEMPEL:renFunc:InvalidFuncName', 'Could
 % Create path parts for the new file
 chNew_Path = chOld_Path;
 chNew_Ext = chOld_Ext;
+
+% Find out if the old function is a packaged function, if so, check the new
+% function name if its packaged or not and adjust accordingly (fail if there is
+% no such new module)
 
 % Create path of new file
 chNew_Filepath = fullfile(chNew_Path, sprintf('%s%s', chNew_Name, chNew_Ext));
