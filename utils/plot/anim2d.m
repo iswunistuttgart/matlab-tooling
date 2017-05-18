@@ -126,10 +126,15 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-05-16
+% Date: 2017-05-18
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 % Changelog:
+%   2017-05-18
+%       * Update handling of objects being passed to anim2d in combination with
+%       a user-given axes handle
+%   2017-05-17
+%       * Make sure figures are non-resizable if there is an active video export
 %   2017-05-16
 %       * Fix bug when no explicit title was set on the plot causing MATLAB to
 %       state that "The statement is incomplete" without any further display.
@@ -206,13 +211,17 @@ args = [{X}, {Y}, varargin];
 % object's `anim2d` function
 if isobject(args{1}) && ismethod(args{1}, 'anim2d')
     % Create a new axes handle or select the given one
-    haTarget = newplot(haTarget);
+%     haTarget = newplot(haTarget);
+
+    % Get the object and remove it from the arguments
+    mxObject = args{1};
+    args(1) = [];
     
     % Add the target axes to the list of arguments
-    args = [args, {'Axes'}, {haTarget}];
+    args = [{haTarget}, args];
     
     % Call the animation on the object
-    ht = deal(anim2d(args{:}));
+    ht = deal(anim2d(mxObject, args{:}));
     
     % If no return arguments are wanted
     if nargout == 0
@@ -408,13 +417,15 @@ if loFileOutput
     
         % Set the frame rate
         stUserData.VideoObject.FrameRate = nFps;
+        
+        % Set video quality for some video profiles
         if any(strcmpi({'MPEG-4', 'Motion JPEG AVI'}, chVideoProfile))
             % Set the quality of the video
             stUserData.VideoObject.Quality = 100;
         end
         
         % Try to open the video file for writing
-        open(stUserData.VideoObject);
+        open(stUserData.VideoObject)
     catch me
         throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLABTOOLING:ANIM2D:ErrorOpeningVideoFile', 'Error opening video file at %s.', escapepath(chOutputFile)), me));
     end
@@ -422,6 +433,7 @@ if loFileOutput
     % We know we are writing to a file and have a valid video writer object, so
     % now we will create the callbacks that will extract the current frame and
     % pass it to the video writer
+    stUserData.StartFcn{end+1} = @cb_start_writeVideo;
     stUserData.UpdateFcn{end+1} = @cb_update_writeVideo;
     stUserData.StopFcn{end+1} = @cb_stop_writeVideo;
 end
@@ -703,6 +715,18 @@ if ~isempty(ceCallbackArgs)
     else
         ceCallbacks = {ceCallbackArgs};
     end
+end
+
+end
+
+
+function cb_start_writeVideo(ax, ~, ~)
+%% CB_START_WRITEVIDEO sets the figure resize option to 'off'
+
+try
+    ax.UserData.Figure.Resize = 'off';
+catch me
+    warning(me.message, me.identifier);
 end
 
 end
