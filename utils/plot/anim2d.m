@@ -308,7 +308,6 @@ try
     
     parse(ip, args{:});
 catch me
-    rethrow(me);
     throwAsCaller(me);
 end
 
