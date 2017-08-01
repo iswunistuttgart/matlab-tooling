@@ -1,22 +1,33 @@
 function lighter = rgb_lighter(rgb, factor, varargin)
 % RGB_LIGHTER 
 %
+%   RGB_LIGHTER(RGB, FACTOR) turns the RGB-triplet RGB darker by factor FACTOR.
+%
+%   RGB_LIGHTER(RGB, FACTOR, 'Name', 'Value', ...) allows setting optional
+%   inputs using name/value pairs.
+%
 %   Inputs:
 %
-%   RGB                 Description of argument RGB
+%   RGB                 1x3 triplet of RGB values in the range of 0..1.
 %
-%   FACTOR              Description of argument FACTOR
+%   FACTOR              Factor to lighten the RGB triplet to. Must be between
+%                       0 and 1. With 1, the triplet will not be lightened, with
+%                       0 it will be set to zero
 %
 %   Outputs:
 %
-%   LIGHTER             Description of argument LIGHTER
+%   LIGHTER             1x3 array of lightened RGB values in the range of 0..1
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-02-24
+% Date: 2017-08-01
 % Changelog:
+%   2017-08-01
+%       * Add option 'AsInteger' to allow returning the lighter RGB as integer
+%       values
+%       * Add help block text
 %   2017-02-24
 %       * Initial release
 
@@ -33,6 +44,10 @@ addRequired(ip, 'rgb', valFcn_Rgb);
 % Required: factor; numeric; scalar, non-empty, non-sparse, non-negative, <= 1,
 valFcn_Factor = @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonempty', 'scalar', 'nonsparse', 'nonnegative', '<=', 1}, mfilename, 'factor');
 addRequired(ip, 'factor', valFcn_Factor);
+
+% Optional: AsInteger; 
+valFcn_AsInteger = @(x) any(validatestring(lower(x), {'on', 'yes', 'off', 'no'}, mfilename, 'AsInteger'));
+addOptional(ip, 'AsInteger', 'off', valFcn_AsInteger);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -54,11 +69,20 @@ end
 aRgb = ip.Results.rgb;
 % Factor to scale each color
 dFactor = ip.Results.factor;
+% Return result as integer not float?
+chAsInteger = parseswitcharg(ip.Results.AsInteger);
+
 
 
 %% Do your code magic here
 
-lighter = fix(aRgb  + (1 - aRgb)*dFactor);
+% Calculate the lighter RGB values
+lighter = fix((aRgb + (1 - aRgb)*dFactor)*100)/100;
+
+% Turn floats into integers as requested by the user
+if strcmp(chAsInteger, 'on')
+    lighter = round(lighter.*255);
+end
 
 
 end
