@@ -126,10 +126,13 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-05-18
+% Date: 2017-08-01
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 % Changelog:
+%   2017-08-01
+%       * Fix error with axes assigment when calling anim2d on an object that
+%       overrides the method
 %   2017-05-18
 %       * Update handling of objects being passed to anim2d in combination with
 %       a user-given axes handle
@@ -218,7 +221,7 @@ if isobject(args{1}) && ismethod(args{1}, 'anim2d')
     args(1) = [];
     
     % Add the target axes to the list of arguments
-    args = [{haTarget}, args];
+    args = ['Axes', {haTarget}, args];
     
     % Call the animation on the object
     ht = deal(anim2d(mxObject, args{:}));
@@ -305,6 +308,7 @@ try
     
     parse(ip, args{:});
 catch me
+    rethrow(me);
     throwAsCaller(me);
 end
 
