@@ -126,10 +126,13 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-08-01
+% Date: 2017-08-02
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 % Changelog:
+%   2017-08-02:
+%       * Update check for too-narrow axes: now compares difference of lower
+%       and upper axes boundaries against eps
 %   2017-08-01
 %       * Fix error with axes assigment when calling anim2d on an object that
 %       overrides the method
@@ -545,11 +548,11 @@ try
     vXLim = [min(min(min(ax.UserData.XData))), max(max(max(ax.UserData.XData)))];
     vYLim = [min(min(min(ax.UserData.YData))), max(max(max(ax.UserData.YData)))];
     % If no x-axis limits are given, we wil make some of our own
-    if vXLim(1) == vXLim(2)
+    if abs( vXLim(1) - vXLim(2) ) <= 10*eps
         vXLim = vXLim + [-1, +1];
     end
     % If no Y-axis limits are given, we will make some of our own
-    if vYLim(1) == vYLim(2)
+    if abs( vYLim(1) - vYLim(2) ) <= 10*eps
         vYLim = vYLim + [-1, +1];
     end
 
@@ -557,12 +560,22 @@ try
     if strcmp('on', ax.UserData.EvenX)
         vXLim = max(abs(vXLim)).*[-1, 1];
     end
+    
+%     display(vXLim)
+%     display(vYLim)
+%     display([vXLim, vYLim], '[vXLim, vYLim]')
 
-    % Set the axes limits to manual...
-    axis(ax, 'manual');
-    % Set the limits to the min and max of the plot data ...
-    axis(ax, [vXLim, vYLim]);
-
+    try
+        % Set the axes limits to manual...
+%         axis(ax, 'manual');
+        % Set the limits to the min and max of the plot data ...
+    %     axis(ax, [vXLim, vYLim]);
+        xlim(ax, vXLim);
+        ylim(ax, vYLim);
+    catch me
+        display(me.message);
+    end
+    
     % Set the title, if a title function callback exists
     if ~isempty(ax.UserData.TitleFcn)
         title(ax, ax.UserData.TitleFcn(ax, ax.UserData.Time(ax.UserData.Frame2Time(1))));
