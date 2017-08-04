@@ -30,8 +30,11 @@ function [Box, Traversal] = bbox(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-30
+% Date: 2017-08-04
 % Changelog:
+%   2017-08-04
+%       * Convert all ```assert``` into ```validateattributes``` for better
+%       error display
 %   2016-05-30
 %       * Update matrix argument processing to column major i.e., [X, Y]
 %   2016-05-10
@@ -56,20 +59,20 @@ end
 
 
 
-%% Pre-process inputs
-% X must not be a scalar and must be a vector
-assert(~isscalar(X));
-assert(isvector(X));
-% Y must not be a scalar and must be a vector
-assert(~isscalar(Y))
-assert(isvector(Y));
-% X and Y must have the same number of elements
-assert(numel(X) == numel(Y));
+%% Validate inputs
+try
+    % X must not be a scalar and must be a vector
+    validateattributes(X, {'numeric'}, {'vector', 'nonempty', 'finite', 'nonsparse', 'numel', numel(Y)}, mfilename, 'X');
+    % Y must not be a scalar and must be a vector
+    validateattributes(Y, {'numeric'}, {'vector', 'nonempty', 'finite', 'nonsparse', 'numel', numel(X)}, mfilename, 'Y');
+catch me
+    throwAsCaller(me);
+end
 
 
 
 %% Do the magic!
-% First, get all minimum and maximum values of X, Y, and Z
+% First, get all minimum and maximum values of X, and Y
 minVals = [min(X), min(Y)];
 maxVals = [max(X), max(Y)];
 
