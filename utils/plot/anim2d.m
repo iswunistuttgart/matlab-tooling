@@ -126,10 +126,14 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-08-02
+% Date: 2017-08-05
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 % Changelog:
+%   2017-08-05
+%       * Fix incorrect validation of 'VideoProfile' argument
+%       * Add input parser option to add 'VideoWriter' options to override
+%       them by the user
 %   2017-08-02:
 %       * Update check for too-narrow axes: now compares difference of lower
 %       and upper axes boundaries against eps
@@ -302,8 +306,12 @@ try
     addParameter(ip, 'UpdateFcn', {}, valFcn_UpdateFcn);
 
     % Parameter: VideoProfile. Char. Non-empty;
-    valFcn_VideoProfile = @(x) validateattributes(x, {'char', 'nonempty'}, {'nonempty'}, mfilename, 'VideoProfile');
+    valFcn_VideoProfile = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'VideoProfile');
     addParameter(ip, 'VideoProfile', 'Motion JPEG AVI', valFcn_VideoProfile);
+
+    % Parameter: VideoWriter. Cell. Non-empty;
+    valFcn_VideoWriter = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'VideoWriter');
+    addParameter(ip, 'VideoWriter', {}, valFcn_VideoWriter);
 
     % Configuration of input parser
     ip.KeepUnmatched = true;
@@ -362,6 +370,8 @@ chOutputFile = ip.Results.Output;
 loFileOutput = ~isempty(chOutputFile);
 % Profile of the video
 chVideoProfile = ip.Results.VideoProfile;
+% Videowriter options
+ceVideoWriter = ip.Results.VideoWriter;
 
 % Even x-axis?
 chEvenX = parseswitcharg(ip.Results.EvenX);
@@ -428,6 +438,19 @@ if loFileOutput
         if any(strcmpi({'MPEG-4', 'Motion JPEG AVI'}, chVideoProfile))
             % Set the quality of the video
             stUserData.VideoObject.Quality = 100;
+        end
+        
+        % Set custom video writer options?
+        if ~isempty(ceVideoWriter)
+            try
+                nVideoWriterOpts = lower(numel(ceVideoWriter)/2);
+                
+                for iOpt = 1:2:nVideoWriterOpts
+                    stUserData.VideoObject.(ceVideoWriter{iOpt}) = ceVideoWriter{iOpt + 1};
+                end
+            catch me
+                warning(me.identifier, me.message);
+            end
         end
         
         % Try to open the video file for writing
