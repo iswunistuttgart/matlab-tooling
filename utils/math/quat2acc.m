@@ -1,30 +1,29 @@
-function alpha = quat2acc(q, q_dot, q_ddot)%#codegen
-% QUAT2ACC Get angular acceleration from quaternion position, velocity, and
-% acceleration
+function alpha = quat2acc(q_dot, q_ddot)%#codegen
+% QUAT2ACC Get angular acceleration from quaternion velocity, and acceleration
 % 
-%   ALPHA = QUAT2ACC(Q, Qdot, Qddot) gets the angular acceleration ALPHA from
-%   the quaternion position Q, quaternion velocity Qdot, and quaternion
-%   acceleration Qddot.
+%   ALPHA = QUAT2ACC(DQ, DDQ) gets the angular acceleration ALPHA from
+%   quaternion velocity DQ, and quaternion acceleration DDQ.
 %
 %   Inputs:
 % 
-%   Q               1x4 vector of quaternion in vector notation with the real
-%       entry at the first index.
+%   DQ              Nx4 vector of quaternion velocity.
 %
-%   Qdot            1x4 vector of quaternion velocity.
-%
-%   Qddot           1x4 vector of quaternion acceleration.
+%   DDQ             Nx4 vector of quaternion acceleration.
 % 
 %   Outputs:
 % 
-%   ALPHA           3x1 vector of angular accelerations.
+%   ALPHA           Nx3 vector of angular accelerations.
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-12-09
+% Date: 2017-08-05
 % Changelog:
+%   2017-08-05
+%       * Add input validation
+%       * Backwards incompatible change: allow for multiple quaternion rate
+%       changes to be converted to angular velocities.
 %   2016-12-09
 %       * Propagate rename of function `ascolumn` to `ascol`
 %   2016-05-10
@@ -34,10 +33,19 @@ function alpha = quat2acc(q, q_dot, q_ddot)%#codegen
 
 
 
+%% Validate input
+% Number of quaternions to manipulate
+nQuaternions = size(q, 1);
+% Quaternions must be given as Nx4 matrix
+validateattributes(q, {'numeric'}, {'2d', 'nonempty', 'ncols', 4, 'finite', 'nonsparse', 'nonnan'}, mfilename, 'q');
+% Quaternion velocities must be given as Nx4 matrix, too
+validateattributes(q, {'numeric'}, {'2d', 'nonempty', 'ncols', 4, 'nrows', nQuaternions, 'finite', 'nonsparse', 'nonnan'}, mfilename, 'q');
+
+
+
 %% Calculation
 
-% alpha = 2*quat2ratem(asrow(q_dot))*ascol(q_dot) + 2*quat2ratem(asrow(q))*ascol(q_ddot);
-alpha = 2*quat2ratem(asrow(q_dot))*ascol(q_ddot);
+alpha = 2*sum(bsxfun(@times, permute(quat2ratem(q_dot), [3, 1, 2]), permute(q_ddot, [1, 3, 2])), 3);
 
 
 end
