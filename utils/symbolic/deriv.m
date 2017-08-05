@@ -21,8 +21,10 @@ function fout = deriv(f, g)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-15
+% Date: 2017-08-05
 % Changelog:
+%   2017-08-05
+%       * Add support for arbitrarily sized input argument G
 %   2016-09-15
 %       * Add help
 %       * Add block file information
@@ -33,12 +35,12 @@ function fout = deriv(f, g)
 
 %% Magic
 % Helper symbolic variable
-x = sym('x');
+x = sym('x', size(g));
 
 % Substitute G in F by X i.e., F(G(...), ...) => F(X, ...)
 f1 = subs(f, g, x);
 % Derive new F after X i.e., dF/dX
-f2 = diff(f1, x);
+f2 = jacobian(f1, x);
 
 % And substitute X back to G i.e., F(X, ...) => F(G(...), ...)
 fout = subs(f2, x, g);
