@@ -126,10 +126,25 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-05-16
+% Date: 2017-08-05
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 % Changelog:
+%   2017-08-05
+%       * Fix incorrect validation of 'VideoProfile' argument
+%       * Add input parser option to add 'VideoWriter' options to override
+%       them by the user
+%   2017-08-02:
+%       * Update check for too-narrow axes: now compares difference of lower
+%       and upper axes boundaries against eps
+%   2017-08-01
+%       * Fix error with axes assigment when calling anim2d on an object that
+%       overrides the method
+%   2017-05-18
+%       * Update handling of objects being passed to anim2d in combination with
+%       a user-given axes handle
+%   2017-05-17
+%       * Make sure figures are non-resizable if there is an active video export
 %   2017-05-16
 %       * Fix bug when no explicit title was set on the plot causing MATLAB to
 %       state that "The statement is incomplete" without any further display.
@@ -206,13 +221,17 @@ args = [{X}, {Y}, varargin];
 % object's `anim2d` function
 if isobject(args{1}) && ismethod(args{1}, 'anim2d')
     % Create a new axes handle or select the given one
-    haTarget = newplot(haTarget);
+%     haTarget = newplot(haTarget);
+
+    % Get the object and remove it from the arguments
+    mxObject = args{1};
+    args(1) = [];
     
     % Add the target axes to the list of arguments
-    args = [args, {'Axes'}, {haTarget}];
+    args = ['Axes', {haTarget}, args];
     
     % Call the animation on the object
-    ht = deal(anim2d(args{:}));
+    ht = deal(anim2d(mxObject, args{:}));
     
     % If no return arguments are wanted
     if nargout == 0
@@ -287,8 +306,12 @@ try
     addParameter(ip, 'UpdateFcn', {}, valFcn_UpdateFcn);
 
     % Parameter: VideoProfile. Char. Non-empty;
-    valFcn_VideoProfile = @(x) validateattributes(x, {'char', 'nonempty'}, {'nonempty'}, mfilename, 'VideoProfile');
+    valFcn_VideoProfile = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'VideoProfile');
     addParameter(ip, 'VideoProfile', 'Motion JPEG AVI', valFcn_VideoProfile);
+
+    % Parameter: VideoWriter. Cell. Non-empty;
+    valFcn_VideoWriter = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'VideoWriter');
+    addParameter(ip, 'VideoWriter', {}, valFcn_VideoWriter);
 
     % Configuration of input parser
     ip.KeepUnmatched = true;
@@ -347,6 +370,8 @@ chOutputFile = ip.Results.Output;
 loFileOutput = ~isempty(chOutputFile);
 % Profile of the video
 chVideoProfile = ip.Results.VideoProfile;
+% Videowriter options
+ceVideoWriter = ip.Results.VideoWriter;
 
 % Even x-axis?
 chEvenX = parseswitcharg(ip.Results.EvenX);
@@ -408,13 +433,28 @@ if loFileOutput
     
         % Set the frame rate
         stUserData.VideoObject.FrameRate = nFps;
+        
+        % Set video quality for some video profiles
         if any(strcmpi({'MPEG-4', 'Motion JPEG AVI'}, chVideoProfile))
             % Set the quality of the video
             stUserData.VideoObject.Quality = 100;
         end
         
+        % Set custom video writer options?
+        if ~isempty(ceVideoWriter)
+            try
+                nVideoWriterOpts = lower(numel(ceVideoWriter)/2);
+                
+                for iOpt = 1:2:nVideoWriterOpts
+                    stUserData.VideoObject.(ceVideoWriter{iOpt}) = ceVideoWriter{iOpt + 1};
+                end
+            catch me
+                warning(me.identifier, me.message);
+            end
+        end
+        
         % Try to open the video file for writing
-        open(stUserData.VideoObject);
+        open(stUserData.VideoObject)
     catch me
         throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLABTOOLING:ANIM2D:ErrorOpeningVideoFile', 'Error opening video file at %s.', escapepath(chOutputFile)), me));
     end
@@ -422,6 +462,7 @@ if loFileOutput
     % We know we are writing to a file and have a valid video writer object, so
     % now we will create the callbacks that will extract the current frame and
     % pass it to the video writer
+    stUserData.StartFcn{end+1} = @cb_start_writeVideo;
     stUserData.UpdateFcn{end+1} = @cb_update_writeVideo;
     stUserData.StopFcn{end+1} = @cb_stop_writeVideo;
 end
@@ -530,11 +571,11 @@ try
     vXLim = [min(min(min(ax.UserData.XData))), max(max(max(ax.UserData.XData)))];
     vYLim = [min(min(min(ax.UserData.YData))), max(max(max(ax.UserData.YData)))];
     % If no x-axis limits are given, we wil make some of our own
-    if vXLim(1) == vXLim(2)
+    if abs( vXLim(1) - vXLim(2) ) <= 10*eps
         vXLim = vXLim + [-1, +1];
     end
     % If no Y-axis limits are given, we will make some of our own
-    if vYLim(1) == vYLim(2)
+    if abs( vYLim(1) - vYLim(2) ) <= 10*eps
         vYLim = vYLim + [-1, +1];
     end
 
@@ -542,12 +583,22 @@ try
     if strcmp('on', ax.UserData.EvenX)
         vXLim = max(abs(vXLim)).*[-1, 1];
     end
+    
+%     display(vXLim)
+%     display(vYLim)
+%     display([vXLim, vYLim], '[vXLim, vYLim]')
 
-    % Set the axes limits to manual...
-    axis(ax, 'manual');
-    % Set the limits to the min and max of the plot data ...
-    axis(ax, [vXLim, vYLim]);
-
+    try
+        % Set the axes limits to manual...
+%         axis(ax, 'manual');
+        % Set the limits to the min and max of the plot data ...
+    %     axis(ax, [vXLim, vYLim]);
+        xlim(ax, vXLim);
+        ylim(ax, vYLim);
+    catch me
+        display(me.message);
+    end
+    
     % Set the title, if a title function callback exists
     if ~isempty(ax.UserData.TitleFcn)
         title(ax, ax.UserData.TitleFcn(ax, ax.UserData.Time(ax.UserData.Frame2Time(1))));
@@ -703,6 +754,18 @@ if ~isempty(ceCallbackArgs)
     else
         ceCallbacks = {ceCallbackArgs};
     end
+end
+
+end
+
+
+function cb_start_writeVideo(ax, ~, ~)
+%% CB_START_WRITEVIDEO sets the figure resize option to 'off'
+
+try
+    ax.UserData.Figure.Resize = 'off';
+catch me
+    warning(me.message, me.identifier);
 end
 
 end

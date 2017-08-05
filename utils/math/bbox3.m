@@ -35,8 +35,11 @@ function [Box, Traversal] = bbox3(X, Y, Z, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-30
+% Date: 2017-08-04
 % Changelog:
+%   2017-08-04
+%       * Convert all ```assert``` into ```validateattributes``` for better
+%       error display
 %   2016-05-30
 %       * Update matrix argument processing to column major i.e., [X, Y, Z]
 %   2016-05-10
@@ -66,18 +69,17 @@ end
 
 
 
-%% Check and prepare the arguments
-% X must not be a scalar and must be a vector
-assert(~isscalar(X), 'X cannot be a scalar value.')
-assert(isvector(X), 'X must be a vector.');
-% Y must not be a scalar and must be a vector
-assert(~isscalar(Y), 'Y cannot be a scalar value.')
-assert(isvector(Y), 'Y must be a vector.');
-% Z must not be a scalar and must be a vector
-assert(~isscalar(Z), 'Z cannot be a scalar value.')
-assert(isvector(Z), 'Z must be a vector.');
-% X, Y, and Z must have the same number of elements
-assert(numel(X) == numel(Y) && numel(Y) == numel(Z), 'X, Y, and Z must have the same number of elements');
+%% Validate inputs
+try
+    % X must not be a scalar and must be a vector
+    validateattributes(X, {'numeric'}, {'vector', 'nonempty', 'finite', 'nonsparse', 'numel', numel(Y)}, mfilename, 'X');
+    % Y must not be a scalar and must be a vector
+    validateattributes(Y, {'numeric'}, {'vector', 'nonempty', 'finite', 'nonsparse', 'numel', numel(X)}, mfilename, 'Y');
+    % Y must not be a scalar and must be a vector
+    validateattributes(Z, {'numeric'}, {'vector', 'nonempty', 'finite', 'nonsparse', 'numel', numel(X)}, mfilename, 'Z');
+catch me
+    throwAsCaller(me);
+end
 
 
 
