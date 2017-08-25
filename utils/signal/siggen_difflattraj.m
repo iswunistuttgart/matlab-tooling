@@ -177,10 +177,8 @@ aTransitionTimePowers = diag(repmat(1/dTransition, 1, nSystemOrder + 1).^(vPower
 vCoeffsPerTime = transpose(vCoefficients*aTransitionTimePowers);
 
 % Calculate the coefficients of the derivatives
-vCoeffsDerivatives = ones(1, nSystemOrder + 1);
-for ii = 1:numel(vCoeffsDerivatives)
-    vCoeffsDerivatives(ii) = prod(nSystemOrder + ii - (1:1:iDeriv) + 1);
-end
+vOrderrange = 1:(nSystemOrder + 1);
+vCoeffsDerivatives = prod(nSystemOrder + vOrderrange(:) - (1:1:iDeriv) + 1, 2).';
 
 % Turn the coefficients row vector into a coefficients matrix
 % aCoeffsDerivatives = repmat(vCoeffsDerivatives, numel(vCoefficients), 1);
