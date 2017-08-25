@@ -6,8 +6,11 @@ function create_docs()
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-01-05
+% Date: 2017-08-17
 % Changelog:
+%   2017-08-17
+%       * Wiki directory is now tried to be generated, if it does not exist
+%       * Replaced sort_nat() function with MATLAB-integrated sortrows function
 %   2017-01-05
 %       * Update to support other formats of H1 lines such as
 %           `%funcname`
@@ -29,7 +32,7 @@ if isempty(chBasepath)
 end
 
 % Check the directory of the wiki exists
-assert(7 == exist(chBasepath_Wiki, 'file') && isdir(chBasepath_Wiki), 'PHILIPPTEMPEL:MATLAB_TOOLING:CREATE_DOCS:DirectoryNotFound', 'Directory [%s] was not found at [%s]. Please checkout the wiki repository into the aforementioned directory.', 'wiki', escapepath(chBasepath));
+assert( (7 == exist(chBasepath_Wiki, 'file') || mkdir(chBasepath_Wiki)) && isdir(chBasepath_Wiki), 'PHILIPPTEMPEL:MATLAB_TOOLING:CREATE_DOCS:DirectoryNotFound', 'Directory [%s] was not found at [%s] and could not be created. Please checkout the wiki repository into the aforementioned directory.', 'wiki', escapepath(chBasepath));
 
 % Open the file containing a markdown-formatted list of all functions
 [fidFunctions, chMessage] = fopen(fullfile(chBasepath_Wiki, 'functions.md'), 'w');
@@ -49,7 +52,7 @@ fprintf(fidFunctions, '# List of Functions\n\n');
 fprintf(fidFunctions, '## Alphabetical list\n\n');
 
 % Sort the functions naturally alphabetically
-ceFunctions_Alphabetical = sort_nat(ceFunctions);
+ceFunctions_Alphabetical = sortrows(ceFunctions);
 
 % Process all functions alphabetically
 for iFunc = 1:numel(ceFunctions_Alphabetical)

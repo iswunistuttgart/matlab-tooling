@@ -1,4 +1,4 @@
-function [Trajectory] = siggen_difflattraj(Start, End, varargin)
+function [Trajectory, varargout] = siggen_difflattraj(Start, End, varargin)
 % SIGGEN_DIFFLATTRAJ creates a differentially flat trajectory.
 %
 %   TRAJECTORY = SIGGEN_DIFFLATTRAJ(START, END) creates a differentially flat /
@@ -8,16 +8,17 @@ function [Trajectory] = siggen_difflattraj(Start, End, varargin)
 %   TRAJECTORY = SIGGEN_DIFFLATTRAJ(START, END, 'Name', 'Value', ...)
 %   additionally allows further options to be set using name/value pairs.
 %
+%   [TRAJECTORY, DTRAJECTORY] = SIGGEN_DIFFLATTRAJ(...) returns the first
+%   derivative of TRAJECTORY with respect to time.
+%
+%   [TRAJECTORY, DTRAJECTORY, ..., D^{n+2}TRAJECTORY] = SIGGEN_DIFFLATTRAJ()
+%   returns the first till (n+2)th derivative of the trajectory as well
+%
 %   Inputs:
 %
 %   START           1xM vector of start positions of the trajectory.
 %
 %   END             1xM vector of end positions of the trajectory.
-%
-%
-%   Outputs:
-%
-%   TRAJECTORY      Time series of the trajectory.
 %
 %   Optional Inputs -- specified as parameter value pairs
 %   Name            Name of the generated time series.
@@ -34,20 +35,32 @@ function [Trajectory] = siggen_difflattraj(Start, End, varargin)
 %
 %   Outputs:
 %
-%   TRAJECTORY      NxM matrix representing trajectory
+%   TRAJECTORY      Time series of the trajectory.
+%
+%   DTRAJECTORY     Time series of the first derivative of the trajectory.
+%
+%   DDTRAJECTORY    Time series of the second derivative of the trajectory.
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-08-26
+% Date: 2017-08-25
 % Changelog:
+%   2017-08-25
+%       * Add variable output arguments for derivatives up to n+2
 %   2016-08-26
 %       * Add option 'Name' to allow for direct naming of the time series object
 %       * Change option 'Time' to 'Sampling' and remove support for a time
 %       vector in favor of providing a sampling time
 %   2016-08-25
 %       * Initial release
+
+
+
+%% Validate nargins and nargouts
+% Need 2 inputs, require at most ten
+narginchk(2, 10);
 
 
 
@@ -93,7 +106,7 @@ end
 
 
 
-%% Parse input parse
+%% Parse input parser result
 % Start pose
 vStart = asrow(ip.Results.Start);
 % End pose
@@ -110,34 +123,20 @@ chName = ip.Results.Name;
 % How many trajectories to generate?
 nTrajectories = numel(vStart);
 % Number of time steps
-nTime = dTransition/dSampling;
+nTime = dTransition/dSampling + 1;
 % Create time vector
 vTime = (0:(nTime-1)).*dSampling;
+
+% We allow returning the position, velocity, acceleration, and jerk of the
+% signal
+nargoutchk(0, nSystemOrder + 2);
 
 
 
 %% Generate trajectory
-% Get coefficients for system order
-vCoefficients = in_sysOrderCoeffs(nSystemOrder);
-
-% Vector of powers
-vPowers = (nSystemOrder + 1):1:(2*nSystemOrder + 1);
-% Build a matrix of rows of vPowers
-aPowers = repmat(vPowers, nTime, 1);
-
-% Vector of (1/T)^i with i = [n+1, ..., 2n+1]
-aTransitionTimePowers = diag(repmat(1/dTransition, 1, nSystemOrder + 1).^(vPowers));
-
-% Pre-Multiply coefficients with time scaling
-vCoeffsPerTime = transpose(vCoefficients*aTransitionTimePowers);
-
-% Build matrix of all powers of time. Rows are by the power of system order and
-% columns are by increasing time.
-aTimeMatrix = repmat(vTime(:), 1, nSystemOrder + 1).^(aPowers);
-
 % Calculate the trajectory matrix with some repeated matrices and things like
 % that
-aTrajec = repmat(vStart, nTime, 1) + repmat(vEnd - vStart, nTime, 1).*(repmat(aTimeMatrix*vCoeffsPerTime, 1, nTrajectories));
+aTrajec = repmat(vStart, nTime, 1) + repmat(vEnd - vStart, nTime, 1).*gen_poly(nSystemOrder, vTime, dTransition, nTrajectories, 0);
 
 
 
@@ -145,6 +144,53 @@ aTrajec = repmat(vStart, nTime, 1) + repmat(vEnd - vStart, nTime, 1).*(repmat(aT
 % Only one output argument
 Trajectory = timeseries(aTrajec, vTime, 'Name', chName);
 
+% Also calculate the signal's derivatives?
+if nargout > 1
+    % For each derivative, we will calculate its polyomial
+    for iDeriv = 1:min(nargout - 1, 3)
+        aTrajec = repmat(vEnd - vStart, nTime, 1).*gen_poly(nSystemOrder, vTime, dTransition, nTrajectories, iDeriv); %#ok<*AGROW>
+        varargout{iDeriv} = timeseries(aTrajec, vTime, 'Name', sprintf('%s: %i%s derivative', chName, iDeriv, ord(iDeriv)));
+    end
+end
+
+
+end
+
+
+function pn = gen_poly(nSystemOrder, vTime, dTransition, nTrajectories, iDeriv)
+
+% Get coefficients for system order
+vCoefficients = in_sysOrderCoeffs(nSystemOrder);
+
+% Range of the sum
+vSumrange = ((nSystemOrder + 1):1:(2*nSystemOrder + 1));
+
+% Vector of powers
+vPowers = vSumrange - iDeriv;
+% Build a matrix of rows of vPowers
+aPowers = repmat(vPowers, numel(vTime), 1);
+
+% Vector of (1/T)^i with i = [n+1, ..., 2n+1]
+aTransitionTimePowers = diag(repmat(1/dTransition, 1, nSystemOrder + 1).^(vPowers));
+
+% Pre-Multiply coefficients with time scaling
+vCoeffsPerTime = transpose(vCoefficients*aTransitionTimePowers);
+
+% Calculate the coefficients of the derivatives
+vOrderrange = 1:(nSystemOrder + 1);
+vCoeffsDerivatives = prod(nSystemOrder + vOrderrange(:) - (1:1:iDeriv) + 1, 2).';
+
+% Turn the coefficients row vector into a coefficients matrix
+% aCoeffsDerivatives = repmat(vCoeffsDerivatives, numel(vCoefficients), 1);
+aCoeffsDerivatives = diag(vCoeffsDerivatives);
+
+% Build matrix of all powers of time. Rows are by the power of system order and
+% columns are by increasing time.
+aTimeMatrix = repmat(vTime(:), 1, nSystemOrder + 1).^(aPowers);
+
+% Calculate the trajectory matrix with some repeated matrices and things like
+% that
+pn = repmat(aTimeMatrix*aCoeffsDerivatives*vCoeffsPerTime, 1, nTrajectories);
 
 end
 
@@ -154,19 +200,19 @@ function vCoeffs = in_sysOrderCoeffs(nSysOrder)
 
 switch nSysOrder
     case 1
-        vCoeffs = [3 -2];
+        vCoeffs = [3, -2];
     case 2
-        vCoeffs = [10 -15 6];
+        vCoeffs = [10, -15, 6];
     case 3
-        vCoeffs = [35 -84 70 -20];
+        vCoeffs = [35, -84, 70, -20];
     case 4
-        vCoeffs = [126 -420 540 -315 70];
+        vCoeffs = [126, -420, 540, -315, 70];
     case 5
-        vCoeffs = [462 -1980 3465 -3080 1386 -252];
+        vCoeffs = [462, -1980, 3465, -3080, 1386, -252];
     case 6
-        vCoeffs = [1716 -9009 20020 -24024 16380 -6006 924];
+        vCoeffs = [1716, -9009, 20020, -24024, 16380, -6006, 924];
     case 7
-        vCoeffs = [6435 -40040 108108 -163800 150150 -83160 25740 -3432];
+        vCoeffs = [6435, -40040, 108108, -163800, 150150, -83160, 25740, -3432];
 end
 
 end
