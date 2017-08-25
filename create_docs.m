@@ -9,8 +9,8 @@ function create_docs()
 % Date: 2017-08-17
 % Changelog:
 %   2017-08-17
-%       * Wiki directory is now tried to be generated, if it does not exist
-%       * Replaced sort_nat() function with MATLAB-integrated sortrows function
+%       * Wiki directory is now created, if it does not exist
+%       * Replace sort_nat() function with MATLAB built-in `sortrows` function
 %   2017-01-05
 %       * Update to support other formats of H1 lines such as
 %           `%funcname`
