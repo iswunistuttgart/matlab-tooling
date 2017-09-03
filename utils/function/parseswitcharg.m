@@ -24,8 +24,10 @@ function [res] = parseswitcharg(arg, add_on, add_off)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-18
+% Date: 2017-08-31
 % Changelog:
+%   2017-08-31
+%       * Remove necessity for argument ARG to be non-empty
 %   2016-09-18
 %       * Add option to pass additional strings for 'on' or 'off' result
 %   2016-09-07
@@ -47,7 +49,7 @@ end
 %% Assertion
 % Arg: char; non-empty
 assert(ischar(arg), 'PHILIPPTEMPEL:MATLAB_TOOLING:PARSESWITCHARG:InvalidArgumentType', 'Argument [arg] must be char.');
-assert(~isempty(arg), 'PHILIPPTEMPEL:MATLAB_TOOLING:PARSESWITCHARG:EmptyArgument', 'Argument [arg] must not be empty.');
+% assert(~isempty(arg), 'PHILIPPTEMPEL:MATLAB_TOOLING:PARSESWITCHARG:EmptyArgument', 'Argument [arg] must not be empty.');
 % Add_on: Cell of chars; nonempty
 assert(iscell(add_on), 'PHILIPPTEMPEL:MATLAB_TOOLING:PARSESWITCHARG:InvalidArgumentType', 'Argument [add_on] must be cell.');
 assert(all(cellfun(@(x) ischar(x), add_on)), 'PHILIPPTEMPEL:MATLAB_TOOLING:PARSESWITCHARG:InvalidArgumentType', 'Argument [add_on] must be cell array of chars.');

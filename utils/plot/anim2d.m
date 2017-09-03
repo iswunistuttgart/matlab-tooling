@@ -65,7 +65,8 @@ function [varargout] = anim2d(X, Y, varargin)
 %       title of the plot to display the progress.
 %
 %   Title           String to be displayed in the title. Can also be set to
-%       'timer' to enable automatic rendering of the time in the axes' title.
+%       'timer' of 'timer_of' to enable automatic rendering of the time in the
+%       axes' title.
 %       If a user-specific string is provided, it will be passed to `sprintf`
 %       where the current time is being parsed as first argument, the current
 %       frame index as second.
@@ -129,11 +130,18 @@ function [varargout] = anim2d(X, Y, varargin)
 % Date: 2017-08-05
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
+%   * Resample time vector such that it explictly matches the FPS value. Right
+%   now, if there are animation values for e.g., t in [0, 2.3, 5]s, then the
+%   animation (and timer title) will "freeze" during 0s and 2.3s as there is no
+%   data drawn => Title should at least update
 % Changelog:
+%   2017-09-03
+%       * Add option 'timer_of' to parameter 'Title' which will also display the
+%       maximum time of animation
 %   2017-08-05
 %       * Fix incorrect validation of 'VideoProfile' argument
-%       * Add input parser option to add 'VideoWriter' options to override
-%       them by the user
+%       * Add input parser option to add 'VideoWriter' options to override them
+%       by the user
 %   2017-08-02:
 %       * Update check for too-narrow axes: now compares difference of lower
 %       and upper axes boundaries against eps
@@ -411,6 +419,8 @@ if isa(mxTitle, 'function_handle')
 % Parse 'timer' as axes title
 elseif strcmp('timer', mxTitle)
     stUserData.TitleFcn = @(ax, t) sprintf('Time: %.2fs', t);
+elseif strcmp('timer_of', mxTitle)
+    stUserData.TitleFcn = @(ax, t) sprintf('Time: %.2fs/%.2fs', t, ax.UserData.Time(end));
 % Parse regular chars as axes title
 elseif isa(mxTitle, 'char')
     if ~isempty(mxTitle)
@@ -499,7 +509,6 @@ end
 % Store the axes parent figure locally so we can access it further down, too,
 % e.g., during starting the animation or during exporting a video
 stUserData.Figure = gpf(haTarget);
-
 
 % Assign our user data to the axes
 haTarget.UserData = stUserData;
