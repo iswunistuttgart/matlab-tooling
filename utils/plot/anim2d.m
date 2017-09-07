@@ -135,6 +135,8 @@ function [varargout] = anim2d(X, Y, varargin)
 %   animation (and timer title) will "freeze" during 0s and 2.3s as there is no
 %   data drawn => Title should at least update
 % Changelog:
+%   2017-09-07
+%       * Change checking of name/value pair 'timer' to be case insensitive
 %   2017-09-03
 %       * Add option 'timer_of' to parameter 'Title' which will also display the
 %       maximum time of animation
@@ -417,9 +419,9 @@ stUserData.TitleFcn = '';
 if isa(mxTitle, 'function_handle')
     stUserData.TitleFcn = mxTitle;
 % Parse 'timer' as axes title
-elseif strcmp('timer', mxTitle)
+elseif strcmpi('timer', mxTitle)
     stUserData.TitleFcn = @(ax, t) sprintf('Time: %.2fs', t);
-elseif strcmp('timer_of', mxTitle)
+elseif strcmpi('timer_of', mxTitle)
     stUserData.TitleFcn = @(ax, t) sprintf('Time: %.2fs/%.2fs', t, ax.UserData.Time(end));
 % Parse regular chars as axes title
 elseif isa(mxTitle, 'char')
