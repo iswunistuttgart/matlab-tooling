@@ -1,24 +1,25 @@
-function varargout = circle(varargin)
+function varargout = circle(Center, Radius, varargin)
 % CIRCLE draws a circle of specified radius
 %
-%   CIRCLE() draws a unit circle at [0,0] i.e., with radius rho = 1.
+%   CIRCLE(CENTER, RADIUS) draws a circle located at CENTER with radius of RHO.
 %
-%   CIRCLE(RHO) draws a unit circle at [0,0] with radius RHO.
-%
-%   CIRCLE(RHO, CENTER) draws a circle located at 1x2 vector CENTER with radius
-%   of RHO.
-%
-%   CIRCLE(RHO, CENTER, ...) passes additional arguments that are not processed
+%   CIRCLE(CENTER, RADIUS, ...) passes additional arguments that are not processed
 %   by this function to the underlying patch command for drawing the circle
 %   object. This allows user-defined plot data to be easily appended like e.g.,
-%       CIRLCE(1, [0,0], 'FaceColor', 'red', 'EdgeColor', 'green');
+%       CIRLCE(1, [0;0], 'FaceColor', 'red', 'EdgeColor', 'green');
 %
 %   CIRCLE(AX, ...) plots into the given axes.
 %
-%   H = CIRCLE(...) returns the handle of the line series graphics object.
+%   H = CIRCLE(...) returns the handle of the patch graphics object.
 %
 %   CIRCLE('Name', 'Value', ...) allows setting optional inputs using name/value
 %   pairs.
+%
+%   Inputs:
+%
+%   RADIUS              1xN array of radius of each circle to draw
+%
+%   CENTER              2xN array of positions of each circle to draw
 %
 %   Optional Inputs -- specified as parameter value pairs
 %
@@ -28,47 +29,40 @@ function varargout = circle(varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-01-05
+% Date: 2017-09-09
 % Changelog:
+%   2017-09-09
+%       * Change order of arguments to (CENTER, RADIUS)
+%       * Update to allow drawing more than one circle at a time
 %   2017-01-05
 %       * Initial release
-
-
-
-%% Adjust Arguments to Allow for Multiple Circles
-% if nargin > 1
-%     % Number of radii and of centers
-%     nRhos = numel(varargin{1});
-%     nCenters = size(varargin{2}, 1);
-%     
-%     % Too few radii?
-%     if nRhos < nCenters
-%         varargin(1) = repmat(varargin{1}, nCenters, 1);
-%     end
-%     % Too few centers?
-%     if nCenters < nRhos
-%         varargin(2) = repmat(varargin{2}, nRhos, 1);
-%     end
-% end
-% 
-% nRhos = numel(varargin{1});
 
 
 
 %% Define the input parser
 ip = inputParser;
 
-% Optional 1: Radius; numeric; scalar, non-empty, positive, finite;
-valFcn_Radius = @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'finite', 'nonempty', 'nonsparse'}, mfilename, 'rho');
-addOptional(ip, 'Radius', 1, valFcn_Radius);
+% Parse possibly given axes
+varargin = [{Center}, {Radius}, varargin];
+[haTarget, args, ~] = axescheck(varargin{:});
 
-% Optional 2: Center; numeric; vector, numel 2, finite;
-valFcn_Center = @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 2, 'finite', 'nonempty', 'nonsparse'}, mfilename, 'center');
-addOptional(ip, 'Center', [0, 0], valFcn_Center);
+% Extract center from the axes-cleaned cell
+Center = args{1};
 
-% Parameter: LineSpec; cell; non-empty;
-% valFcn_LineSpec = @(x) validateattributes(x, {'cell'}, {'nonempty'}, mfilename, 'LineSpec');
-% addParameter(ip, 'LineSpec', {}, valFcn_LineSpec);
+% Count circles
+nCircles = size(Center, 2);
+
+% Center: numeric; 2d, nrows 2, ncols N, finite, nonempty, nonnan, nonsparse
+valFcn_Center = @(x) validateattributes(x, {'numeric'}, {'2d', 'nrows', 2, 'finite', 'nonempty', 'nonnan', 'nonsparse'}, mfilename, 'Center');
+addRequired(ip, 'Center', valFcn_Center);
+
+% Radius: numeric; row, finite, nonempty, nonnan, nonsparse
+valFcn_Radius = @(x) validateattributes(x, {'numeric'}, {'vector', 'row', 'ncols', nCircles, 'positive', 'finite', 'nonempty', 'nonnan', 'nonsparse'}, mfilename, 'Radius');
+addRequired(ip, 'Radius', valFcn_Radius);
+
+% Samples: numeric; vector, finite, nonnan, nonsparse, positive
+valFcn_Samples = @(x) validateattributes(x, {'numeric'}, {'vector', 'nrows', 1, 'ncols', nCircles, 'nonempty', 'positive', 'nonnan', 'nonsparse'}, mfilename, 'Samples');
+addParameter(ip, 'Samples', 500, valFcn_Samples);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -76,8 +70,6 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
-    [haTarget, args, ~] = axescheck(varargin{:});
-    
     parse(ip, args{:});
 catch me
     throwAsCaller(me);
@@ -86,18 +78,20 @@ end
 
 
 %% Parse IP results
-% Radius
-dRadius = ip.Results.Radius;
 % Center location
-vCenter = ip.Results.Center;
+aCenter = ip.Results.Center;
+% Number of circles
+nCircles = size(aCenter, 2);
+% Radius
+vRadius = ip.Results.Radius;
+% Sample points
+vSamples = ip.Results.Samples;
+if numel(vSamples) ~= nCircles
+    vSamples = repmat(vSamples, 1, nCircles);
+end
 % Additional plot styles for the circle are the ones we didn't match with the IP
 stLinespec = ip.Unmatched;
 ceLinespec = {};
-% if isfield(stLinespec, 'color')
-%     stLinespec.FaceColor = stLinespec.Color;
-%     stLinespec.EdgeColor = stLinespec.Color;
-%     stLinespec = rmfield(stLinespec, 'color');
-% end
 % Convert the structure of possible linespecs to a proper cell
 ceFields_Linespec = fieldnames(stLinespec);
 if numel(ceFields_Linespec)
@@ -125,14 +119,19 @@ hold(haTarget, 'on');
 
 %% Draw the circle
 % Linear space of the angle
-vTheta = 0:1e-3:2*pi;
+ceThetas = arrayfun(@(s) linspace(0, 2*pi, s), vSamples, 'UniformOutput', false);
 
-% Draw the circle
-hRadius = patch(haTarget,  vCenter(1,1) + dRadius(1)*cos(vTheta), vCenter(1,2) + dRadius(1)*sin(vTheta), 0);
+% Create a placeholder object for all drawn circles
+hpCircles = gobjects(nCircles, 1);
+
+% Draw the circles
+for iCircle = 1:nCircles
+    hpCircles(iCircle) = patch(haTarget, aCenter(1,iCircle) + vRadius(iCircle)*cos(ceThetas{iCircle}), aCenter(2,iCircle) + vRadius(iCircle)*sin(ceThetas{iCircle}), 0);
+end
 
 % Set user-defined plot styles?
 if ~isempty(ceLinespec)
-    set(hRadius, ceLinespec{:});
+    set(hpCircles, ceLinespec{:});
 end
 
 
@@ -151,7 +150,7 @@ end
 %% Assign output quantities
 % Return the plot handle?
 if nargout > 0
-    varargout{1} = hRadius;
+    varargout{1} = hpCircles;
 end
 
 
