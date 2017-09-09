@@ -18,8 +18,11 @@ function res = isplot2d(varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-08-01
+% Date: 2017-09-09
 % Changelog:
+%   2017-09-09
+%       * Now fix error in function falsely identifying an empty plot as a 3D
+%       axes
 %   2017-08-01
 %       * Fix error in function that failed for passing multiple plot axes as
 %       argument
@@ -62,14 +65,14 @@ end
 
 
 %% Checking
-% Loop over all given axes
-% for iAx = 1:numel(haTarget)
-%     vAxisNumel(iAx) = numel(axis(haTarget(iAx)));
-% end
+ceAxis = axis(haTarget);
+if ~iscell(ceAxis)
+    ceAxis = {ceAxis};
+end
 
 % The plot is a 2D plot if the numel of its axis size is 4, otherwise it is a 3D
 % plot
-res = arrayfun(@(x) numel(x) == 4, axis(haTarget));
+res = cellfun(@(x) numel(x) == 4, ceAxis);
 
 
 end
