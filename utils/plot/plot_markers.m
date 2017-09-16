@@ -10,20 +10,20 @@ function varargout = plot_markers(varargin)
 %   markers on the first line, 50 on the second, 30 on the third, and 60 on the
 %   fourth/last. If the number of markers is smaller than the number of child
 %   charts found in the given axes, the markers will cyclically repeat.
-% 
-%   PLOT_MARKERS(COUNT, ORDER) uses the given order of marker styles to plot
-%   into the given axes. Defaults to 'o|+|*|x'. Markers will be applied in order
-%   of found child objects in the current axis. If the number of markers is
-%   smaller than the number of valid charts then markers will be cyclically
-%   repeated.
 %
-%   PLOT_MARKERS(COUNT, ORDER, SPACING) does spacing according to the value
-%   chosen. Possible options for SPACING are
+%   PLOT_MARKERS(COUNT, SPACING) does spacing according to the value chosen.
+%   Possible options for SPACING are
 %       x       equidistant spacing along the x-axis (primary axis).
 %       curve   equidistant along curve y
 %       logx    used with logarithmix x-scale
+% 
+%   PLOT_MARKERS(COUNT, SPACING, ORDER) uses the given order of marker styles to
+%   plot into the given axes. Defaults to 'o|+|*|x'. Markers will be applied in
+%   order of found child objects in the current axis. If the number of markers
+%   is smaller than the number of valid charts then markers will be cyclically
+%   repeated.
 %
-%   PLOT_MARKERS(COUNT, ORDER, SPACING, 'PropertyName', 'PropertyValue', ...)
+%   PLOT_MARKERS(COUNT, SPACING, ORDER, 'PropertyName', 'PropertyValue', ...)
 %   plots markers for the given axis.
 %
 %   PLOT_MARKERS(AX, ...) plots into the given axes handle.
@@ -48,14 +48,14 @@ function varargout = plot_markers(varargin)
 %   Optional Inputs -- specified as parameter value pairs
 %   Count       - Number of markers per line. Default is 25
 %
-%   Order       - [char] Pipe-separated list of marker order for the lines found
-%               in the given axes. Default is 'o|+|*|x'.
-%
 %   Spacing     - Spacing according to which the markers should be spaced. Valid
 %               values are:
 %               x     - equidistant spacing along the x-axis (primary axis)
 %               curve - equidistant along curve y
 %               logx  - equidistant along a log-x axis
+%
+%   Order       - [char] Pipe-separated list of marker order for the lines found
+%               in the given axes. Default is 'o|+|*|x'.
 %
 %   See also: PLOT
 
@@ -68,6 +68,9 @@ function varargout = plot_markers(varargin)
 %   * If a legend can be found in the plot, we should extract the lines' legend
 %   entries from these values... somehow
 % Changelog:
+%   2017-09-16
+%       * Change order and type of arguments from (opt:count, opt:order,
+%       opt:spacing) to (opt:count, opt:spacing, par:order)
 %   2016-11-01
 %       * Update input argument checking to be more robust
 %       * Allow function to be called with either ORDER or SPACING as second
@@ -93,14 +96,14 @@ function varargout = plot_markers(varargin)
 
 
 %% Pre-process arguments
-% Allow the second argument to be both the SPACING and ORDER argument
-if nargin > 1
-    % If the second argument matches any valid spacing option, we will move it
-    % to the third position i.e., shift everything right by one
-    if any(strcmpi(varargin{2}, {'x', 'curve', 'logx'}))
-        varargin = [varargin{1}, 'o|+|*|x', varargin(2:end)];
-    end
-end
+% % Allow the second argument to be both the SPACING and ORDER argument
+% if nargin > 1
+%     % If the second argument matches any valid spacing option, we will move it
+%     % to the third position i.e., shift everything right by one
+%     if any(strcmpi(varargin{2}, {'x', 'curve', 'logx'}))
+%         varargin = [varargin{1}, 'o|+|*|x', varargin(2:end)];
+%     end
+% end
 
 
 
@@ -112,15 +115,15 @@ ip = inputParser;
 valFcn_Count = @(x) validateattributes(x, {'numeric'}, {'row', '>=', 1}, mfilename, 'Count', 1);
 addOptional(ip, 'Count', '25', valFcn_Count);
 
-% Optional 2: Markers to set or order of markers
-% valFcn_Order = @(x) assert(all(ismember(strsplit(x, '|'), {'o', '+', '*', '.', 'x', 's', 'd', '^', 'v', '>', '<', 'p', 'h'})));
-valFcn_Order = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Order', 2);
-addOptional(ip, 'Order', 'o|+|*|x', valFcn_Order);
-
-% Optional 3: Spacing between the markers
+% Optional 2: Spacing between the markers
 % valFcn_Spacing = @(x) assert(any(validatestring(lower(x), {'x', 'curve', 'logx'}, mfilename, 'Spacing', 3)));
 valFcn_Spacing = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Spacing', 3);
 addOptional(ip, 'Spacing', 'x', valFcn_Spacing);
+
+% Parameter: Markers to set or order of markers
+% valFcn_Order = @(x) assert(all(ismember(strsplit(x, '|'), {'o', '+', '*', '.', 'x', 's', 'd', '^', 'v', '>', '<', 'p', 'h'})));
+valFcn_Order = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Order', 2);
+addParameter(ip, 'Order', 'o|+|*|x', valFcn_Order);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
