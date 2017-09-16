@@ -4,6 +4,10 @@ function [varargout] = ruler(Axis, Position, varargin)
 %   RULER(AXIS, POSITION) plots a ruler parallel to the axis AXIS at position
 %   POSITION.
 %
+%   RULER(AXIS, POSITION, 'Name', 'Value', ...) passes unmatched arguments to
+%   the underlying plot command so that chart line properties can be adjusted
+%   easily.
+%
 %   RULER('y', 1) plots a horizontal ruler at y = 1 spanning the whole width of
 %   the current axes.
 %
@@ -28,23 +32,17 @@ function [varargout] = ruler(Axis, Position, varargin)
 %
 %   RULERS: Returns a cell array of handles to all drawn rulers.
 %
-%   Optional Inputs -- specified as parameter value pairs
-%   LineSpec        Cell array of line specs that will be applied to each ruler.
-%                   If a two-dimensional cell array is determined, the
-%                   specifications will be applied to each ruler cyclically. A
-%                   two-dimensional cell array will be determined by checking
-%                   whether the first value of 'AnchorSpec' is a cell array in
-%                   itself.
-%
-%   See
-%       plot
+%   See also:
+%       PLOT
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-12-09
+% Date: 2017-09-16
 % Changelog:
+%   2017-09-16
+%       * Move LineSpec argument to unmatched results in input parser
 %   2016-12-09
 %       * Propagate rename of function `ascolumn` to `ascol`
 %   2016-09-07
@@ -99,7 +97,7 @@ vPositions = ascol(ip.Results.Position);
 % Holds the rulers' plot handles
 hpRulers = gobjects(numel(vPositions), 1);
 % Plot style for the rulers
-cePlotStyle = cycliccell(ip.Results.LineSpec, numel(vPositions));
+cePlotStyle = cycliccell(ip.Unmatched, numel(vPositions));
 
 
 
