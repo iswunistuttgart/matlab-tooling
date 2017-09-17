@@ -96,8 +96,12 @@ chAxis = ip.Results.Axis;
 vPositions = ascol(ip.Results.Position);
 % Holds the rulers' plot handles
 hpRulers = gobjects(numel(vPositions), 1);
+% Convert unmatched arguments from a struct to key/value cell array
+ceUnmatched = cell(1, 2*numel(ip.Unmatched));
+ceUnmatched(1:2:end) = fieldnames(ip.Unmatched);
+ceUnmatched(2:2:end) = struct2cell(ip.Unmatched);
 % Plot style for the rulers
-cePlotStyle = cycliccell(ip.Unmatched, numel(vPositions));
+cePlotStyle = cycliccell(ceUnmatched, numel(vPositions));
 
 
 
