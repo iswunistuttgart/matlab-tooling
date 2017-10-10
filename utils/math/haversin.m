@@ -28,7 +28,7 @@ narginchk(1, 1);
 nargoutchk(0, 1);
 
 try
-    validateattributes(z, {'numeric'}, {'nonempty', 'matrix', 'finite', 'nonnan', 'nonsparse'}, mfilename, 'z');
+    validateattributes(z, {'numeric'}, {'nonempty', 'finite', 'nonnan', 'nonsparse'}, mfilename, 'z');
 catch me
     throwAsCaller(me);
 end
