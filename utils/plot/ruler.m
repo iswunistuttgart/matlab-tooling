@@ -39,8 +39,13 @@ function [varargout] = ruler(Axis, Position, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-09-16
+% Date: 2017-11-21
 % Changelog:
+%   2017-11-21
+%       * Fix error in processing unmatched input parser arguments if there were
+%       none given
+%   2017-09-17
+%       * Fix incorrect processing of unmatched input parser arguments
 %   2017-09-16
 %       * Move LineSpec argument to unmatched results in input parser
 %   2016-12-09
@@ -97,9 +102,13 @@ vPositions = ascol(ip.Results.Position);
 % Holds the rulers' plot handles
 hpRulers = gobjects(numel(vPositions), 1);
 % Convert unmatched arguments from a struct to key/value cell array
-ceUnmatched = cell(1, 2*numel(ip.Unmatched));
-ceUnmatched(1:2:end) = fieldnames(ip.Unmatched);
-ceUnmatched(2:2:end) = struct2cell(ip.Unmatched);
+if ~isempty(fieldnames(ip.Unmatched))
+    ceUnmatched = cell(1, 2*numel(fieldnames(ip.Unmatched)));
+    ceUnmatched(1:2:end) = fieldnames(ip.Unmatched);
+    ceUnmatched(2:2:end) = struct2cell(ip.Unmatched);
+else
+    ceUnmatched = {};
+end
 % Plot style for the rulers
 cePlotStyle = cycliccell(ceUnmatched, numel(vPositions));
 

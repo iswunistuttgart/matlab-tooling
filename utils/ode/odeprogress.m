@@ -23,8 +23,13 @@ function status = odeprogress(t, y, flag, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-09-17
+% Date: 2017-11-20
 % Changelog:
+%   2017-11-20
+%       * Implement missing logic for canceling the ODE callback in case the
+%       stop button has been pressed
+%       * Add info on how the call-syntax for the three differently flagged
+%       function calls are
 %   2017-09-17
 %       * Initial release
 
@@ -49,22 +54,34 @@ end
 
 switch ( flag )
     
-    case ''
+    case ''    % odeplot(t,y,'')
         if isempty(hpTarget)
             error(message('PHILIPPTEMPEL:MATLAB:ODEPROGRESS:NotCalledWithInit'));
+        elseif ishghandle(hpTarget)  % figure still open
+
+            try
+                % Has stop button been pushed?
+                if hpTarget.UserData.stop == 1
+                    status = 1;
+                else
+                    dMaxTime = hpTarget.UserData.Time;
+
+                    dProgress = t(1)/dMaxTime;
+                    waitbar(dProgress, hpTarget, sprintf('Simulation time: %.4f/%.2f', t(1), dMaxTime));
+                    hpTarget.Name = sprintf('Progress: %.2f %%', dProgress*100);
+                end
+            catch ME
+                error(message('MATLAB:odeplot:ErrorUpdatingWindow', ME.message));
+            end
+
         end
-        
-        dMaxTime = hpTarget.UserData.Time;
-        
-        dProgress = t(1)/dMaxTime;
-        waitbar(dProgress, hpTarget, sprintf('Simulation time: %.4f/%.2f', t(1), dMaxTime));
-        hpTarget.Name = sprintf('Progress: %.2f %%', dProgress*100);
     
-    case 'init'
+    case 'init'    % odeplot(tspan,y0,'init')
         hpTarget = waitbar(0, 'Initializing...', 'Name', 'Initializing', 'CreateCancelBtn', @in_cb_stopbutton);
         hpTarget.UserData.Time = max(t);
+        hpTarget.UserData.stop = 0;
     
-    case 'done'
+    case 'done'    % odeplot([],[],'done')
         % Reset the persistent progress bar window
         hpWindow = hpTarget;
         hpTarget = [];

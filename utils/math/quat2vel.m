@@ -46,7 +46,7 @@ validateattributes(q, {'numeric'}, {'2d', 'nonempty', 'ncols', 4, 'nrows', nQuat
 
 %% Magic
 % The formula is quite simple: 2*W(q)*Dq
-% To perform really quick calculations, we will do some magic with permution and
+% To perform really quick calculations, we will do some magic with permute and
 % bsxfun
 omega = 2*sum(bsxfun(@times, permute(quat2ratem([q(:,1), q(:,2), q(:,3), q(:,4)]), [3, 1, 2]), permute(q_dot, [1, 3, 2])), 3);
 
