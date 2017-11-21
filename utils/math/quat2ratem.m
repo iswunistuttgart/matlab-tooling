@@ -2,7 +2,8 @@ function W = quat2ratem(q)%#codegen
 % QUAT2RATEM Gives the quaternion rate matrices
 % 
 %   T = QUAT2RATEM(Q) determines the quaternion rate matrices of size 3x4xN for
-%   each quaternion in Q.
+%   each quaternion in Q. Quaternion rate matrix T can then be used to be
+%   post-multiplied by the quaternion to get the angular velocity.
 %
 %   Inputs:
 %   
