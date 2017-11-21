@@ -135,6 +135,10 @@ function [varargout] = anim2d(X, Y, varargin)
 %   animation (and timer title) will "freeze" during 0s and 2.3s as there is no
 %   data drawn => Title should at least update
 % Changelog:
+%   2017-10-18
+%       * Fix error when a time vector was given that spans less time than fit
+%       in between frames. Now the time to frame mapping will be such that the
+%       first and last time step are used
 %   2017-09-07
 %       * Change checking of name/value pair 'timer' to be case insensitive
 %   2017-09-03
@@ -344,9 +348,9 @@ vTime = ip.Results.Time;
 % If time is empty, we will just loop over the samples of X and Y
 if isempty(vTime)
     vTime = 1:size(aXData,1);
-    loLoopItems = true;
+    loLoopTime = false;
 else
-    loLoopItems = false;
+    loLoopTime = true;
 end
 % Frames per second
 nFps = ip.Results.Fps;
@@ -485,12 +489,17 @@ stUserData.Frame2Time = stUserData.Time;
 
 % Time is given explicitely, so we need to find out what time index each
 % frame corresponds to
-if ~loLoopItems
+if loLoopTime
     % Number of frames equals end of animation time multiplied by number of
     % frames
     nFrames = vTime(end)*nFps;
     % The time stamp assigned to each frame
     vFrameTime = ((1:nFrames) - 1)/nFps;
+    % If no time cannot be found because the given final time is less than the
+    % first frame, we will display at least the first frame
+    if isempty(vFrameTime)
+        vFrameTime = 0;
+    end
     % If the last frame does not represent the last snapshot of time, we
     % will append this one
     if vFrameTime(end) ~= vTime(end)
