@@ -1,4 +1,4 @@
-function Files = allfiles(varargin)
+function Files = allfiles(d, varargin)
 % ALLFILES Finds all files in directory DIR and returns them in a structure
 %
 %   FILES = ALLFILES() scans through current working directory and returns all
@@ -34,14 +34,26 @@ function Files = allfiles(varargin)
 %           'off', 'no'     Do not include hidden files
 %       Defaults to 'off'.
 %
+%   Recurse         Flag whether to recurse into subdirectories, too. Possible
+%       options are
+%           'on', 'yes'     Recurse into subdirectories
+%           'off', 'no'     Do not recurse into subdirectories
+%       Defaults to 'off'
+%
 %   See also: dir
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-10-18
+% Date: 2018-01-22
 % Changelog:
+%   2018-01-22
+%       * Make parameter "D" required. By default, if not given, it will fall
+%       back to `pwd`
+%       * Change optional parameter 'Extension' to a parameter
+%       * Add Name/Value pair 'Recurse' to allow recursing into subdirectories,
+%       too
 %   2016-10-18
 %       * Change name/value pair 'Extension' from optional to parameter
 %   2016-09-09
@@ -61,11 +73,11 @@ ip = inputParser;
 
 % Optional: Directory. Char. Non-empty.
 valFcn_Dir = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Dir');
-addOptional(ip, 'Dir', pwd, valFcn_Dir);
+addRequired(ip, 'Dir', valFcn_Dir);
 
 % Parameter: Extension. Char. Non-empty.
 valFcn_Extension = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Extension');
-addOptional(ip, 'Extension', '*', valFcn_Extension);
+addParameter(ip, 'Extension', '', valFcn_Extension);
 
 % Paramter: Prefix. Char. Non-empty.
 valFcn_Prefix = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Prefix');
@@ -79,13 +91,31 @@ addParameter(ip, 'Suffix', '', valFcn_Suffix);
 valFcn_IncludeHidden = @(x) any(validatestring(lower(x), {'on', 'yes', 'off', 'no'}, mfilename, 'IncludeHidden'));
 addParameter(ip, 'IncludeHidden', 'off', valFcn_IncludeHidden);
 
+% Parameter: Recurse. Char. Matches {on, yes, off, no}
+valFcn_Recurse = @(x) any(validatestring(lower(x), {'on', 'yes', 'off', 'no'}, mfilename, 'Recurse'));
+addParameter(ip, 'Recurse', 'off', valFcn_Recurse);
+
 % Configuration of input parser
 ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
-    parse(ip, varargin{:});
+    % Default argument fallback
+    if nargin == 0 || isempty(d)
+        d = pwd;
+    end
+    
+    % ALLFILES(D)
+    % ALLFILES(D, ...)
+    narginchk(1, Inf);
+    % ALLFILES(...)
+    % F = ALLFILES(...)
+    nargoutchk(0, 1);
+    
+    args = [{d}, varargin];
+    
+    parse(ip, args{:});
 catch me
     throwAsCaller(me);
 end
@@ -97,36 +127,71 @@ end
 chDir = fullpath(ip.Results.Dir);
 % File extension to retrieve: char
 chExtension = ip.Results.Extension;
+if isempty(chExtension)
+    chExtension = '.*';
+end
 % File prefix: char
 chPrefix = ip.Results.Prefix;
+if isempty(chPrefix)
+    chPrefix = '.*';
+end
 % File suffix: char
 chSuffix = ip.Results.Suffix;
-% Include system: char, {'yes', 'no'}
+if isempty(chSuffix)
+    chSuffix = '.*';
+end
+% Include system: char, {'on', 'off'}
 chIncludeHidden = parseswitcharg(ip.Results.IncludeHidden);
+% Recurse into subdirectories: char, {'on', 'off'})
+chRecurse = parseswitcharg(ip.Results.Recurse);
 
 
 
 %% Magic, collect the files
-chPath = sprintf('%s%s%s*%s.%s', chDir, filesep, chPrefix, chSuffix, chExtension);
-
 % Get all the files in the given directory
-stFiles = dir(chPath);
+stFiles = dir(chDir);
+[stFiles(:).path] = deal('');
 
 % Proceed only from here on if there were any files found
 if ~isempty(stFiles)
     % Remove the system entries '.' and '..'
     stFiles(ismember({stFiles(:).name}, {'.', '..'})) = [];
     
-    % Remove directories
-    stFiles([stFiles.isdir]) = [];
-    
     % Do we need to filter the system files like '.' and '..'?
     if strcmpi('off', chIncludeHidden)
         % Remove all directories from the found items
         stFiles(1 == cell2mat(regexp({stFiles(:).name}, '^\..*'))) = [];
     end
+    
+    % Logically index directories
+    loDirs = [stFiles.isdir];
+    % Get index of directories
+    idxDirs = find(loDirs);
+    
+    % Recurse into subdirectories if requested
+    if strcmp('on', chRecurse)
+        for iDir = 1:numel(idxDirs)
+            % And merge with the files found in the subdirectory
+            stFiles = vertcat(stFiles, allfiles(fullfile(chDir, stFiles(idxDirs(iDir)).name) ...
+                , 'Extension', chExtension ...
+                , 'Prefix', chPrefix ...
+                , 'Suffix', chSuffix ...
+                , 'IncludeHidden', chIncludeHidden ...
+                , 'Recurse', 'on' ...
+            ));
+        end
+    end
+    % Now, remove all items that are directories (we have left overs from the
+    % root direcotry and possibly from recursed directories)
+    stFiles([stFiles.isdir]) = [];
+    
+    % And now filter the files that do not match the requested pattern
+    stFiles(0 == cell2mat(regexp({stFiles(:).name}, ['^' , chPrefix , '.*' , chSuffix , '\.' , chExtension , '$']))) = [];
+    
+    % Add the files' path so that the user can use the files more easily later
+    % on
+    [stFiles(strcmp('', {stFiles.path})).path] = deal(chDir);
 end
-
 
 
 
