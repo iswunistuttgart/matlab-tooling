@@ -1,4 +1,4 @@
-function varargout = plot_markers(varargin)
+function varargout = plot_markers(n, varargin)
 % PLOT_MARKERS Plot some markers on the lines given in Axes
 % 
 %   PLOT_MARKERS() plots 25 markers along all of the lines of the current axes.
@@ -113,12 +113,12 @@ ip = inputParser;
 % Let user decide on the plot style
 % Plot style can be chosen anything from the list below
 valFcn_Count = @(x) validateattributes(x, {'numeric'}, {'row', '>=', 1}, mfilename, 'Count', 1);
-addOptional(ip, 'Count', '25', valFcn_Count);
+addRequired(ip, 'Count', valFcn_Count);
 
 % Optional 2: Spacing between the markers
 % valFcn_Spacing = @(x) assert(any(validatestring(lower(x), {'x', 'curve', 'logx'}, mfilename, 'Spacing', 3)));
 valFcn_Spacing = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Spacing', 3);
-addOptional(ip, 'Spacing', 'x', valFcn_Spacing);
+addParameter(ip, 'Spacing', 'x', valFcn_Spacing);
 
 % Parameter: Markers to set or order of markers
 % valFcn_Order = @(x) assert(all(ismember(strsplit(x, '|'), {'o', '+', '*', '.', 'x', 's', 'd', '^', 'v', '>', '<', 'p', 'h'})));
@@ -131,6 +131,12 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
+    narginchk(1, Inf);
+    
+    nargoutchk(0, 2);
+    
+    varargin = [{n}, varargin];
+    
     [haTarget, args, ~] = axescheck(varargin{:});
     
     parse(ip, args{:});
@@ -250,7 +256,9 @@ for iChild = 1:nValidChildren
                 vArcSpaced(1) = vArcLength(1);
                 vArcSpaced(end) = vArcLength(end);
                 % And get the x-indices of these values of y
-                vSelector = round(interp1(vArcLength, vXIndex, vArcSpaced));
+                vSelector = fix(interp1(vArcLength, vXIndex, vArcSpaced));
+                % Remove NaNs
+                vSelector(isnan(vSelector)) = [];
             end
     end
     
