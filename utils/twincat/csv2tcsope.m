@@ -36,8 +36,10 @@ function tcs = csv2tcsope(File, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-01-15
+% Date: 2018-02-25
 % Changelog:
+%   2018-02-25
+%       * Fix incorrect parameter default 'CollectSignals'
 %   2018-01-15
 %       * Initial release
 
@@ -57,7 +59,7 @@ addParameter(ip, 'Delimiter', '\t', valFcn_Delimiter);
 
 % Parameter: CollectSignals; char; matches {'on', 'off', 'yes', 'no', 'please'}
 valFcn_CollectSignals = @(x) any(validatestring(lower(x), {'on', 'yes', 'please', 'off', 'no'}, mfilename, 'CollectSignals'));
-addParameter(ip, 'CollectSignals', false, valFcn_CollectSignals);
+addParameter(ip, 'CollectSignals', 'off', valFcn_CollectSignals);
 
 % Configuration for the input parser
 ip.KeepUnmatched = true;
