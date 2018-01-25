@@ -1,7 +1,7 @@
-function [X, ndx, dbg] = strnatsort(X, xpr,varargin)%#ok<*SPERR>
+function [X, ndx, dbg] = strnatsort(X, xpr, varargin) %#ok<*SPERR>
 % Alphanumeric / Natural-Order sort the strings in a cell array of strings.
 %
-% (c) 2016 Stephen Cobeldick
+% (c) 2017 Stephen Cobeldick
 %
 % Alphanumeric sort of a cell array of strings: sorts by character order
 % and also by the values of any numbers that are within the strings. The
@@ -10,15 +10,15 @@ function [X, ndx, dbg] = strnatsort(X, xpr,varargin)%#ok<*SPERR>
 % number substring matching (see the section "Number Substrings" below).
 %
 %%% Syntax:
-%  Y = natsort(X)
-%  Y = natsort(X,xpr)
-%  Y = natsort(X,xpr,<options>)
-% [Y,ndx] = natsort(X,...);
+%  Y = strnatsort(X)
+%  Y = strnatsort(X,xpr)
+%  Y = strnatsort(X,xpr,<options>)
+% [Y,ndx] = strnatsort(X,...);
 %
-% To sort filenames or filepaths use NATSORTFILES (File Exchange 47434).
-% To sort the rows of a cell array of strings use NATSORTROWS (File Exchange 47433).
+% To sort filenames or filepaths use STRNATSORTFILES (File Exchange 47434).
+% To sort the rows of a cell array of strings use STRNATSORTROWS (File Exchange 47433).
 %
-% See also NATSORTFILES NATSORTROWS SORTROWS SORT CELLSTR REGEXP SSCANF NUM2ORDINAL NUM2WORDS NUM2BIP NUM2SIP INTMAX
+% See also STRNATSORTFILES STRNATSORTROWS SORTROWS SORT CELLSTR REGEXP SSCANF NUM2ORDINAL NUM2WORDS NUM2BIP NUM2SIP INTMAX
 %
 %% Number Substrings %%
 %
@@ -30,7 +30,6 @@ function [X, ndx, dbg] = strnatsort(X, xpr,varargin)%#ok<*SPERR>
 %
 % The substrings are then parsed by SSCANF into numeric variables, using
 % either the *default format '%f', or the user-supplied format specifier.
-% The numeric variables' class type is determined by the format specifier.
 %
 % This table shows some example regular expression patterns for some common
 % notations and ways of writing numbers (see section "Examples" for more):
@@ -44,7 +43,7 @@ function [X, ndx, dbg] = strnatsort(X, xpr,varargin)%#ok<*SPERR>
 % --------------|------------------|-------------------------------|------------------
 %   \d+(\.\d+)? | 012, 3.45, 678.9 | integer or decimal            | %f
 % --------------|------------------|-------------------------------|------------------
-%   \d+|Inf|NaN | 123456, Inf, NaN | integer, infinite or NaN value| %f
+%   \d+|Inf|NaN | 123, 4, Inf, NaN | integer, infinite or NaN value| %f
 % --------------|------------------|-------------------------------|------------------
 %  \d+\.\d+e\d+ | 0.123e4, 5.67e08 | exponential notation          | %f
 % --------------|------------------|-------------------------------|------------------
@@ -77,73 +76,73 @@ function [X, ndx, dbg] = strnatsort(X, xpr,varargin)%#ok<*SPERR>
 %
 %% Examples %%
 %
-% % Integer number substrings:
+%%% Integer number substrings:
 % A = {'a2', 'a10', 'a1'};
 % sort(A)
 %  ans =  'a1'  'a10'  'a2'
-% natsort(A)
+% strnatsort(A)
 %  ans =  'a1'  'a2'  'a10'
 %
-% % Multiple number substrings (e.g. release version numbers):
+%%% Multiple number substrings (e.g. release version numbers):
 % B = {'v10.6', 'v9.10', 'v9.5', 'v10.10', 'v9.10.20', 'v9.10.8'};
 % sort(B)
 %  ans =  'v10.10'  'v10.6'  'v9.10'  'v9.10.20'  'v9.10.8'  'v9.5'
-% natsort(B)
+% strnatsort(B)
 %  ans =  'v9.5'  'v9.10'  'v9.10.8'  'v9.10.20'  'v10.6'  'v10.10'
 %
-% % Integer, decimal or Inf number substrings, possibly with +/- signs:
+%%% Integer, decimal or Inf number substrings, possibly with +/- signs:
 % C = {'test+Inf', 'test11.5', 'test-1.4', 'test', 'test-Inf', 'test+0.3'};
 % sort(C)
 %  ans =  'test'  'test+0.3'  'test+Inf'  'test-1.4'  'test-Inf'  'test11.5'
-% natsort(C, '(-|+)?(Inf|\d+(\.\d+)?)')
+% strnatsort(C, '(-|+)?(Inf|\d+(\.\d+)?)')
 %  ans =  'test'  'test-Inf'  'test-1.4'  'test+0.3'  'test11.5'  'test+Inf'
 %
-% % Integer or decimal number substrings, possibly with an exponent:
+%%% Integer or decimal number substrings, possibly with an exponent:
 % D = {'0.56e007', '', '4.3E-2', '10000', '9.8'};
 % sort(D)
 %  ans =  ''  '0.56e007'  '10000'  '4.3E-2'  '9.8'
-% natsort(D, '\d+(\.\d+)?(E(+|-)?\d+)?')
+% strnatsort(D, '\d+(\.\d+)?(E(+|-)?\d+)?')
 %  ans =  ''  '4.3E-2'  '9.8'  '10000'  '0.56e007'
 %
-% % Hexadecimal number substrings (possibly with '0X' prefix):
+%%% Hexadecimal number substrings (possibly with '0X' prefix):
 % E = {'a0X7C4z', 'a0X5z', 'a0X18z', 'aFz'};
 % sort(E)
 %  ans =  'a0X18z'  'a0X5z'  'a0X7C4z'  'aFz'
-% natsort(E, '(?<=a)(0X)?[0-9A-F]+', '%x')
+% strnatsort(E, '(?<=a)(0X)?[0-9A-F]+', '%x')
 %  ans =  'a0X5z'  'aFz'  'a0X18z'  'a0X7C4z'
 %
-% % Binary number substrings (possibly with '0B' prefix):
+%%% Binary number substrings (possibly with '0B' prefix):
 % F = {'a11111000100z', 'a0B101z', 'a0B000000000011000z', 'a1111z'};
 % sort(F)
 %  ans =  'a0B000000000011000z'  'a0B101z'  'a11111000100z'  'a1111z'
-% natsort(F, '(0B)?[01]+', '%b')
+% strnatsort(F, '(0B)?[01]+', '%b')
 %  ans =  'a0B101z'  'a1111z'  'a0B000000000011000z'  'a11111000100z'
 %
-% % uint64 number substrings (with full precision!):
-% natsort({'a18446744073709551615z', 'a18446744073709551614z'}, [], '%lu')
+%%% uint64 number substrings (with full precision!):
+% strnatsort({'a18446744073709551615z', 'a18446744073709551614z'}, [], '%lu')
 %  ans =   'a18446744073709551614z'  'a18446744073709551615z'
 %
-% % Case sensitivity:
+%%% Case sensitivity:
 % G = {'a2', 'A20', 'A1', 'a10', 'A2', 'a1'};
-% natsort(G, [], 'ignorecase') % default
+% strnatsort(G, [], 'ignorecase') % default
 %  ans =   'A1'  'a1'  'a2'  'A2'  'a10'  'A20'
-% natsort(G, [], 'matchcase')
+% strnatsort(G, [], 'matchcase')
 %  ans =   'A1'  'A2'  'A20'  'a1'  'a2'  'a10'
 %
-% % Sort direction:
+%%% Sort direction:
 % H = {'2', 'a', '3', 'B', '1'};
-% natsort(H, [], 'ascend') % default
+% strnatsort(H, [], 'ascend') % default
 %  ans =   '1'  '2'  '3'  'a'  'B'
-% natsort(H, [], 'descend')
+% strnatsort(H, [], 'descend')
 %  ans =   'B'  'a'  '3'  '2'  '1'
 %
-% % Relative sort-order of number substrings compared to characters:
+%%% Relative sort-order of number substrings compared to characters:
 % X = num2cell(char(32+randperm(63)));
-% cell2mat(natsort(X, [], 'asdigit')) % default
+% cell2mat(strnatsort(X, [], 'asdigit')) % default
 %  ans = '!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_'
-% cell2mat(natsort(X, [], 'beforechar'))
+% cell2mat(strnatsort(X, [], 'beforechar'))
 %  ans = '0123456789!"#$%&'()*+,-./:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_'
-% cell2mat(natsort(X, [], 'afterchar'))
+% cell2mat(strnatsort(X, [], 'afterchar'))
 %  ans = '!"#$%&'()*+,-./:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_0123456789'
 %
 %% Input and Output Arguments %%
@@ -163,14 +162,12 @@ function [X, ndx, dbg] = strnatsort(X, xpr,varargin)%#ok<*SPERR>
 %   dbg = Cell Array of all parsed characters and number values. Each row is
 %         one string, linear-indexed from <X>. Helps to debug string parsing.
 %
-% [X,ndx,dbg] = natsort(X,*xpr,<options>)
+% [X,ndx,dbg] = strnatsort(X,*xpr,<options>)
 
 %% Input Wrangling %%
 %
 assert(iscell(X),'First input <X> must be a cell array.')
-tmp = cellfun('isclass',X,'char') & ...
-	2>cellfun('size',X,1) & ...
-	3>cellfun('ndims',X);
+tmp = cellfun('isclass',X,'char') & 2>cellfun('size',X,1) & 3>cellfun('ndims',X);
 assert(all(tmp(:)),'First input <X> must be a cell array of strings (1xN character).')
 %
 % Regular expression:
@@ -181,7 +178,7 @@ else
 end
 %
 % Optional arguments:
-tmp = cellfun('isclass',varargin,'char')&1==cellfun('size',varargin,1)&2==cellfun('ndims',varargin);
+tmp = cellfun('isclass',varargin,'char') & 1==cellfun('size',varargin,1) & 2==cellfun('ndims',varargin);
 assert(all(tmp(:)),'All optional arguments must be strings (1xN character).')
 % Character case matching:
 MatL = strcmpi(varargin,'matchcase');
@@ -316,4 +313,4 @@ ndx  = reshape(ndx,size(X));
 X = X(ndx);
 %
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%natsort
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%strnatsort

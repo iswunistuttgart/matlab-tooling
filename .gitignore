@@ -1,5 +1,7 @@
 *codegen*
 wiki/
+*.wiki/
+temp/*
 
 # Worktree folders
 wt-*

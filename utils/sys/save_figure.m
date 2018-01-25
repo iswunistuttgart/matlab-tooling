@@ -70,8 +70,10 @@ function save_figure(Filename, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-11-11
+% Date: 2018-01-22
 % Changelog:
+%   2018-01-22
+%       * Change printer for PNG from 'zbuffer' to 'opengl'
 %   2016-11-11
 %       * Adjust message identifiers of MExceptions
 %       * Replace `in_charToValidArgument` with `parseswitcharg`
@@ -191,71 +193,83 @@ for iFig = 1:nFigures
 
         % Make the given figure active and visible
         figure(hfTheSource);
-        set(hfTheSource, 'Visible', 'on');
+        hfTheSource.Visible = 'on';
 
         % Append number of figure if more than one figure
         if nFigures > 1
             chFilename = sprintf(sprintf('%%s-%%0%dd', length(sprintf('%d', nFigures)) + 1), chFilename, iFig);
         end
 
-        % Save as fig
+        % FIG
         if ismember('fig', ceOutputTypes)
-            chFilepath = in_createFilepath('fig');
+            chFilepath = in_createFilepath(chPath, 'fig', chInDir);
             % Matlab .FIG file
             saveas(hfTheSource, [chFilepath , '.fig']);
         end
 
-        % Save as emf
+        % EMF
         if ismember('emf', ceOutputTypes)
-            chFilepath = in_createFilepath('emf');
+            chFilepath = in_createFilepath(chPath, 'emf', chInDir);
             % Windows Enhanced Meta-File (best for powerpoints)
             saveas(hfTheSource, [chFilepath , '.emf']);
         end
 
-        % Save as png
+        % PNG
         if ismember('png', ceOutputTypes)
-            chFilepath = in_createFilepath('png');
+            chFilepath = in_createFilepath(chPath, 'png', chInDir);
             % Standard PNG graphics file (best for web)
-            print('-dpng', '-loose', '-zbuffer', '-r200', [chFilepath, '.png'], cePngConfig{:});
+            print('-dpng', '-loose', '-opengl', '-r200', [chFilepath, '.png'], cePngConfig{:});
         end
 
-        % Save as eps
+        % EPS
         if ismember('eps', ceOutputTypes)
-            chFilepath = in_createFilepath('eps');
+            chFilepath = in_createFilepath(chPath, 'eps', chInDir);
             % Enhanced Postscript (Level 2 color) (Best for LaTeX documents)
             print('-depsc', '-tiff', '-zbuffer', '-r200', [chFilepath, '.eps'], ceEpsConfig{:});
         end
 
-        % Save as pdf
+        % PDF
         if ismember('pdf', ceOutputTypes)
-            chFilepath = in_createFilepath('pdf');
+            chFilepath = in_createFilepath(chPath, 'pdf', chInDir);
             % Full page Portable Document Format (PDF) color
             print('-dpdf', '-painters', [chFilepath, '.pdf'], cePdfConfig{:});
         end
 
-        % Save as tikz
+        % TikZ
         if ismember('tikz', ceOutputTypes)
-            chFilepath = in_createFilepath('tikz');
-            % matlab2tikz([chTargetFolder , '.tikz'], 'Height', '\figureheight', 'Width', '\figurewidth', 'ShowInfo', false);
+            chFilepath = in_createFilepath(chPath, 'tikz', chInDir);
             matlab2tikz('FigureHandle', hfTheSource, 'filename', [chFilepath, '.tikz'], 'figurehandle', hfSource, 'ShowInfo', false, ceTikzConfig{:});
         end
     catch me
-        me = addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:SAVE_FIGURE:errorSaveFile', 'Error saving file [%s]', chFilepath));
+        % Add a cause to the exception
+        me = addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:SAVE_FIGURE:errorSaveFile', 'Error saving file [%s].', chFilepath));
         
+        % And throw the exception
         throwAsCaller(me);
     end
 end
 
 
-    function chTargetPath = in_createFilepath(chFolder)
-        chTargetPath = fullfile(chPath);
-        if strcmp('on', chInDir)
-            mkdir(fullfile(chPath, chFolder));
-            chTargetPath = fullfile(chTargetPath, chFolder);
-        end
-        
-        chTargetPath = fullfile(chTargetPath, chFilename);
-    end
+end
+
+
+function chTargetPath = in_createFilepath(chPath, chFolder, chInDir)
+%% IN_CREATEFILEPATH creates the filepath given the base path and InDir flag
+
+
+% Get a FQPN of the target path
+chTargetPath = fullfile(chPath);
+
+% Store inside directories?
+if strcmp('on', chInDir)
+    % Ensure we have a directory
+    mkdir(fullfile(chPath, chFolder));
+    % Append this directory to the target path
+    chTargetPath = fullfile(chTargetPath, chFolder);
+end
+
+% Append the filename to the target path
+chTargetPath = fullfile(chTargetPath, chFilename);
 
 
 end
