@@ -70,8 +70,11 @@ function save_figure(Filename, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-01-22
+% Date: 2018-02-06
 % Changelog:
+%   2018-02-06
+%       * Fix error when using this with a fully qualified filename i.e., with
+%       file extension would not work
 %   2018-01-22
 %       * Change printer for PNG from 'zbuffer' to 'opengl'
 %   2016-11-11
@@ -183,7 +186,13 @@ nFigures = numel(hfSource);
 
 % Check the filename is a valid file i.e., starts with a directory
 chFileTarget = fullpath(chFileTarget);
-[chPath, chFilename, ~] = fileparts(chFileTarget);
+[chFile_Path, chFile_Name, chFile_Ext] = fileparts(chFileTarget);
+
+% If no output types were given but a fully qualifying file name/path i.e., with
+% file extension, then get the output types from there
+if ~isempty(chFile_Ext) && ismember('Types', ip.UsingDefaults)
+    ceOutputTypes = {chFile_Ext(2:end)};
+end
 
 % Loop over all figures
 for iFig = 1:nFigures
@@ -197,52 +206,52 @@ for iFig = 1:nFigures
 
         % Append number of figure if more than one figure
         if nFigures > 1
-            chFilename = sprintf(sprintf('%%s-%%0%dd', length(sprintf('%d', nFigures)) + 1), chFilename, iFig);
+            chFile_Name = sprintf(sprintf('%%s-%%0%dd', length(sprintf('%d', nFigures)) + 1), chFile_Name, iFig);
         end
 
         % FIG
         if ismember('fig', ceOutputTypes)
-            chFilepath = in_createFilepath(chPath, 'fig', chInDir);
+            chFilepath = in_createFilepath(chFile_Path, 'fig', chFile_Name, chInDir);
             % Matlab .FIG file
             saveas(hfTheSource, [chFilepath , '.fig']);
         end
 
         % EMF
         if ismember('emf', ceOutputTypes)
-            chFilepath = in_createFilepath(chPath, 'emf', chInDir);
+            chFilepath = in_createFilepath(chFile_Path, 'emf', chFile_Name, chInDir);
             % Windows Enhanced Meta-File (best for powerpoints)
             saveas(hfTheSource, [chFilepath , '.emf']);
         end
 
         % PNG
         if ismember('png', ceOutputTypes)
-            chFilepath = in_createFilepath(chPath, 'png', chInDir);
+            chFilepath = in_createFilepath(chFile_Path, 'png', chFile_Name, chInDir);
             % Standard PNG graphics file (best for web)
             print('-dpng', '-loose', '-opengl', '-r200', [chFilepath, '.png'], cePngConfig{:});
         end
 
         % EPS
         if ismember('eps', ceOutputTypes)
-            chFilepath = in_createFilepath(chPath, 'eps', chInDir);
+            chFilepath = in_createFilepath(chFile_Path, 'eps', chFile_Name, chInDir);
             % Enhanced Postscript (Level 2 color) (Best for LaTeX documents)
             print('-depsc', '-tiff', '-zbuffer', '-r200', [chFilepath, '.eps'], ceEpsConfig{:});
         end
 
         % PDF
         if ismember('pdf', ceOutputTypes)
-            chFilepath = in_createFilepath(chPath, 'pdf', chInDir);
+            chFilepath = in_createFilepath(chFile_Path, 'pdf', chFile_Name, chInDir);
             % Full page Portable Document Format (PDF) color
             print('-dpdf', '-painters', [chFilepath, '.pdf'], cePdfConfig{:});
         end
 
         % TikZ
         if ismember('tikz', ceOutputTypes)
-            chFilepath = in_createFilepath(chPath, 'tikz', chInDir);
+            chFilepath = in_createFilepath(chFile_Path, 'tikz', chFile_Name, chInDir);
             matlab2tikz('FigureHandle', hfTheSource, 'filename', [chFilepath, '.tikz'], 'figurehandle', hfSource, 'ShowInfo', false, ceTikzConfig{:});
         end
     catch me
         % Add a cause to the exception
-        me = addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:SAVE_FIGURE:errorSaveFile', 'Error saving file [%s].', chFilepath));
+        me = addCause(me, MException('PHILIPPTEMPEL:MATLAB_TOOLING:SAVE_FIGURE:errorSaveFile', 'Error saving figure %g.', hfTheSource.Number));
         
         % And throw the exception
         throwAsCaller(me);
@@ -253,7 +262,7 @@ end
 end
 
 
-function chTargetPath = in_createFilepath(chPath, chFolder, chInDir)
+function chTargetPath = in_createFilepath(chPath, chFolder, chFilename, chInDir)
 %% IN_CREATEFILEPATH creates the filepath given the base path and InDir flag
 
 
