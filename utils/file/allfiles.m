@@ -150,7 +150,6 @@ chRecurse = parseswitcharg(ip.Results.Recurse);
 %% Magic, collect the files
 % Get all the files in the given directory
 stFiles = dir(chDir);
-[stFiles(:).path] = deal('');
 
 % Proceed only from here on if there were any files found
 if ~isempty(stFiles)
@@ -187,10 +186,6 @@ if ~isempty(stFiles)
     
     % And now filter the files that do not match the requested pattern
     stFiles(0 == cell2mat(regexp({stFiles(:).name}, ['^' , chPrefix , '.*' , chSuffix , '\.' , chExtension , '$']))) = [];
-    
-    % Add the files' path so that the user can use the files more easily later
-    % on
-    [stFiles(strcmp('', {stFiles.path})).path] = deal(chDir);
 end
 
 
