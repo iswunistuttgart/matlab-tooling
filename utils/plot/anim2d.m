@@ -127,7 +127,7 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-08-05
+% Date: 2018-02-17
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 %   * Resample time vector such that it explictly matches the FPS value. Right
@@ -135,6 +135,10 @@ function [varargout] = anim2d(X, Y, varargin)
 %   animation (and timer title) will "freeze" during 0s and 2.3s as there is no
 %   data drawn => Title should at least update
 % Changelog:
+%   2018-02-17
+%       * Ensure figure is visible after the function has been called. Prior to
+%       now, the figure was made visible once the timer started which wasn't
+%       very convenient or to-be-expected
 %   2017-10-18
 %       * Fix error when a time vector was given that spans less time than fit
 %       in between frames. Now the time to frame mapping will be such that the
@@ -543,6 +547,9 @@ hfFigure.DeleteFcn = {@cb_cleanup, haTarget};
 
 % Add the timer to the axes, too
 haTarget.UserData.Timer = tiUpdater;
+
+% Finally, make the figure visible (even though it will be empty)
+hfFigure.Visible = 'on';
 
 
 
