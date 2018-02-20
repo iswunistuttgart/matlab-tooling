@@ -40,7 +40,7 @@ end
 % Get the field names of the structure
 ceFields = fieldnames(st);
 % Create the cell array
-ceUnmatched = cell(2*numel(ceFIelds), 1);
+ceUnmatched = cell(2*numel(ceFields), 1);
 % Add the fields on every second element starting at one
 ceUnmatched(1:2:end) = ceFields;
 % Add the fields' values starting at two
