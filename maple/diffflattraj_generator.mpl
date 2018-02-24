@@ -18,7 +18,7 @@ for n from 1 to 7 do
     fprintf(f_n, "function D%dz = in_sys%d_diff%d(t, z0, z1, T)\n", iD, n, iD):
     fprintf(f_n, "%%%% IN_SYS%d_DIFF%d is the %d-degree derivative trajectory for an order-%d system\n", n, iD, iD, n):
     fprintf(f_n, "%%\n"):
-    fprintf(f_n, "%%   D%dZ = IN_SYS%d_DIFF%d(T, Z0, Z1, T) returns the evaluated differentially flat\n", n, iD, n, iD):
+    fprintf(f_n, "%%   D%dZ = IN_SYS%d_DIFF%d(T, Z0, Z1, T) returns the evaluated differentially flat\n", iD, n, iD):
     fprintf(f_n, "%%   trajectory over time T starting at point Z0 and ending at Z1 with a total\n"):
     fprintf(f_n, "%%   time of transition of T seconds.\n"):
     fprintf(f_n, "%%\n"):

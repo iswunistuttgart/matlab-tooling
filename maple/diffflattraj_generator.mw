@@ -115,7 +115,7 @@ for n from 1 to 7 do
 <Font encoding="UTF-8">    fprintf(f_n, &quot;function D%dz = in_sys%d_diff%d(t, z0, z1, T)\134n&quot;, iD, n, iD):
 </Font>    <Font encoding="UTF-8">fprintf(f_n, &quot;%%%% IN_SYS%d_DIFF%d is the %d-degree derivative trajectory for an order-%d system\134n&quot;, n, iD, iD, n):</Font>
 <Font encoding="UTF-8">    fprintf(f_n, &quot;%%\134n&quot;):</Font>
-<Font encoding="UTF-8">    fprintf(f_n, &quot;%%   D%dZ = IN_SYS%d_DIFF%d(T, Z0, Z1, T) returns the evaluated differentially flat\134n&quot;</Font>, n, iD, n, iD<Font encoding="UTF-8">):
+<Font encoding="UTF-8">    fprintf(f_n, &quot;%%   D%dZ = IN_SYS%d_DIFF%d(T, Z0, Z1, T) returns the evaluated differentially flat\134n&quot;</Font>, iD, n, iD<Font encoding="UTF-8">):
     fprintf(f_n, &quot;%%   trajectory over time T starting at point Z0 and ending at Z1 with a total\134n&quot;):
     fprintf(f_n, &quot;%%   time of transition of T seconds.\134n&quot;):</Font>
 <Font encoding="UTF-8">    fprintf(f_n, &quot;%%\134n&quot;):
