@@ -266,7 +266,7 @@ _minted*
 *.pyg
 
 # morewrites
-*.mw
+#*.mw
 
 # mylatexformat
 
@@ -488,7 +488,7 @@ _minted*
 *.pyg
 
 # morewrites
-*.mw
+#*.mw
 
 # mylatexformat
 
