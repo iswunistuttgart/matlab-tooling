@@ -3,13 +3,25 @@ function funcren(Old, New, varargin)
 %
 %   FUNCREN(OLD, NEW) renames function OLD to NEW and changes its signature.
 %
+%   FUNCNREN(OLD, NEW, 'Name', 'Value', ...) allows setting optional inputs
+%   using name/value pairs.
+%
 %   Inputs:
 %
-%   OLD:    Old name of function. Must be the old name and not the file name of
-%           the function
+%   OLD                 Old name of function. Must be the old name and not the
+%                       file name of the function
 %
-%   NEW:    New name of function. Must be the new name and not the file name of
-%           the function
+%   Optional Inputs -- specified as parameter value pairs
+%
+%   Open                Flag to open file after renaming or not. Possible values
+%                       are
+%                       'on', 'yes'     Open file in editor after renaming
+%                       'off', 'no',    Do not open file in editor after
+%                                       renaming
+%                       Defaults to 'off'
+%
+%   NEW                 New name of function. Must be the new name and not the
+%                       file name of the function
 
 
 
@@ -21,6 +33,10 @@ function funcren(Old, New, varargin)
 %   name it seems to work, but for the new function name it does (somehow
 %   magically, but not really) work.
 % Changelog:
+%   2018-03-03
+%       * Change parameter 'silent' to 'open' and change it's default value to
+%       'off'.
+%       * Update H1 with help on name/value-parameters
 %   2017-01-10
 %       * Add TODO to handle packaged functions
 %   2016-12-03
@@ -54,8 +70,8 @@ valFcn_New = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'New'
 addRequired(ip, 'New', valFcn_New);
 
 % Silent creation i.e., not opening file afterwards
-valFcn_Silent = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no', 'please', 'never'}, mfilename, 'Silent'));
-addParameter(ip, 'Silent', 'off', valFcn_Silent);
+valFcn_Open = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no', 'please', 'never'}, mfilename, 'Open'));
+addParameter(ip, 'Open', 'off', valFcn_Open);
 
 
 % Configuration of input parser
@@ -64,6 +80,13 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
+    % FUNCREN(OLD, NEW);
+    % FUNCREN(OLD, NEW, 'Name', 'Value', ...);
+    narginchk(2, Inf);
+    
+    % FUNCREN(OLD, NEW);
+    nargoutchk(0, 0);
+    
     args = [{Old}, {New}, varargin];
     
     parse(ip, args{:});
@@ -78,8 +101,8 @@ end
 chName_Old = ip.Results.Old;
 % New function name
 chName_New = ip.Results.New;
-% Silent creation?
-chSilent = parseswitcharg(ip.Results.Silent);
+% Open after rename
+chOpen = parseswitcharg(ip.Results.Open);
 
 
 
@@ -87,7 +110,7 @@ chSilent = parseswitcharg(ip.Results.Silent);
 %% Rename file
 % Get the path to the specified function
 chOld_Filepath = which(chName_Old);
-assert(~isempty(chOld_Filepath), 'PHILIPPTEMPEL:renFunc:InvalidFuncName', 'Could not find function %s anywhere in your path', chName_Old);
+assert(~isempty(chOld_Filepath), 'PHILIPPTEMPEL:MATLAB_TOOLING:FUNCREN:InvalidFuncName', 'Could not find function %s anywhere in your path', chName_Old);
 
 % Get the path parts of the old and new file
 [chOld_Path, chOld_Name, chOld_Ext] = fileparts(chOld_Filepath);
@@ -151,8 +174,8 @@ end
 %% Assign output quantities
 
 % Open file afterwards?
-if strcmp('off', chSilent)
-    open(chNew_Filepath);
+if strcmp('on', chOpen)
+    edit(chNew_Filepath);
 end
 
 
