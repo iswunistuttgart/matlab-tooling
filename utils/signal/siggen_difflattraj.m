@@ -48,24 +48,24 @@ function [Trajectory, varargout] = siggen_difflattraj(Start, End, varargin)
 % Date: 2018-02-25
 % Changelog:
 %   2018-02-25
-%       * Properly initialize variable list of output arguments and avoid having
+%       .* Properly initialize variable list of output arguments and avoid having
 %       to use `%#ok<AGROW>`
-%       * Update all inline function callbacks with beautiful H1 help lines
+%       .* Update all inline function callbacks with beautiful H1 help lines
 %   2017-08-28
-%       * Fix incorect determination of derivatives of signal: now we are using
+%       .* Fix incorect determination of derivatives of signal: now we are using
 %       MAPLE code-generated functions inline. These are less error-prone and
 %       additionally should be much faster than the actual code execution in
 %       MATLAB
-%       * Add code directives since the inline functions are never used
+%       .* Add code directives since the inline functions are never used
 %       explicitly
 %   2017-08-25
-%       * Add variable output arguments for derivatives up to n+2
+%       .* Add variable output arguments for derivatives up to n+2
 %   2016-08-26
-%       * Add option 'Name' to allow for direct naming of the time series object
-%       * Change option 'Time' to 'Sampling' and remove support for a time
+%       .* Add option 'Name' to allow for direct naming of the time series object
+%       .* Change option 'Time' to 'Sampling' and remove support for a time
 %       vector in favor of providing a sampling time
 %   2016-08-25
-%       * Initial release
+%       .* Initial release
 
 
 
@@ -205,7 +205,7 @@ function D0z = in_sys1_diff0(t, z0, z1, T)
 %% Auto-generated and optimized code
 
 t1 = 1 / T;
-D0z = -(z0 - z1) * t1 ^ 2 * t ^ 2 * (-2 * t1 * t + 3) + z0;
+D0z = -(z0 - z1) .* t1 .^ 2 .* t .^ 2 .* (-2 .* t1 .* t + 3) + z0;
 
 end
 % END function D0z = in_sys1_diff0(t, z0, z1, T)
@@ -239,8 +239,8 @@ function D1z = in_sys1_diff1(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = 6;
-t3 = (t1 ^ 2);
-D1z = t2 * (z0 - z1) * t * (t - T) * t1 * t3;
+t3 = (t1 .^ 2);
+D1z = t2 .* (z0 - z1) .* t .* (t - T) .* t1 .* t3;
 
 end
 % END function D1z = in_sys1_diff1(t, z0, z1, T)
@@ -274,8 +274,8 @@ function D2z = in_sys1_diff2(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = -6;
-t3 = (t1 ^ 2);
-D2z = t2 * (z0 - z1) * (T - 2 * t) * t1 * t3;
+t3 = (t1 .^ 2);
+D2z = t2 .* (z0 - z1) .* (T - 2 .* t) .* t1 .* t3;
 
 end
 % END function D2z = in_sys1_diff2(t, z0, z1, T)
@@ -309,8 +309,8 @@ function D3z = in_sys1_diff3(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = 12;
-t3 = (t1 ^ 2);
-D3z = t2 * (z0 - z1) * t1 * t3;
+t3 = (t1 .^ 2);
+D3z = t2 .* (z0 - z1) .* t1 .* t3;
 
 end
 % END function D3z = in_sys1_diff3(t, z0, z1, T)
@@ -343,9 +343,9 @@ function D0z = in_sys2_diff0(t, z0, z1, T)
 %% Auto-generated and optimized code
 
 t1 = 1 / T;
-t2 = (t1 ^ 2);
-t3 = (t1 * t);
-D0z = -(z0 - z1) * t1 * t2 * t ^ 3 * (t3 * (6 * t3 - 15) + 10) + z0;
+t2 = (t1 .^ 2);
+t3 = (t1 .* t);
+D0z = -(z0 - z1) .* t1 .* t2 .* t .^ 3 .* (t3 .* (6 .* t3 - 15) + 10) + z0;
 
 end
 % END function D0z = in_sys2_diff0(t, z0, z1, T)
@@ -380,8 +380,8 @@ function D1z = in_sys2_diff1(t, z0, z1, T)
 t1 = (t - T);
 t2 = 1 / T;
 t3 = -30;
-t4 = (t2 ^ 2);
-D1z = t3 * (z0 - z1) * t ^ 2 * t1 ^ 2 * t2 * t4 ^ 2;
+t4 = (t2 .^ 2);
+D1z = t3 .* (z0 - z1) .* t .^ 2 .* t1 .^ 2 .* t2 .* t4 .^ 2;
 
 end
 % END function D1z = in_sys2_diff1(t, z0, z1, T)
@@ -415,8 +415,8 @@ function D2z = in_sys2_diff2(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = 60;
-t3 = (t1 ^ 2);
-D2z = t2 * (z0 - z1) * t * (t - T) * (T - 2 * t) * t1 * t3 ^ 2;
+t3 = (t1 .^ 2);
+D2z = t2 .* (z0 - z1) .* t .* (t - T) .* (T - 2 .* t) .* t1 .* t3 .^ 2;
 
 end
 % END function D2z = in_sys2_diff2(t, z0, z1, T)
@@ -450,8 +450,8 @@ function D3z = in_sys2_diff3(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = -60;
-t3 = (t1 ^ 2);
-D3z = t2 * (z0 - z1) * (-6 * t * (T - t) + T ^ 2) * t1 * t3 ^ 2;
+t3 = (t1 .^ 2);
+D3z = t2 .* (z0 - z1) .* (-6 .* t .* (T - t) + T .^ 2) .* t1 .* t3 .^ 2;
 
 end
 % END function D3z = in_sys2_diff3(t, z0, z1, T)
@@ -485,8 +485,8 @@ function D4z = in_sys2_diff4(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = 360;
-t3 = (t1 ^ 2);
-D4z = t2 * (z0 - z1) * (T - 2 * t) * t1 * t3 ^ 2;
+t3 = (t1 .^ 2);
+D4z = t2 .* (z0 - z1) .* (T - 2 .* t) .* t1 .* t3 .^ 2;
 
 end
 % END function D4z = in_sys2_diff4(t, z0, z1, T)
@@ -520,8 +520,8 @@ function D5z = in_sys2_diff5(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = -720;
-t3 = (t1 ^ 2);
-D5z = t2 * (z0 - z1) * t1 * t3 ^ 2;
+t3 = (t1 .^ 2);
+D5z = t2 .* (z0 - z1) .* t1 .* t3 .^ 2;
 
 end
 % END function D5z = in_sys2_diff5(t, z0, z1, T)
@@ -554,10 +554,10 @@ function D0z = in_sys3_diff0(t, z0, z1, T)
 %% Auto-generated and optimized code
 
 t1 = 1 / T;
-t2 = (t ^ 2);
-t3 = (t1 ^ 2);
-t4 = t1 * t;
-D0z = -(z0 - z1) * t3 ^ 2 * t2 ^ 2 * (t4 * (t4 * (-20 * t1 * t + 70) - 84) + 35) + z0;
+t2 = (t .^ 2);
+t3 = (t1 .^ 2);
+t4 = t1 .* t;
+D0z = -(z0 - z1) .* t3 .^ 2 .* t2 .^ 2 .* (t4 .* (t4 .* (-20 .* t1 .* t + 70) - 84) + 35) + z0;
 
 end
 % END function D0z = in_sys3_diff0(t, z0, z1, T)
@@ -592,10 +592,10 @@ function D1z = in_sys3_diff1(t, z0, z1, T)
 t1 = (t - T);
 t2 = 1 / T;
 t3 = 140;
-t4 = (t2 ^ 2);
-t2 = (t2 * t4);
-t5 = (t1 ^ 2);
-D1z = t3 * (z0 - z1) * t ^ 3 * t1 * t5 * t2 * t4 ^ 2;
+t4 = (t2 .^ 2);
+t2 = (t2 .* t4);
+t5 = (t1 .^ 2);
+D1z = t3 .* (z0 - z1) .* t .^ 3 .* t1 .* t5 .* t2 .* t4 .^ 2;
 
 end
 % END function D1z = in_sys3_diff1(t, z0, z1, T)
@@ -630,9 +630,9 @@ function D2z = in_sys3_diff2(t, z0, z1, T)
 t1 = (t - T);
 t2 = 1 / T;
 t3 = -420;
-t4 = (t2 ^ 2);
-t2 = (t2 * t4);
-D2z = t3 * (z0 - z1) * t ^ 2 * t1 ^ 2 * (T - 2 * t) * t2 * t4 ^ 2;
+t4 = (t2 .^ 2);
+t2 = (t2 .* t4);
+D2z = t3 .* (z0 - z1) .* t .^ 2 .* t1 .^ 2 .* (T - 2 .* t) .* t2 .* t4 .^ 2;
 
 end
 % END function D2z = in_sys3_diff2(t, z0, z1, T)
@@ -664,11 +664,11 @@ function D3z = in_sys3_diff3(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = (t * (t - T));
+t1 = (t .* (t - T));
 t2 = 1 / T;
-t3 = (t2 ^ 2);
-t2 = (t2 * t3);
-D3z = 840 * t1 * (z0 - z1) * (T ^ 2 + 5 * t1) * t2 * t3 ^ 2;
+t3 = (t2 .^ 2);
+t2 = (t2 .* t3);
+D3z = 840 .* t1 .* (z0 - z1) .* (T .^ 2 + 5 .* t1) .* t2 .* t3 .^ 2;
 
 end
 % END function D3z = in_sys3_diff3(t, z0, z1, T)
@@ -702,9 +702,9 @@ function D4z = in_sys3_diff4(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = -840;
-t3 = (t1 ^ 2);
-t1 = (t1 * t3);
-D4z = t2 * (z0 - z1) * (T - 2 * t) * (-10 * t * (T - t) + T ^ 2) * t1 * t3 ^ 2;
+t3 = (t1 .^ 2);
+t1 = (t1 .* t3);
+D4z = t2 .* (z0 - z1) .* (T - 2 .* t) .* (-10 .* t .* (T - t) + T .^ 2) .* t1 .* t3 .^ 2;
 
 end
 % END function D4z = in_sys3_diff4(t, z0, z1, T)
@@ -738,9 +738,9 @@ function D5z = in_sys3_diff5(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = 10080;
-t3 = (t1 ^ 2);
-t1 = (t1 * t3);
-D5z = t2 * (z0 - z1) * (-5 * t * (T - t) + T ^ 2) * t1 * t3 ^ 2;
+t3 = (t1 .^ 2);
+t1 = (t1 .* t3);
+D5z = t2 .* (z0 - z1) .* (-5 .* t .* (T - t) + T .^ 2) .* t1 .* t3 .^ 2;
 
 end
 % END function D5z = in_sys3_diff5(t, z0, z1, T)
@@ -774,9 +774,9 @@ function D6z = in_sys3_diff6(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = -50400;
-t3 = (t1 ^ 2);
-t1 = (t1 * t3);
-D6z = t2 * (z0 - z1) * (T - 2 * t) * t1 * t3 ^ 2;
+t3 = (t1 .^ 2);
+t1 = (t1 .* t3);
+D6z = t2 .* (z0 - z1) .* (T - 2 .* t) .* t1 .* t3 .^ 2;
 
 end
 % END function D6z = in_sys3_diff6(t, z0, z1, T)
@@ -810,9 +810,9 @@ function D7z = in_sys3_diff7(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = 100800;
-t3 = (t1 ^ 2);
-t1 = (t1 * t3);
-D7z = t2 * (z0 - z1) * t1 * t3 ^ 2;
+t3 = (t1 .^ 2);
+t1 = (t1 .* t3);
+D7z = t2 .* (z0 - z1) .* t1 .* t3 .^ 2;
 
 end
 % END function D7z = in_sys3_diff7(t, z0, z1, T)
@@ -845,10 +845,10 @@ function D0z = in_sys4_diff0(t, z0, z1, T)
 %% Auto-generated and optimized code
 
 t1 = 1 / T;
-t2 = (t ^ 2);
-t3 = (t1 ^ 2);
-t4 = t1 * t;
-D0z = -(z0 - z1) * t1 * t3 ^ 2 * t * t2 ^ 2 * (t4 * (t4 * (t4 * (70 * t1 * t - 315) + 540) - 420) + 126) + z0;
+t2 = (t .^ 2);
+t3 = (t1 .^ 2);
+t4 = t1 .* t;
+D0z = -(z0 - z1) .* t1 .* t3 .^ 2 .* t .* t2 .^ 2 .* (t4 .* (t4 .* (t4 .* (70 .* t1 .* t - 315) + 540) - 420) + 126) + z0;
 
 end
 % END function D0z = in_sys4_diff0(t, z0, z1, T)
@@ -883,11 +883,11 @@ function D1z = in_sys4_diff1(t, z0, z1, T)
 t1 = (t - T);
 t2 = 1 / T;
 t3 = -630;
-t4 = (t ^ 2);
-t1 = t1 ^ 2;
-t5 = (t2 ^ 2);
-t5 = t5 ^ 2;
-D1z = t3 * (z0 - z1) * t4 ^ 2 * t1 ^ 2 * t2 * t5 ^ 2;
+t4 = (t .^ 2);
+t1 = t1 .^ 2;
+t5 = (t2 .^ 2);
+t5 = t5 .^ 2;
+D1z = t3 .* (z0 - z1) .* t4 .^ 2 .* t1 .^ 2 .* t2 .* t5 .^ 2;
 
 end
 % END function D1z = in_sys4_diff1(t, z0, z1, T)
@@ -922,10 +922,10 @@ function D2z = in_sys4_diff2(t, z0, z1, T)
 t1 = (t - T);
 t2 = 1 / T;
 t3 = 2520;
-t4 = (t2 ^ 2);
-t4 = t4 ^ 2;
-t5 = (t1 ^ 2);
-D2z = t3 * (z0 - z1) * t ^ 3 * t1 * t5 * (T - 2 * t) * t2 * t4 ^ 2;
+t4 = (t2 .^ 2);
+t4 = t4 .^ 2;
+t5 = (t1 .^ 2);
+D2z = t3 .* (z0 - z1) .* t .^ 3 .* t1 .* t5 .* (T - 2 .* t) .* t2 .* t4 .^ 2;
 
 end
 % END function D2z = in_sys4_diff2(t, z0, z1, T)
@@ -959,9 +959,9 @@ function D3z = in_sys4_diff3(t, z0, z1, T)
 
 t1 = (T - t);
 t2 = 1 / T;
-t3 = (t2 ^ 2);
-t3 = t3 ^ 2;
-D3z = (-7560 * T ^ 2 + 35280 * t * t1) * t1 ^ 2 * t ^ 2 * (z0 - z1) * t2 * t3 ^ 2;
+t3 = (t2 .^ 2);
+t3 = t3 .^ 2;
+D3z = (-7560 .* T .^ 2 + 35280 .* t .* t1) .* t1 .^ 2 .* t .^ 2 .* (z0 - z1) .* t2 .* t3 .^ 2;
 
 end
 % END function D3z = in_sys4_diff3(t, z0, z1, T)
@@ -993,11 +993,11 @@ function D4z = in_sys4_diff4(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = (t * (t - T));
+t1 = (t .* (t - T));
 t2 = 1 / T;
-t3 = (t2 ^ 2);
-t3 = t3 ^ 2;
-D4z = 15120 * t1 * (z0 - z1) * (T - 2 * t) * (T ^ 2 + 7 * t1) * t2 * t3 ^ 2;
+t3 = (t2 .^ 2);
+t3 = t3 .^ 2;
+D4z = 15120 .* t1 .* (z0 - z1) .* (T - 2 .* t) .* (T .^ 2 + 7 .* t1) .* t2 .* t3 .^ 2;
 
 end
 % END function D4z = in_sys4_diff4(t, z0, z1, T)
@@ -1029,12 +1029,12 @@ function D5z = in_sys4_diff5(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = (T ^ 2);
+t1 = (T .^ 2);
 t2 = 1 / T;
 t3 = -15120;
-t4 = (t2 ^ 2);
-t4 = t4 ^ 2;
-D5z = t3 * (z0 - z1) * ((-20 * T * t1 + ((-140 * T + 70 * t) * t + 90 * t1) * t) * t + t1 ^ 2) * t2 * t4 ^ 2;
+t4 = (t2 .^ 2);
+t4 = t4 .^ 2;
+D5z = t3 .* (z0 - z1) .* ((-20 .* T .* t1 + ((-140 .* T + 70 .* t) .* t + 90 .* t1) .* t) .* t + t1 .^ 2) .* t2 .* t4 .^ 2;
 
 end
 % END function D5z = in_sys4_diff5(t, z0, z1, T)
@@ -1068,9 +1068,9 @@ function D6z = in_sys4_diff6(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = 302400;
-t3 = (t1 ^ 2);
-t3 = t3 ^ 2;
-D6z = t2 * (z0 - z1) * (T - 2 * t) * (-7 * t * (T - t) + T ^ 2) * t1 * t3 ^ 2;
+t3 = (t1 .^ 2);
+t3 = t3 .^ 2;
+D6z = t2 .* (z0 - z1) .* (T - 2 .* t) .* (-7 .* t .* (T - t) + T .^ 2) .* t1 .* t3 .^ 2;
 
 end
 % END function D6z = in_sys4_diff6(t, z0, z1, T)
@@ -1104,9 +1104,9 @@ function D7z = in_sys4_diff7(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = -907200;
-t3 = (t1 ^ 2);
-t3 = t3 ^ 2;
-D7z = t2 * (z0 - z1) * (-14 * t * (T - t) + 3 * T ^ 2) * t1 * t3 ^ 2;
+t3 = (t1 .^ 2);
+t3 = t3 .^ 2;
+D7z = t2 .* (z0 - z1) .* (-14 .* t .* (T - t) + 3 .* T .^ 2) .* t1 .* t3 .^ 2;
 
 end
 % END function D7z = in_sys4_diff7(t, z0, z1, T)
@@ -1140,9 +1140,9 @@ function D8z = in_sys4_diff8(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = 12700800;
-t3 = (t1 ^ 2);
-t3 = t3 ^ 2;
-D8z = t2 * (z0 - z1) * (T - 2 * t) * t1 * t3 ^ 2;
+t3 = (t1 .^ 2);
+t3 = t3 .^ 2;
+D8z = t2 .* (z0 - z1) .* (T - 2 .* t) .* t1 .* t3 .^ 2;
 
 end
 % END function D8z = in_sys4_diff8(t, z0, z1, T)
@@ -1176,9 +1176,9 @@ function D9z = in_sys4_diff9(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = -25401600;
-t3 = (t1 ^ 2);
-t3 = t3 ^ 2;
-D9z = t2 * (z0 - z1) * t1 * t3 ^ 2;
+t3 = (t1 .^ 2);
+t3 = t3 .^ 2;
+D9z = t2 .* (z0 - z1) .* t1 .* t3 .^ 2;
 
 end
 % END function D9z = in_sys4_diff9(t, z0, z1, T)
@@ -1211,12 +1211,12 @@ function D0z = in_sys5_diff0(t, z0, z1, T)
 %% Auto-generated and optimized code
 
 t1 = 1 / T;
-t2 = (t1 ^ 2);
-t3 = (t2 ^ 2);
-t4 = (t ^ 2);
-t5 = (t4 ^ 2);
-t6 = t1 * t;
-D0z = -(z0 - z1) * t2 * t3 * t4 * t5 * (t6 * (t6 * (t6 * (t6 * (-252 * t1 * t + 1386) - 3080) + 3465) - 1980) + 462) + z0;
+t2 = (t1 .^ 2);
+t3 = (t2 .^ 2);
+t4 = (t .^ 2);
+t5 = (t4 .^ 2);
+t6 = t1 .* t;
+D0z = -(z0 - z1) .* t2 .* t3 .* t4 .* t5 .* (t6 .* (t6 .* (t6 .* (t6 .* (-252 .* t1 .* t + 1386) - 3080) + 3465) - 1980) + 462) + z0;
 
 end
 % END function D0z = in_sys5_diff0(t, z0, z1, T)
@@ -1251,11 +1251,11 @@ function D1z = in_sys5_diff1(t, z0, z1, T)
 t1 = (t - T);
 t2 = 1 / T;
 t3 = 2772;
-t4 = (t ^ 2);
-t5 = (t1 ^ 2);
-t6 = (t2 ^ 2);
-t7 = (t6 ^ 2);
-D1z = t3 * (z0 - z1) * t * t4 ^ 2 * t1 * t5 ^ 2 * t2 * t6 * t7 ^ 2;
+t4 = (t .^ 2);
+t5 = (t1 .^ 2);
+t6 = (t2 .^ 2);
+t7 = (t6 .^ 2);
+D1z = t3 .* (z0 - z1) .* t .* t4 .^ 2 .* t1 .* t5 .^ 2 .* t2 .* t6 .* t7 .^ 2;
 
 end
 % END function D1z = in_sys5_diff1(t, z0, z1, T)
@@ -1290,11 +1290,11 @@ function D2z = in_sys5_diff2(t, z0, z1, T)
 t1 = (t - T);
 t2 = 1 / T;
 t3 = -13860;
-t4 = (t ^ 2);
-t5 = (t2 ^ 2);
-t6 = (t5 ^ 2);
-t1 = t1 ^ 2;
-D2z = t3 * (z0 - z1) * t4 ^ 2 * t1 ^ 2 * (T - 2 * t) * t2 * t5 * t6 ^ 2;
+t4 = (t .^ 2);
+t5 = (t2 .^ 2);
+t6 = (t5 .^ 2);
+t1 = t1 .^ 2;
+D2z = t3 .* (z0 - z1) .* t4 .^ 2 .* t1 .^ 2 .* (T - 2 .* t) .* t2 .* t5 .* t6 .^ 2;
 
 end
 % END function D2z = in_sys5_diff2(t, z0, z1, T)
@@ -1326,13 +1326,13 @@ function D3z = in_sys5_diff3(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = -3 * t;
+t1 = -3 .* t;
 t2 = t - T;
 t3 = 1 / T;
-t4 = t3 ^ 2;
-t5 = t4 ^ 2;
-t6 = t2 ^ 2;
-D3z = (55440 * T + 27720 * t1) * t2 * t6 * t ^ 3 * (z0 - z1) * (t1 + T) * t3 * t4 * t5 ^ 2;
+t4 = t3 .^ 2;
+t5 = t4 .^ 2;
+t6 = t2 .^ 2;
+D3z = (55440 .* T + 27720 .* t1) .* t2 .* t6 .* t .^ 3 .* (z0 - z1) .* (t1 + T) .* t3 .* t4 .* t5 .^ 2;
 
 end
 % END function D3z = in_sys5_diff3(t, z0, z1, T)
@@ -1366,9 +1366,9 @@ function D4z = in_sys5_diff4(t, z0, z1, T)
 
 t1 = (t - T);
 t2 = 1 / T;
-t3 = (t2 ^ 2);
-t4 = (t3 ^ 2);
-D4z = -166320 * t1 ^ 2 * t ^ 2 * (z0 - z1) * (T - 2 * t) * (T ^ 2 + 6 * t * t1) * t2 * t3 * t4 ^ 2;
+t3 = (t2 .^ 2);
+t4 = (t3 .^ 2);
+D4z = -166320 .* t1 .^ 2 .* t .^ 2 .* (z0 - z1) .* (T - 2 .* t) .* (T .^ 2 + 6 .* t .* t1) .* t2 .* t3 .* t4 .^ 2;
 
 end
 % END function D4z = in_sys5_diff4(t, z0, z1, T)
@@ -1400,12 +1400,12 @@ function D5z = in_sys5_diff5(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = (T ^ 2);
+t1 = (T .^ 2);
 t2 = 1 / T;
 t3 = 332640;
-t4 = (t2 ^ 2);
-t5 = (t4 ^ 2);
-D5z = t3 * (z0 - z1) * t * (t - T) * ((-14 * T * t1 + ((-84 * T + 42 * t) * t + 56 * t1) * t) * t + t1 ^ 2) * t2 * t4 * t5 ^ 2;
+t4 = (t2 .^ 2);
+t5 = (t4 .^ 2);
+D5z = t3 .* (z0 - z1) .* t .* (t - T) .* ((-14 .* T .* t1 + ((-84 .* T + 42 .* t) .* t + 56 .* t1) .* t) .* t + t1 .^ 2) .* t2 .* t4 .* t5 .^ 2;
 
 end
 % END function D5z = in_sys5_diff5(t, z0, z1, T)
@@ -1437,12 +1437,12 @@ function D6z = in_sys5_diff6(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = (T ^ 2);
+t1 = (T .^ 2);
 t2 = 1 / T;
 t3 = -332640;
-t4 = (t2 ^ 2);
-t5 = (t4 ^ 2);
-D6z = t3 * (z0 - z1) * (T - 2 * t) * ((-28 * T * t1 + ((-252 * T + 126 * t) * t + 154 * t1) * t) * t + t1 ^ 2) * t2 * t4 * t5 ^ 2;
+t4 = (t2 .^ 2);
+t5 = (t4 .^ 2);
+D6z = t3 .* (z0 - z1) .* (T - 2 .* t) .* ((-28 .* T .* t1 + ((-252 .* T + 126 .* t) .* t + 154 .* t1) .* t) .* t + t1 .^ 2) .* t2 .* t4 .* t5 .^ 2;
 
 end
 % END function D6z = in_sys5_diff6(t, z0, z1, T)
@@ -1474,12 +1474,12 @@ function D7z = in_sys5_diff7(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = (T ^ 2);
+t1 = (T .^ 2);
 t2 = 1 / T;
 t3 = 9979200;
-t4 = (t2 ^ 2);
-t5 = (t4 ^ 2);
-D7z = t3 * (z0 - z1) * ((-14 * T * t1 + ((-84 * T + 42 * t) * t + 56 * t1) * t) * t + t1 ^ 2) * t2 * t4 * t5 ^ 2;
+t4 = (t2 .^ 2);
+t5 = (t4 .^ 2);
+D7z = t3 .* (z0 - z1) .* ((-14 .* T .* t1 + ((-84 .* T + 42 .* t) .* t + 56 .* t1) .* t) .* t + t1 .^ 2) .* t2 .* t4 .* t5 .^ 2;
 
 end
 % END function D7z = in_sys5_diff7(t, z0, z1, T)
@@ -1513,9 +1513,9 @@ function D8z = in_sys5_diff8(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = -139708800;
-t3 = (t1 ^ 2);
-t4 = (t3 ^ 2);
-D8z = t2 * (z0 - z1) * (T - 2 * t) * (-6 * t * (T - t) + T ^ 2) * t1 * t3 * t4 ^ 2;
+t3 = (t1 .^ 2);
+t4 = (t3 .^ 2);
+D8z = t2 .* (z0 - z1) .* (T - 2 .* t) .* (-6 .* t .* (T - t) + T .^ 2) .* t1 .* t3 .* t4 .^ 2;
 
 end
 % END function D8z = in_sys5_diff8(t, z0, z1, T)
@@ -1547,11 +1547,11 @@ function D9z = in_sys5_diff9(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = -3 * t;
+t1 = -3 .* t;
 t2 = 1 / T;
-t3 = (t2 ^ 2);
-t4 = (t3 ^ 2);
-D9z = (1117670400 * T + 558835200 * t1) * (z0 - z1) * (T + t1) * t2 * t3 * t4 ^ 2;
+t3 = (t2 .^ 2);
+t4 = (t3 .^ 2);
+D9z = (1117670400 .* T + 558835200 .* t1) .* (z0 - z1) .* (T + t1) .* t2 .* t3 .* t4 .^ 2;
 
 end
 % END function D9z = in_sys5_diff9(t, z0, z1, T)
@@ -1585,9 +1585,9 @@ function D10z = in_sys5_diff10(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = -5029516800;
-t3 = (t1 ^ 2);
-t4 = (t3 ^ 2);
-D10z = t2 * (z0 - z1) * (T - 2 * t) * t1 * t3 * t4 ^ 2;
+t3 = (t1 .^ 2);
+t4 = (t3 .^ 2);
+D10z = t2 .* (z0 - z1) .* (T - 2 .* t) .* t1 .* t3 .* t4 .^ 2;
 
 end
 % END function D10z = in_sys5_diff10(t, z0, z1, T)
@@ -1621,9 +1621,9 @@ function D11z = in_sys5_diff11(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = 10059033600;
-t3 = (t1 ^ 2);
-t4 = (t3 ^ 2);
-D11z = t2 * (z0 - z1) * t1 * t3 * t4 ^ 2;
+t3 = (t1 .^ 2);
+t4 = (t3 .^ 2);
+D11z = t2 .* (z0 - z1) .* t1 .* t3 .* t4 .^ 2;
 
 end
 % END function D11z = in_sys5_diff11(t, z0, z1, T)
@@ -1656,12 +1656,12 @@ function D0z = in_sys6_diff0(t, z0, z1, T)
 %% Auto-generated and optimized code
 
 t1 = 1 / T;
-t2 = (t ^ 2);
-t3 = (t * t2);
-t4 = (t1 ^ 2);
-t5 = (t1 * t4);
-t1 = (t1 * t);
-D0z = -(z0 - z1) * t5 * t4 ^ 2 * t3 * t2 ^ 2 * (t1 * (t1 * (t1 * (t1 * (t1 * (924 * t1 - 6006) + 16380) - 24024) + 20020) - 9009) + 1716) + z0;
+t2 = (t .^ 2);
+t3 = (t .* t2);
+t4 = (t1 .^ 2);
+t5 = (t1 .* t4);
+t1 = (t1 .* t);
+D0z = -(z0 - z1) .* t5 .* t4 .^ 2 .* t3 .* t2 .^ 2 .* (t1 .* (t1 .* (t1 .* (t1 .* (t1 .* (924 .* t1 - 6006) + 16380) - 24024) + 20020) - 9009) + 1716) + z0;
 
 end
 % END function D0z = in_sys6_diff0(t, z0, z1, T)
@@ -1696,14 +1696,14 @@ function D1z = in_sys6_diff1(t, z0, z1, T)
 t1 = (t - T);
 t2 = 1 / T;
 t3 = -12012;
-t4 = (t ^ 2);
-t5 = (t4 ^ 2);
-t6 = (t2 ^ 2);
-t6 = t6 ^ 2;
-t2 = (t2 * t6);
-t1 = (t1 ^ 2);
-t7 = (t1 ^ 2);
-D1z = t3 * (z0 - z1) * t4 * t5 * t1 * t7 * t2 * t6 ^ 2;
+t4 = (t .^ 2);
+t5 = (t4 .^ 2);
+t6 = (t2 .^ 2);
+t6 = t6 .^ 2;
+t2 = (t2 .* t6);
+t1 = (t1 .^ 2);
+t7 = (t1 .^ 2);
+D1z = t3 .* (z0 - z1) .* t4 .* t5 .* t1 .* t7 .* t2 .* t6 .^ 2;
 
 end
 % END function D1z = in_sys6_diff1(t, z0, z1, T)
@@ -1738,12 +1738,12 @@ function D2z = in_sys6_diff2(t, z0, z1, T)
 t1 = (t - T);
 t2 = 1 / T;
 t3 = 72072;
-t4 = (t ^ 2);
-t5 = (t2 ^ 2);
-t5 = t5 ^ 2;
-t2 = (t2 * t5);
-t6 = (t1 ^ 2);
-D2z = t3 * (z0 - z1) * t * t4 ^ 2 * t1 * t6 ^ 2 * (T - 2 * t) * t2 * t5 ^ 2;
+t4 = (t .^ 2);
+t5 = (t2 .^ 2);
+t5 = t5 .^ 2;
+t2 = (t2 .* t5);
+t6 = (t1 .^ 2);
+D2z = t3 .* (z0 - z1) .* t .* t4 .^ 2 .* t1 .* t6 .^ 2 .* (T - 2 .* t) .* t2 .* t5 .^ 2;
 
 end
 % END function D2z = in_sys6_diff2(t, z0, z1, T)
@@ -1778,12 +1778,12 @@ function D3z = in_sys6_diff3(t, z0, z1, T)
 t1 = (t - T);
 t2 = 1 / T;
 t3 = -72072;
-t4 = (t ^ 2);
-t5 = (t2 ^ 2);
-t5 = t5 ^ 2;
-t2 = (t2 * t5);
-t6 = (t1 ^ 2);
-D3z = t3 * (z0 - z1) * t4 ^ 2 * t6 ^ 2 * (5 * T ^ 2 + 22 * t * t1) * t2 * t5 ^ 2;
+t4 = (t .^ 2);
+t5 = (t2 .^ 2);
+t5 = t5 .^ 2;
+t2 = (t2 .* t5);
+t6 = (t1 .^ 2);
+D3z = t3 .* (z0 - z1) .* t4 .^ 2 .* t6 .^ 2 .* (5 .* T .^ 2 + 22 .* t .* t1) .* t2 .* t5 .^ 2;
 
 end
 % END function D3z = in_sys6_diff3(t, z0, z1, T)
@@ -1817,11 +1817,11 @@ function D4z = in_sys6_diff4(t, z0, z1, T)
 
 t1 = t - T;
 t2 = 0.1e1 / T;
-t3 = t1 ^ 2;
-t4 = t2 ^ 2;
-t4 = t4 ^ 2;
-t2 = t2 * t4;
-D4z = 0.1441440e7 * t1 * t3 * (0.11e2 / 0.2e1 * t * t1 + T ^ 2) * t ^ 3 * (z0 - z1) * (T - 0.2e1 * t) * t2 * t4 ^ 2;
+t3 = t1 .^ 2;
+t4 = t2 .^ 2;
+t4 = t4 .^ 2;
+t2 = t2 .* t4;
+D4z = 0.1441440e7 .* t1 .* t3 .* (0.11e2 / 0.2e1 .* t .* t1 + T .^ 2) .* t .^ 3 .* (z0 - z1) .* (T - 0.2e1 .* t) .* t2 .* t4 .^ 2;
 
 end
 % END function D4z = in_sys6_diff4(t, z0, z1, T)
@@ -1854,12 +1854,12 @@ function D5z = in_sys6_diff5(t, z0, z1, T)
 %% Auto-generated and optimized code
 
 t1 = (t - T);
-t2 = (T ^ 2);
+t2 = (T .^ 2);
 t3 = 1 / T;
-t4 = (t3 ^ 2);
-t4 = t4 ^ 2;
-t3 = (t3 * t4);
-D5z = -4324320 * t1 ^ 2 * t ^ 2 * (z0 - z1) * ((-12 * T * t2 + ((-66 * T + 33 * t) * t + 45 * t2) * t) * t + t2 ^ 2) * t3 * t4 ^ 2;
+t4 = (t3 .^ 2);
+t4 = t4 .^ 2;
+t3 = (t3 .* t4);
+D5z = -4324320 .* t1 .^ 2 .* t .^ 2 .* (z0 - z1) .* ((-12 .* T .* t2 + ((-66 .* T + 33 .* t) .* t + 45 .* t2) .* t) .* t + t2 .^ 2) .* t3 .* t4 .^ 2;
 
 end
 % END function D5z = in_sys6_diff5(t, z0, z1, T)
@@ -1891,13 +1891,13 @@ function D6z = in_sys6_diff6(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = (T ^ 2);
+t1 = (T .^ 2);
 t2 = 1 / T;
 t3 = 8648640;
-t4 = (t2 ^ 2);
-t4 = t4 ^ 2;
-t2 = (t2 * t4);
-D6z = t3 * (t - T) * t * (z0 - z1) * (T - 2 * t) * ((-18 * T * t1 + ((-132 * T + 66 * t) * t + 84 * t1) * t) * t + t1 ^ 2) * t2 * t4 ^ 2;
+t4 = (t2 .^ 2);
+t4 = t4 .^ 2;
+t2 = (t2 .* t4);
+D6z = t3 .* (t - T) .* t .* (z0 - z1) .* (T - 2 .* t) .* ((-18 .* T .* t1 + ((-132 .* T + 66 .* t) .* t + 84 .* t1) .* t) .* t + t1 .^ 2) .* t2 .* t4 .^ 2;
 
 end
 % END function D6z = in_sys6_diff6(t, z0, z1, T)
@@ -1929,14 +1929,14 @@ function D7z = in_sys6_diff7(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = (T ^ 2);
-t2 = (t1 ^ 2);
+t1 = (T .^ 2);
+t2 = (t1 .^ 2);
 t3 = 1 / T;
 t4 = -8648640;
-t5 = (t3 ^ 2);
-t5 = t5 ^ 2;
-t3 = (t3 * t5);
-D7z = t4 * (z0 - z1) * ((-42 * T * t2 + ((-1680 * T * t1 + ((-2772 * T + 924 * t) * t + 3150 * t1) * t) * t + 420 * t2) * t) * t + t1 * t2) * t3 * t5 ^ 2;
+t5 = (t3 .^ 2);
+t5 = t5 .^ 2;
+t3 = (t3 .* t5);
+D7z = t4 .* (z0 - z1) .* ((-42 .* T .* t2 + ((-1680 .* T .* t1 + ((-2772 .* T + 924 .* t) .* t + 3150 .* t1) .* t) .* t + 420 .* t2) .* t) .* t + t1 .* t2) .* t3 .* t5 .^ 2;
 
 end
 % END function D7z = in_sys6_diff7(t, z0, z1, T)
@@ -1968,13 +1968,13 @@ function D8z = in_sys6_diff8(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = (T ^ 2);
+t1 = (T .^ 2);
 t2 = 1 / T;
 t3 = 363242880;
-t4 = (t2 ^ 2);
-t4 = t4 ^ 2;
-t2 = (t2 * t4);
-D8z = t3 * (z0 - z1) * (T - 2 * t) * ((-18 * T * t1 + ((-132 * T + 66 * t) * t + 84 * t1) * t) * t + t1 ^ 2) * t2 * t4 ^ 2;
+t4 = (t2 .^ 2);
+t4 = t4 .^ 2;
+t2 = (t2 .* t4);
+D8z = t3 .* (z0 - z1) .* (T - 2 .* t) .* ((-18 .* T .* t1 + ((-132 .* T + 66 .* t) .* t + 84 .* t1) .* t) .* t + t1 .^ 2) .* t2 .* t4 .^ 2;
 
 end
 % END function D8z = in_sys6_diff8(t, z0, z1, T)
@@ -2006,13 +2006,13 @@ function D9z = in_sys6_diff9(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = (T ^ 2);
+t1 = (T .^ 2);
 t2 = 1 / T;
 t3 = -7264857600;
-t4 = (t2 ^ 2);
-t4 = t4 ^ 2;
-t2 = (t2 * t4);
-D9z = t3 * (z0 - z1) * ((-12 * T * t1 + ((-66 * T + 33 * t) * t + 45 * t1) * t) * t + t1 ^ 2) * t2 * t4 ^ 2;
+t4 = (t2 .^ 2);
+t4 = t4 .^ 2;
+t2 = (t2 .* t4);
+D9z = t3 .* (z0 - z1) .* ((-12 .* T .* t1 + ((-66 .* T + 33 .* t) .* t + 45 .* t1) .* t) .* t + t1 .^ 2) .* t2 .* t4 .^ 2;
 
 end
 % END function D9z = in_sys6_diff9(t, z0, z1, T)
@@ -2045,10 +2045,10 @@ function D10z = in_sys6_diff10(t, z0, z1, T)
 %% Auto-generated and optimized code
 
 t1 = 1 / T;
-t2 = (t1 ^ 2);
-t2 = t2 ^ 2;
-t1 = (t1 * t2);
-D10z = (-479480601600 * t * (T - t) + 87178291200 * T ^ 2) * (z0 - z1) * (T - 2 * t) * t1 * t2 ^ 2;
+t2 = (t1 .^ 2);
+t2 = t2 .^ 2;
+t1 = (t1 .* t2);
+D10z = (-479480601600 .* t .* (T - t) + 87178291200 .* T .^ 2) .* (z0 - z1) .* (T - 2 .* t) .* t1 .* t2 .^ 2;
 
 end
 % END function D10z = in_sys6_diff10(t, z0, z1, T)
@@ -2082,10 +2082,10 @@ function D11z = in_sys6_diff11(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = -130767436800;
-t3 = (t1 ^ 2);
-t3 = t3 ^ 2;
-t1 = (t1 * t3);
-D11z = t2 * (z0 - z1) * (-22 * t * (T - t) + 5 * T ^ 2) * t1 * t3 ^ 2;
+t3 = (t1 .^ 2);
+t3 = t3 .^ 2;
+t1 = (t1 .* t3);
+D11z = t2 .* (z0 - z1) .* (-22 .* t .* (T - t) + 5 .* T .^ 2) .* t1 .* t3 .^ 2;
 
 end
 % END function D11z = in_sys6_diff11(t, z0, z1, T)
@@ -2119,10 +2119,10 @@ function D12z = in_sys6_diff12(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = 2876883609600;
-t3 = (t1 ^ 2);
-t3 = t3 ^ 2;
-t1 = (t1 * t3);
-D12z = t2 * (z0 - z1) * (T - 2 * t) * t1 * t3 ^ 2;
+t3 = (t1 .^ 2);
+t3 = t3 .^ 2;
+t1 = (t1 .* t3);
+D12z = t2 .* (z0 - z1) .* (T - 2 .* t) .* t1 .* t3 .^ 2;
 
 end
 % END function D12z = in_sys6_diff12(t, z0, z1, T)
@@ -2156,10 +2156,10 @@ function D13z = in_sys6_diff13(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = -5753767219200;
-t3 = (t1 ^ 2);
-t3 = t3 ^ 2;
-t1 = (t1 * t3);
-D13z = t2 * (z0 - z1) * t1 * t3 ^ 2;
+t3 = (t1 .^ 2);
+t3 = t3 .^ 2;
+t1 = (t1 .* t3);
+D13z = t2 .* (z0 - z1) .* t1 .* t3 .^ 2;
 
 end
 % END function D13z = in_sys6_diff13(t, z0, z1, T)
@@ -2192,12 +2192,12 @@ function D0z = in_sys7_diff0(t, z0, z1, T)
 %% Auto-generated and optimized code
 
 t1 = 1 / T;
-t2 = (t ^ 2);
-t2 = t2 ^ 2;
-t3 = (t1 ^ 2);
-t3 = t3 ^ 2;
-t4 = t1 * t;
-D0z = -(z0 - z1) * t3 ^ 2 * t2 ^ 2 * (t4 * (t4 * (t4 * (t4 * (t4 * (t4 * (-3432 * t1 * t + 25740) - 83160) + 150150) - 163800) + 108108) - 40040) + 6435) + z0;
+t2 = (t .^ 2);
+t2 = t2 .^ 2;
+t3 = (t1 .^ 2);
+t3 = t3 .^ 2;
+t4 = t1 .* t;
+D0z = -(z0 - z1) .* t3 .^ 2 .* t2 .^ 2 .* (t4 .* (t4 .* (t4 .* (t4 .* (t4 .* (t4 .* (-3432 .* t1 .* t + 25740) - 83160) + 150150) - 163800) + 108108) - 40040) + 6435) + z0;
 
 end
 % END function D0z = in_sys7_diff0(t, z0, z1, T)
@@ -2232,14 +2232,14 @@ function D1z = in_sys7_diff1(t, z0, z1, T)
 t1 = (t - T);
 t2 = 1 / T;
 t3 = 51480;
-t4 = (t ^ 2);
-t5 = (t * t4);
-t6 = (t2 ^ 2);
-t7 = t6 ^ 2;
-t2 = (t2 * t6 * t7);
-t6 = (t1 ^ 2);
-t1 = (t1 * t6);
-D1z = t3 * (z0 - z1) * t5 * t4 ^ 2 * t1 * t6 ^ 2 * t2 * t7 ^ 2;
+t4 = (t .^ 2);
+t5 = (t .* t4);
+t6 = (t2 .^ 2);
+t7 = t6 .^ 2;
+t2 = (t2 .* t6 .* t7);
+t6 = (t1 .^ 2);
+t1 = (t1 .* t6);
+D1z = t3 .* (z0 - z1) .* t5 .* t4 .^ 2 .* t1 .* t6 .^ 2 .* t2 .* t7 .^ 2;
 
 end
 % END function D1z = in_sys7_diff1(t, z0, z1, T)
@@ -2274,14 +2274,14 @@ function D2z = in_sys7_diff2(t, z0, z1, T)
 t1 = (t - T);
 t2 = 1 / T;
 t3 = -360360;
-t4 = (t ^ 2);
-t5 = (t4 ^ 2);
-t6 = (t2 ^ 2);
-t7 = (t6 ^ 2);
-t2 = (t2 * t6 * t7);
-t1 = (t1 ^ 2);
-t6 = (t1 ^ 2);
-D2z = t3 * (z0 - z1) * t4 * t5 * t1 * t6 * (T - 2 * t) * t2 * t7 ^ 2;
+t4 = (t .^ 2);
+t5 = (t4 .^ 2);
+t6 = (t2 .^ 2);
+t7 = (t6 .^ 2);
+t2 = (t2 .* t6 .* t7);
+t1 = (t1 .^ 2);
+t6 = (t1 .^ 2);
+D2z = t3 .* (z0 - z1) .* t4 .* t5 .* t1 .* t6 .* (T - 2 .* t) .* t2 .* t7 .^ 2;
 
 end
 % END function D2z = in_sys7_diff2(t, z0, z1, T)
@@ -2316,12 +2316,12 @@ function D3z = in_sys7_diff3(t, z0, z1, T)
 t1 = (t - T);
 t2 = 1 / T;
 t3 = 720720;
-t4 = (t ^ 2);
-t5 = (t2 ^ 2);
-t6 = t5 ^ 2;
-t2 = (t2 * t5 * t6);
-t5 = (t1 ^ 2);
-D3z = t3 * (z0 - z1) * t * t4 ^ 2 * t1 * t5 ^ 2 * (3 * T ^ 2 + 13 * t * t1) * t2 * t6 ^ 2;
+t4 = (t .^ 2);
+t5 = (t2 .^ 2);
+t6 = t5 .^ 2;
+t2 = (t2 .* t5 .* t6);
+t5 = (t1 .^ 2);
+D3z = t3 .* (z0 - z1) .* t .* t4 .^ 2 .* t1 .* t5 .^ 2 .* (3 .* T .^ 2 + 13 .* t .* t1) .* t2 .* t6 .^ 2;
 
 end
 % END function D3z = in_sys7_diff3(t, z0, z1, T)
@@ -2355,12 +2355,12 @@ function D4z = in_sys7_diff4(t, z0, z1, T)
 
 t1 = t - T;
 t2 = 0.1e1 / T;
-t3 = t ^ 2;
-t4 = t1 ^ 2;
-t5 = t2 ^ 2;
-t6 = t5 ^ 2;
-t2 = t2 * t5 * t6;
-D4z = -0.10810800e8 * t4 ^ 2 * t3 ^ 2 * (z0 - z1) * (0.26e2 / 0.5e1 * t * t1 + T ^ 2) * (T - 0.2e1 * t) * t2 * t6 ^ 2;
+t3 = t .^ 2;
+t4 = t1 .^ 2;
+t5 = t2 .^ 2;
+t6 = t5 .^ 2;
+t2 = t2 .* t5 .* t6;
+D4z = -0.10810800e8 .* t4 .^ 2 .* t3 .^ 2 .* (z0 - z1) .* (0.26e2 / 0.5e1 .* t .* t1 + T .^ 2) .* (T - 0.2e1 .* t) .* t2 .* t6 .^ 2;
 
 end
 % END function D4z = in_sys7_diff4(t, z0, z1, T)
@@ -2393,13 +2393,13 @@ function D5z = in_sys7_diff5(t, z0, z1, T)
 %% Auto-generated and optimized code
 
 t1 = (t - T);
-t2 = (T ^ 2);
+t2 = (T .^ 2);
 t3 = 1 / T;
-t4 = (t3 ^ 2);
-t5 = (t4 ^ 2);
-t3 = (t3 * t4 * t5);
-t4 = (t1 ^ 2);
-D5z = 8648640 * t1 * t4 * t ^ 3 * (z0 - z1) * ((-55 * T * t2 + ((-286 * T + 143 * t) * t + 198 * t2) * t) * t + 5 * t2 ^ 2) * t3 * t5 ^ 2;
+t4 = (t3 .^ 2);
+t5 = (t4 .^ 2);
+t3 = (t3 .* t4 .* t5);
+t4 = (t1 .^ 2);
+D5z = 8648640 .* t1 .* t4 .* t .^ 3 .* (z0 - z1) .* ((-55 .* T .* t2 + ((-286 .* T + 143 .* t) .* t + 198 .* t2) .* t) .* t + 5 .* t2 .^ 2) .* t3 .* t5 .^ 2;
 
 end
 % END function D5z = in_sys7_diff5(t, z0, z1, T)
@@ -2432,13 +2432,13 @@ function D6z = in_sys7_diff6(t, z0, z1, T)
 %% Auto-generated and optimized code
 
 t1 = (t - T);
-t2 = (T ^ 2);
-t3 = (t2 ^ 2);
+t2 = (T .^ 2);
+t3 = (t2 .^ 2);
 t4 = 1 / T;
-t5 = t4 ^ 2;
-t6 = (t5 ^ 2);
-t4 = (t4 * t5 * t6);
-D6z = -43243200 * t1 ^ 2 * t ^ 2 * (z0 - z1) * (3 * T * t3 + ((275 * T * t2 + ((715 * T - 286 * t) * t - 660 * t2) * t) * t - 50 * t3) * t) * t4 * t6 ^ 2;
+t5 = t4 .^ 2;
+t6 = (t5 .^ 2);
+t4 = (t4 .* t5 .* t6);
+D6z = -43243200 .* t1 .^ 2 .* t .^ 2 .* (z0 - z1) .* (3 .* T .* t3 + ((275 .* T .* t2 + ((715 .* T - 286 .* t) .* t - 660 .* t2) .* t) .* t - 50 .* t3) .* t) .* t4 .* t6 .^ 2;
 
 end
 % END function D6z = in_sys7_diff6(t, z0, z1, T)
@@ -2470,14 +2470,14 @@ function D7z = in_sys7_diff7(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = (T ^ 2);
-t2 = (t1 ^ 2);
+t1 = (T .^ 2);
+t2 = (t1 .^ 2);
 t3 = 1 / T;
 t4 = 259459200;
-t5 = t3 ^ 2;
-t6 = (t5 ^ 2);
-t3 = (t3 * t5 * t6);
-D7z = t4 * (t - T) * t * (z0 - z1) * ((-27 * T * t2 + ((-825 * T * t1 + ((-1287 * T + 429 * t) * t + 1485 * t1) * t) * t + 225 * t2) * t) * t + t1 * t2) * t3 * t6 ^ 2;
+t5 = t3 .^ 2;
+t6 = (t5 .^ 2);
+t3 = (t3 .* t5 .* t6);
+D7z = t4 .* (t - T) .* t .* (z0 - z1) .* ((-27 .* T .* t2 + ((-825 .* T .* t1 + ((-1287 .* T + 429 .* t) .* t + 1485 .* t1) .* t) .* t + 225 .* t2) .* t) .* t + t1 .* t2) .* t3 .* t6 .^ 2;
 
 end
 % END function D7z = in_sys7_diff7(t, z0, z1, T)
@@ -2509,14 +2509,14 @@ function D8z = in_sys7_diff8(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = (T ^ 2);
-t2 = (t1 ^ 2);
+t1 = (T .^ 2);
+t2 = (t1 .^ 2);
 t3 = 1 / T;
 t4 = -259459200;
-t5 = t3 ^ 2;
-t6 = (t5 ^ 2);
-t3 = (t3 * t5 * t6);
-D8z = t4 * (z0 - z1) * (T - 2 * t) * ((-54 * T * t2 + ((-2904 * T * t1 + ((-5148 * T + 1716 * t) * t + 5742 * t1) * t) * t + 648 * t2) * t) * t + t1 * t2) * t3 * t6 ^ 2;
+t5 = t3 .^ 2;
+t6 = (t5 .^ 2);
+t3 = (t3 .* t5 .* t6);
+D8z = t4 .* (z0 - z1) .* (T - 2 .* t) .* ((-54 .* T .* t2 + ((-2904 .* T .* t1 + ((-5148 .* T + 1716 .* t) .* t + 5742 .* t1) .* t) .* t + 648 .* t2) .* t) .* t + t1 .* t2) .* t3 .* t6 .^ 2;
 
 end
 % END function D8z = in_sys7_diff8(t, z0, z1, T)
@@ -2548,14 +2548,14 @@ function D9z = in_sys7_diff9(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = (T ^ 2);
-t2 = (t1 ^ 2);
+t1 = (T .^ 2);
+t2 = (t1 .^ 2);
 t3 = 1 / T;
 t4 = 14529715200;
-t5 = t3 ^ 2;
-t6 = (t5 ^ 2);
-t3 = (t3 * t5 * t6);
-D9z = t4 * (z0 - z1) * ((-27 * T * t2 + ((-825 * T * t1 + ((-1287 * T + 429 * t) * t + 1485 * t1) * t) * t + 225 * t2) * t) * t + t1 * t2) * t3 * t6 ^ 2;
+t5 = t3 .^ 2;
+t6 = (t5 .^ 2);
+t3 = (t3 .* t5 .* t6);
+D9z = t4 .* (z0 - z1) .* ((-27 .* T .* t2 + ((-825 .* T .* t1 + ((-1287 .* T + 429 .* t) .* t + 1485 .* t1) .* t) .* t + 225 .* t2) .* t) .* t + t1 .* t2) .* t3 .* t6 .^ 2;
 
 end
 % END function D9z = in_sys7_diff9(t, z0, z1, T)
@@ -2587,14 +2587,14 @@ function D10z = in_sys7_diff10(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = (T ^ 2);
-t2 = (t1 ^ 2);
+t1 = (T .^ 2);
+t2 = (t1 .^ 2);
 t3 = 1 / T;
 t4 = -130767436800;
-t5 = t3 ^ 2;
-t6 = (t5 ^ 2);
-t3 = (t3 * t5 * t6);
-D10z = t4 * (z0 - z1) * (3 * T * t2 + ((275 * T * t1 + ((715 * T - 286 * t) * t - 660 * t1) * t) * t - 50 * t2) * t) * t3 * t6 ^ 2;
+t5 = t3 .^ 2;
+t6 = (t5 .^ 2);
+t3 = (t3 .* t5 .* t6);
+D10z = t4 .* (z0 - z1) .* (3 .* T .* t2 + ((275 .* T .* t1 + ((715 .* T - 286 .* t) .* t - 660 .* t1) .* t) .* t - 50 .* t2) .* t) .* t3 .* t6 .^ 2;
 
 end
 % END function D10z = in_sys7_diff10(t, z0, z1, T)
@@ -2626,13 +2626,13 @@ function D11z = in_sys7_diff11(t, z0, z1, T)
 
 %% Auto-generated and optimized code
 
-t1 = (T ^ 2);
+t1 = (T .^ 2);
 t2 = 1 / T;
 t3 = 1307674368000;
-t4 = t2 ^ 2;
-t5 = (t4 ^ 2);
-t2 = (t2 * t4 * t5);
-D11z = t3 * (z0 - z1) * ((-55 * T * t1 + ((-286 * T + 143 * t) * t + 198 * t1) * t) * t + 5 * t1 ^ 2) * t2 * t5 ^ 2;
+t4 = t2 .^ 2;
+t5 = (t4 .^ 2);
+t2 = (t2 .* t4 .* t5);
+D11z = t3 .* (z0 - z1) .* ((-55 .* T .* t1 + ((-286 .* T + 143 .* t) .* t + 198 .* t1) .* t) .* t + 5 .* t1 .^ 2) .* t2 .* t5 .^ 2;
 
 end
 % END function D11z = in_sys7_diff11(t, z0, z1, T)
@@ -2666,10 +2666,10 @@ function D12z = in_sys7_diff12(t, z0, z1, T)
 
 t1 = 0.1e1 / T;
 t2 = -71922090240000;
-t3 = t1 ^ 2;
-t4 = t3 ^ 2;
-t1 = t1 * t3 * t4;
-D12z = t2 * (z0 - z1) * (-0.26e2 / 0.5e1 * t * (T - t) + T ^ 2) * (T - 0.2e1 * t) * t1 * t4 ^ 2;
+t3 = t1 .^ 2;
+t4 = t3 .^ 2;
+t1 = t1 .* t3 .* t4;
+D12z = t2 .* (z0 - z1) .* (-0.26e2 / 0.5e1 .* t .* (T - t) + T .^ 2) .* (T - 0.2e1 .* t) .* t1 .* t4 .^ 2;
 
 end
 % END function D12z = in_sys7_diff12(t, z0, z1, T)
@@ -2703,10 +2703,10 @@ function D13z = in_sys7_diff13(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = 172613016576000;
-t3 = t1 ^ 2;
-t4 = (t3 ^ 2);
-t1 = (t1 * t3 * t4);
-D13z = t2 * (z0 - z1) * (-13 * t * (T - t) + 3 * T ^ 2) * t1 * t4 ^ 2;
+t3 = t1 .^ 2;
+t4 = (t3 .^ 2);
+t1 = (t1 .* t3 .* t4);
+D13z = t2 .* (z0 - z1) .* (-13 .* t .* (T - t) + 3 .* T .^ 2) .* t1 .* t4 .^ 2;
 
 end
 % END function D13z = in_sys7_diff13(t, z0, z1, T)
@@ -2740,10 +2740,10 @@ function D14z = in_sys7_diff14(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = -2243969215488000;
-t3 = t1 ^ 2;
-t4 = (t3 ^ 2);
-t1 = (t1 * t3 * t4);
-D14z = t2 * (z0 - z1) * (T - 2 * t) * t1 * t4 ^ 2;
+t3 = t1 .^ 2;
+t4 = (t3 .^ 2);
+t1 = (t1 .* t3 .* t4);
+D14z = t2 .* (z0 - z1) .* (T - 2 .* t) .* t1 .* t4 .^ 2;
 
 end
 % END function D14z = in_sys7_diff14(t, z0, z1, T)
@@ -2777,10 +2777,10 @@ function D15z = in_sys7_diff15(t, z0, z1, T)
 
 t1 = 1 / T;
 t2 = 4487938430976000;
-t3 = t1 ^ 2;
-t4 = (t3 ^ 2);
-t1 = (t1 * t3 * t4);
-D15z = t2 * (z0 - z1) * t1 * t4 ^ 2;
+t3 = t1 .^ 2;
+t4 = (t3 .^ 2);
+t1 = (t1 .* t3 .* t4);
+D15z = t2 .* (z0 - z1) .* t1 .* t4 .^ 2;
 
 end
 % END function D15z = in_sys7_diff15(t, z0, z1, T)
