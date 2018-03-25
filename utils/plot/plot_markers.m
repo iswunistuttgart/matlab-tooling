@@ -1,8 +1,6 @@
 function varargout = plot_markers(n, varargin)
 % PLOT_MARKERS Plot some markers on the lines given in Axes
 % 
-%   PLOT_MARKERS() plots 25 markers along all of the lines of the current axes.
-%
 %   PLOT_MARKERS(COUNT) plots COUNT markers along all of the lines of the
 %   current axes. If count is given as a vector, then the values will be used
 %   according to the lines found in the current axes. For example, if there are
@@ -63,11 +61,17 @@ function varargout = plot_markers(n, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-11-01
+% Date: 2018-03-25
 % TODO:
 %   * If a legend can be found in the plot, we should extract the lines' legend
 %   entries from these values... somehow
 % Changelog:
+%   2018-03-25
+%       * Fix collection of child objects from the given axes to ensure that
+%       axes with two y-axis also work
+%       * Reverse direction of looping over children so that the resulting
+%       marker array is of same order as the plotted lines
+%       * Update H1 help block
 %   2017-09-16
 %       * Change order and type of arguments from (opt:count, opt:order,
 %       opt:spacing) to (opt:count, opt:spacing, par:order)
@@ -174,9 +178,9 @@ ceSupportedPlotTypesSelector = {'Type', 'line'};
 
 %% Pre-process data
 % Get all children of the axes
-ceChildren = get(haTarget, 'Children');
+aChildren = allchild(haTarget);
 % Grab only the valid children from the current axes' children
-ceValidChildren = findobj(ceChildren, ceSupportedPlotTypesSelector{:});
+ceValidChildren = findobj(aChildren, ceSupportedPlotTypesSelector{:});
 nValidChildren = numel(ceValidChildren);
 % Ensure we have enough markers for all children
 if isscalar(vMarkersCount)
@@ -198,7 +202,7 @@ hMarkerStart = gobjects(nValidChildren, 1);
 %% Here is where all the adjustment happens
 % For every child...
 for iChild = 1:nValidChildren
-    mxChild = ceChildren(iChild);
+    mxChild = aChildren(iChild);
     
     %%% Create two copies of the current graphics type
     % First copy will be used to display only the markers
@@ -308,12 +312,18 @@ drawnow
 %% Assign output quantities
 % First optional return argument is the handles of markers
 if nargout > 0
-    varargout{1} = hMarkers;
+    % Reverse the order of the generated marker-only handles so that it matches
+    % the order of plotted lines. If you read this comment and know why this has
+    % to be done, please, please, let me know.
+    varargout{1} = flipud(hMarkers);
 end
 
 % Second optional return argument is the handles of the start markers
 if nargout > 1
-    varargout{2} = hMarkerStart;
+    % Reverse the order of the generated marker-line handles so that it matches
+    % the order of plotted lines. If you read this comment and know why this has
+    % to be done, please, please, let me know.
+    varargout{2} = flipud(hMarkerStart);
 end
 
 
