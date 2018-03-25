@@ -54,7 +54,7 @@ else
             error('PHILIPPTEMPEL:MATLABTOOLING:MAT:ISEVEN:InvalidArgument', 'Not implemented for classes int8, int16, int32, and int64.');
         otherwise
             error('PHILIPPTEMPEL:MATLABTOOLING:MAT:ISEVEN:InvalidArgument', 'Argument is of unrecognized class %s.', chClassX);
-        end
+    end
 end
 
 
