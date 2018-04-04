@@ -104,7 +104,19 @@ classdef manager
             %% VALID_NAME turns the given name to a valid experimental folder name
             
             
-            name = matlab.lang.makeValidName(name);
+            persistent ceInvalidChars
+            if isempty(ceInvalidChars)
+                ceInvalidChars = '[^a-zA-Z_0-9\-\ ]';
+            end
+            
+            % Delete all invalid characters
+            name = regexprep(name, ceInvalidChars, '');
+            
+            % Replace whitespace by hyphen
+            name = strrep(name, ' ', '-');
+            
+            % Lastly, lowercase everything
+            name = lower(name);
             
         end
         
