@@ -1,10 +1,26 @@
 classdef trial < handle & matlab.mixin.Heterogeneous
     % TRIAL An experimental trial object containing information on all files
     
+    
     properties
         
         % Name of the trial
         Name
+        
+        % All images of this experiment
+        Images
+        
+        % All videos of this experiment
+        Videos
+        
+        % All media files of this experiment i.e., images and videos
+        Media
+        
+        % Path to the scope file
+        Scope
+        
+        % Path to the Input file
+        Input
         
     end
     
@@ -35,6 +51,19 @@ classdef trial < handle & matlab.mixin.Heterogeneous
     end
     
     
+    properties ( Constant , Hidden )
+        
+        ImageExtensions = {'cr2', 'png', 'jpeg', 'jpg', 'tiff'}
+        
+        VideoExtensions = {'mp4', 'mov', 'mpg', 'mpeg', 'mkv'}
+        
+        ScopeName = 'scope'
+        
+        InputName = 'input'
+        
+    end
+    
+    
     
     %% GENERAL METHODS
     methods
@@ -60,6 +89,46 @@ classdef trial < handle & matlab.mixin.Heterogeneous
             % Assign the parent session
             this.Session = sess;
             
+            % Get all media files
+            this.Media = dir(fullfile(this.Path, 'media'));
+            % Remove any folders from the content of the trials 'media'
+            % directory
+            this.Media([this.Media.isdir]) = [];
+            
+            % Grab all images from the array of image files
+            this.Images = this.Media(~cellfun(@isempty, regexp({this.Media.name}, sprintf('.*%s.$', strjoin(this.ImageExtensions, '|')))));
+            % If we found images, sort the naturally
+            if ~isempty(this.Images)
+                [~, idxSorted] = strnatsort({this.Images.name});
+                this.Images = this.Images(idxSorted);
+            end
+            
+            % Grab all videos from the array of media files
+            this.Videos = this.Media(~cellfun(@isempty, regexp({this.Media.name}, sprintf('.*%s.$', strjoin(this.VideoExtensions, '|')))));
+            % If we found videos, sort the naturally
+            if ~isempty(this.Videos)
+                [~, idxSorted] = strnatsort({this.Videos.name});
+                this.Videos = this.Videos(idxSorted);
+            end
+            
+            % Build the path to the scope file
+            chScopePath = fullfile(this.Path, sprintf('%s.csv', this.ScopeName));
+            % But only assign it if the file exists
+            if 2 == exist(chScopePath, 'file')
+                this.Scope = dir(chScopePath);
+            end
+            
+            % Build the path to the input file
+            chInputPath = fullfile(this.Path, sprintf('%s.tcsv', this.InputName));
+            % If there is no '.TCSV' file, we will check for a '.NC' file
+            if 2 ~= exist(chInputPath, 'file')
+                chInputPath = fullfile(this.Path, sprintf('%s.nc', this.InputName));
+            end
+            % But only assign it if the file exists
+            if 2 == exist(chInputPath, 'file')
+                this.Input = dir(chInputPath);
+            end
+            
         end
         
         
@@ -80,6 +149,10 @@ classdef trial < handle & matlab.mixin.Heterogeneous
                 
                 % Create the 'media' directory
                 mkdir(fullfile(this.Path, 'media'));
+                
+                % Here, we should copy all the files that are assigned to this
+                % new trial to the target trial's folder (i.e., media, scope,
+                % etc.)
             catch me
                 % Delete the directory i.e., 'cleanup'
                 rmdir(this.Path, 's');
