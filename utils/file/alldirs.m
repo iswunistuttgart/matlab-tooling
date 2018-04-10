@@ -1,12 +1,26 @@
-function Dirs = alldirs(Dir, varargin)
+function D = alldirs(Dir, varargin)
 % ALLDIRS Finds all files in directory DIR and returns them in a structure
 %
-%   FILES = ALLDIRS(DIR) scans through directory DIR and returns all files. This
-%   is basically the same as calling the `dir` function. However, the power lies
-%   in the magic of this function. Read more to see what is meant.
+%   DIRS = ALLDIRS(DIR) scans through directory DIR and returns all
+%   directories. This basically behaves like the built-in `dir` function,
+%   however, provides some very convenient additional features.
 %
-%   FILES = ALLDIRS(DIR, 'csv') scans through directory DIR and returns all
-%   files with extension 'csv' (or, '.csv' to be more precise).
+%   DIRS = ALLDIRS(DIR, 'Name', 'Value', ...) allows setting optional inputs
+%   using name/value pairs.
+%
+%   Optional Inputs -- specified as parameter value pairs
+%
+%   Prefix              Prefix of folder names to match. Performs a matching of
+%                       the folder name to begin with PREFIX.
+%
+%   Suffix              Suffix of folder names to match. Performs a matching of
+%                       the folder name to end in SUFFIX.
+%
+%   IncludeSystem       Toggle flag whether to include '.' and '..' directories.
+%                       Possible values are
+%                       'on', 'yes'
+%                       'off', 'no'
+%                       Defaults to 'off'
 %
 %   See also: dir
 
@@ -14,8 +28,10 @@ function Dirs = alldirs(Dir, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-09-09
+% Date: 2018-04-04
 % Changelog:
+%   2018-04-04
+%       * Update help block
 %   2016-09-09
 %       * Initial release
 
@@ -37,11 +53,11 @@ ip = inputParser;
 valFcn_Dir = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Dir');
 addRequired(ip, 'Dir', valFcn_Dir);
 
-% Include system files like '.', or '..'?
+% Find directories with a certain folder name prefix?
 valFcn_Prefix = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Prefix');
 addParameter(ip, 'Prefix', '', valFcn_Prefix);
 
-% Include system files like '.', or '..'?
+% Find directories with a certain folder name suffix?
 valFcn_Suffix = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Suffix');
 addParameter(ip, 'Suffix', '', valFcn_Suffix);
 
@@ -74,30 +90,28 @@ chIncludeSystem = ip.Results.IncludeSystem;
 
 
 
-
 %% Magic, collect the files
 chPath = sprintf('%s%s%s*%s', chDir, filesep, chPrefix, chSuffix);
 
 % Get all the files in the given directory
-stFiles = dir(chPath);
+stDirs = dir(chPath);
 
 % Proceed only from here on if there were any files found
-if ~isempty(stFiles)
+if ~isempty(stDirs)
     % Do we need to filter the system files like '.' and '..'?
     if strcmpi(chIncludeSystem, 'no')
         % Remove all system directories from the found items
-        stFiles(ismember({stFiles(:).name}, {'.', '..'})) = [];
+        stDirs(ismember({stDirs(:).name}, {'.', '..'})) = [];
     end
     
     % Remove files
-    stFiles = stFiles([stFiles.isdir]);
+    stDirs = stDirs([stDirs.isdir]);
 end
 
 
 
-
 %% Assign output quantities
-Dirs = stFiles;
+D = stDirs;
 
 
 end

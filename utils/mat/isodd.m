@@ -19,8 +19,10 @@ function flag = isodd(x)
 %% File information
 % Author: Peter J. Acklam <pjacklam@online.no>
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-12-23
+% Date: 2018-03-10
 % Changelog:
+%   2018-03-10
+%       * Add missing line to determine class of given variable
 %   2016-12-23
 %       * Change from nargchk to narginchk
 %   2016-12-04
@@ -41,6 +43,9 @@ nargoutchk(0, 1);
 if ~isnumeric(x)
     error('Argument must be a numeric array.');
 end
+
+% class of input argument
+chClass = class(x);
 
 % Return empty array of same class
 if isempty(x)

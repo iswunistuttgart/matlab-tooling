@@ -7,7 +7,6 @@ temp/*
 wt-*
 worktree*
 
-
 # Created by https://www.gitignore.io/api/windows
 
 ### Windows ###
@@ -31,11 +30,20 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+<<<<<<< HEAD
 # End of https://www.gitignore.io/api/windows
 
 # Created by https://www.gitignore.io/api/osx
 
 ### OSX ###
+=======
+
+# End of https://www.gitignore.io/api/windows
+
+# Created by https://www.gitignore.io/api/macos
+
+### macOS ###
+>>>>>>> exps-master
 *.DS_Store
 .AppleDouble
 .LSOverride
@@ -43,7 +51,10 @@ $RECYCLE.BIN/
 # Icon must end with two \r
 Icon
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> exps-master
 # Thumbnails
 ._*
 
@@ -63,6 +74,7 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+<<<<<<< HEAD
 # End of https://www.gitignore.io/api/osx
 
 # Created by https://www.gitignore.io/api/linux
@@ -83,6 +95,10 @@ Temporary Items
 .nfs*
 
 # End of https://www.gitignore.io/api/linux
+=======
+
+# End of https://www.gitignore.io/api/macos
+>>>>>>> exps-master
 
 # Created by https://www.gitignore.io/api/matlab
 
@@ -96,7 +112,11 @@ Temporary Items
 *.asv
 
 # OSX / *nix default autosave extension
+<<<<<<< HEAD
 *.*~
+=======
+*.m~
+>>>>>>> exps-master
 
 # Compiled MEX binaries (all platforms)
 *.mex*
@@ -108,6 +128,7 @@ slprj/
 octave-workspace
 
 # Simulink autosave extension
+<<<<<<< HEAD
 .autosave
 
 # End of https://www.gitignore.io/api/matlab
@@ -701,3 +722,9 @@ fabric.properties
 *.~vsdx
 
 # End of https://www.gitignore.io/api/microsoftoffice
+=======
+*.autosave
+
+
+# End of https://www.gitignore.io/api/matlab
+>>>>>>> exps-master
