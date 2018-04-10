@@ -12,8 +12,11 @@ function p = exppath()
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-04-04
+% Date: 2018-04-10
 % Changelog:
+%   2018-04-10
+%       * Change function to support loading a 'exppath.mat' file and retrieving
+%       the folder path from there
 %   2018-04-04
 %       * Initial release
 
@@ -21,7 +24,18 @@ function p = exppath()
 
 %% Do your code magic here
 
+% By default, this file's folder is where experiments are stored
 p = fileparts(fullfile(mfilename('fullpath')));
+
+% Check if there is an `exppath` file on the path that we can load
+if 2 == exist('exppath.mat', 'file')
+    % Load the file
+    stConfig = load('exppath.mat');
+    % And check if there is a 'p' variable inside
+    if isfield(stConfig, 'p')
+        p = stConfig.p;
+    end
+end
 
 
 end
