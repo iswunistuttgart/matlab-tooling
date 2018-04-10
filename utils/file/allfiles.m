@@ -46,8 +46,10 @@ function Files = allfiles(d, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-01-22
+% Date: 2018-04-10
 % Changelog:
+%   2018-04-10
+%       * Fix 'extension' handling by defaulting prefix and suffix to ''
 %   2018-01-22
 %       * Make parameter "D" required. By default, if not given, it will fall
 %       back to `pwd`
@@ -132,14 +134,8 @@ if isempty(chExtension)
 end
 % File prefix: char
 chPrefix = ip.Results.Prefix;
-if isempty(chPrefix)
-    chPrefix = '.*';
-end
 % File suffix: char
 chSuffix = ip.Results.Suffix;
-if isempty(chSuffix)
-    chSuffix = '.*';
-end
 % Include system: char, {'on', 'off'}
 chIncludeHidden = parseswitcharg(ip.Results.IncludeHidden);
 % Recurse into subdirectories: char, {'on', 'off'})
@@ -185,7 +181,7 @@ if ~isempty(stFiles)
     stFiles([stFiles.isdir]) = [];
     
     % And now filter the files that do not match the requested pattern
-    stFiles(0 == cell2mat(regexp({stFiles(:).name}, ['^' , chPrefix , '.*' , chSuffix , '\.' , chExtension , '$']))) = [];
+    stFiles(cellfun(@isempty, regexp({stFiles(:).name}, ['^' , chPrefix , '.*' , chSuffix , '\.' , chExtension , '$'], 'match', 'once'))) = [];
 end
 
 
