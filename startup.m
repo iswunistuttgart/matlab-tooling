@@ -14,7 +14,14 @@ function startup()
 
 %% Do your code magic here
 
-addpath(genpath(fullfile(fileparts(mfilename('fullpath')), 'utils')));
+chPath = fileparts(mfilename('fullpath'));
+
+cePaths = {
+    fullfile(chPath);
+    genpath(fullfile(chPath, 'utils'));
+};
+
+addpaths(cePaths{:});
 
 setrng()
 
