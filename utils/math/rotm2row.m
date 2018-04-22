@@ -1,25 +1,28 @@
 function Row = rotm2row(Matrix)%#codegen
 % ROTM2ROW converts a 3d rotation matrix to a row
 % 
-%   ROW = ROTM2ROW(MATRIX) converts the 3x3 matrix into a 1x9 rotation vector
+%   ROW = ROTM2ROW(MATRIX) converts the 2x2xM or 3x3xM matrix into a Mx4 or Mx9
+%   rotation vector.
 %   
 %   
 %   Inputs:
 %   
-%   MATRIX: A 3x3xN matrix of rotation matrices
+%   MATRIX              A 2x2xM or 3x3xN matrix of rotation matrices.
 % 
 %   Outputs:
 % 
-%   ROW: Nx9 matrix of rotation matrix rows where the columns are of MATRIX are
-%   horizontally concatenated
+%   ROW                 Mx4 or Mx9 matrix of rotation matrix rows where the
+%                       columns of MATRIX are horizontally concatenated.
 %
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-05-10
+% Date: 2018-04-22
 % Changelog:
+%   2018-04-22
+%        * Add support for two-dimensional rotation matrices
 %   2017-04-17
 %       * Add argument assertion
 %   2016-05-10
@@ -33,15 +36,18 @@ function Row = rotm2row(Matrix)%#codegen
 narginchk(1, 1);
 nargoutchk(0, 1);
 
-validateattributes(Matrix, {'numeric'}, {'3d', 'size', [3, 3, NaN], 'nonnan', 'nonsparse', 'finite', '<=', 1, '>=', -1}, mfilename, 'Col');
+assert(any([any(size(Matrix, 2) == [2, 2, NaN]), any(size(Matrix, 2) == [3, 3, NaN])]), 'Invalid count of length along dimension 2. Expected Matrix to be of size 2x2xM or 3x3xM.');
+validateattributes(Matrix, {'numeric'}, {'3d', 'nonnan', 'nonsparse', 'finite', '<=', 1, '>=', -1}, mfilename, 'Matrix');
 
 
 
 %% Transformation
 % Number of matrices to convert
 nMatrices = size(Matrix, 3);
+% Size of the rotation matrix
+nDim = size(Matrix, 2);
 % And reshape to match size Nx9
-Row = reshape(permute(Matrix, [3, 2, 1]), nMatrices, 9);
+Row = reshape(permute(Matrix, [3, 2, 1]), nMatrices, nDim*nDim);
 
 
 end
