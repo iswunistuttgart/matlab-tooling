@@ -7,8 +7,10 @@
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-08-04
+% Date: 2018-04-10
 % Changelog:
+%   2018-04-10
+%       * Change function calls to parantheses syntax
 %   2017-08-04
 %       * Add help block and File Information section
 %   2017-08-03
@@ -22,25 +24,28 @@
 fclose('all');
 
 % Close all open windows
-close all
+close('all');
 
 % Hidden windows are not closed when closing open windows, so we need to
 % explicitely close them
-close all hidden
+close('all', 'hidden');
 
 % Windows with a modified DeleteFcn that might not have been closed until now
 % need to be closed explicitely, too
-close all force
+close('all', 'force');
 
 % Clear all variables
-clear variables
+clear('variables');
 
 % Global variables need to be removed, too, as they are not removed with a call
 % to ```clear variables```
-clear global
+clear('global')
 
 % Lastly, we will stop all timers that may still be running in the backgroudn
-stopalltimers
+try
+    stopalltimers
+catch me
+end
 
 % For a clean start we will of course need a clean command window
 clc
