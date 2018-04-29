@@ -1,3 +1,8 @@
+function plotrange()
+%% PLOTRANGE tests the `minplotvalue()` and `maxplotvalue()` functions
+
+
+
 %% Initialize
 t = linspace(0, 2*pi, 500);
 x = sin(t);
@@ -40,3 +45,5 @@ hold on;
 hPlot = plot(t, x, t, y);
 [minplotvalue(), maxplotvalue()]
 clf(hFig)
+
+end
