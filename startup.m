@@ -5,23 +5,16 @@ function startup()
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-03-12
+% Date: 2018-04-29
 % Changelog:
+%   2018-04-29
+%       * Move all path definitions to `pathdef.m`
 %   2017-03-12
 %       * Initial release
 
 
 
 %% Do your code magic here
-
-chPath = fileparts(mfilename('fullpath'));
-
-cePaths = {
-    fullfile(chPath);
-    genpath(fullfile(chPath, 'utils'));
-};
-
-addpaths(cePaths{:});
 
 setrng()
 
