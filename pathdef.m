@@ -1,18 +1,29 @@
-function finish()
-% FINISH shuts down the project
+function p = pathdef()
+% PATHDEF returns the path definiton for this project
+%
+%   Outputs:
+%
+%   P                   Cell array of paths to automatically load
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-03-12
+% Date: 2018-04-29
 % Changelog:
-%   2017-03-12
+%   2018-04-29
 %       * Initial release
 
 
 
 %% Do your code magic here
+
+chPath = fileparts(mfilename('fullpath'));
+
+p = {
+    fullfile(chPath) ...
+    , genpath(fullfile(chPath, 'utils'));
+};
 
 
 end
