@@ -14,7 +14,7 @@ classdef project < handle & matlab.mixin.Heterogeneous
     
     properties ( Dependent )
         
-        % Path of the project's fodler
+        % Path of the project's folder
         Path
         
         % Number of project sessions

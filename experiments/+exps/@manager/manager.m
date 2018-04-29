@@ -1,32 +1,199 @@
-classdef manager
-    % MANAGER is the experimental project/session/trial manager
+classdef manager < handle
+    % MANAGER is the manager of experimental projects/sessions/trials
     
+    
+    %% PUBLIC PROPERTIES
     properties
+        
+        Projects@exps.project = exps.project.empty(1, 0)
+        
     end
     
+    
+    %% WRITE-PROTECTED PROPERTIES
+    properties ( SetAccess = protected )
+        
+    end
+    
+    
+    %% DEPENDENT PUBLIC PROPERTIES
+    properties ( Dependent )
+        
+    end
+    
+    
+    
+    %% STATIC METHODS
     methods ( Static )
         
-        function p = project(name)
-            %% PROJECT finds the given project and returns it as an EXPS.EPROJECT object
+        function f = filename()
+            %% FILENAME returns the computer aware filename of the projects file
             
             
-            try
-                narginchk(1, 1);
-                
-                nargoutchk(0, 1);
-                
-                validateattributes(name, {'char'}, {'nonempty'}, mfilename, 'name');
-            catch me
-                throwAsCaller(me);
+            % Call the system command `hostname` and check its result status
+            [dStatus, chComputername] = system('hostname');
+
+            % If the previous command call failed, we will need to infer the computer name
+            % from an environment variable
+            if dStatus ~= 0
+                % On windows
+                if ispc
+                    chComputername = getenv('COMPUTERNAME');
+                % On anything else
+                else      
+                    chComputername = getenv('HOSTNAME');
+                end
             end
             
-            % Find folder and create object from it
+            % Check userpath is not empty
+            if isempty(userpath)
+                userpath('reset');
+            end
+
+            % Build the filename
+            f = fullfile(userpath, sprintf('experiments_%s.mat', matlab.lang.makeValidName(chComputername)));
+            
+        end
+        
+    end
+    
+    
+    
+    %% STATIC PROTECTED METHODS
+    methods ( Static, Access = protected )
+        
+        function d = strdist(r, b, krk, cas)
+            %% STRDIST computes distances between strings
+            %
+            % d=strdist(r,b,krk,cas) computes Levenshtein and editor distance 
+            % between strings r and b with use of Vagner-Fisher algorithm.
+            %    Levenshtein distance is the minimal quantity of character
+            % substitutions, deletions and insertions for transformation
+            % of string r into string b. An editor distance is computed as 
+            % Levenshtein distance with substitutions weight of 2.
+            % d=strdist(r) computes numel(r);
+            % d=strdist(r,b) computes Levenshtein distance between r and b.
+            % If b is empty string then d=numel(r);
+            % d=strdist(r,b,krk)computes both Levenshtein and an editor distance
+            % when krk=2. d=strdist(r,b,krk,cas) computes a distance accordingly 
+            % with krk and cas. If cas>0 then case is ignored.
+            % 
+            % Example.
+            %  disp(strdist('matlab'))
+            %     6
+            %  disp(strdist('matlab','Mathworks'))
+            %     7
+            %  disp(strdist('matlab','Mathworks',2))
+            %     7    11
+            %  disp(strdist('matlab','Mathworks',2,1))
+            %     6     9
+
+            switch nargin
+               case 1
+                  d = numel(r);
+                  return
+               case 2
+                  krk = 1;
+                  bb = b;
+                  rr = r;
+               case 3
+                   bb = b;
+                   rr = r;
+               case 4
+                  bb = b;
+                  rr = r;
+                  if cas > 0
+                     bb = upper(b);
+                     rr = upper(r);
+                  end
+            end
+
+            if krk ~= 2
+               krk = 1;
+            end
+
+            d = zeros(1, 0);
+            luma = numel(bb);
+            lima = numel(rr);
+            lu1 = luma + 1;
+            li1 = lima + 1;
+            dl = zeros([lu1, li1]);
+            dl(1,:) = 0:lima;
+            dl(:,1) = 0:luma;
+            % Distance
+            for krk1 = 1:krk
+                for ii = 2:lu1
+                    bbi = bb(ii-1);
+                    for ij = 2:li1
+                        kr = krk1;
+                        if strcmp(rr(ij-1),bbi)
+                            kr = 0;
+                        end
+                        dl(ii,ij) = min([dl(ii-1,ij-1) + kr, dl(ii-1,ij) + 1, dl(ii,ij-1) + 1]);
+                    end
+                end
+                d = horzcat(d, dl(end,end));
+            end
+            
+        end
+        
+    end
+    
+    
+    
+    %% GENERAL METHODS
+    methods
+        
+        function this = manager()
+            %% MANAGER creates a new manager instance
+            
+            
+            % Load the projects
+            this.load_projects_();
+            
+            
+        end
+        
+        
+        function p = find(this, name)
+            %% FIND a single project by name
+            
+            
             try
-                % Check project exists
-                assert(exps.manager.project_exist(name), 'PHILIPPTEMPEL:SIMTECH_SEILMODELLIERUNG:EXPERIMENTS:EXPS:MANAGER:PROJECT:InvalidProjectName', 'Invalid project name given. Does the project exixst?');
+                % Find matching names
+                idxMatches = ismember({this.Projects.Name}, name);
                 
-                % Return the instantiated project
-                p = exps.project(name);
+                % Make sure we found any project
+                assert(any(idxMatches), 'PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:MANAGER:FIND:ProjectNotFound', 'Project could not be found because it does not exist or names are too ambigious');
+                
+                % And return the data
+                p = this.Projects(idxMatches);
+            catch me
+                % No match, so let's suggest projects based on their string
+                % distance
+                pclose = this.closest_projects(name);
+                
+                % Found similarly sounding projects?
+                if ~isempty(pclose)
+                    throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:MANAGER:FIND:ProjectNotFound', 'Project could not be found. Did you maybe mean one of the following projects?\n%s', strjoin(arrayfun(@(pp) pp.Name, pclose, 'UniformOutput', false), '\n')), me));
+                else
+                    throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:MANAGER:FIND:ProjectNotFound', 'Project could not be found. Make sure there is no typo in the name and that the project exists.'), me));
+                end
+            end
+            
+        end
+        
+        
+        function go(this, name)
+            %% GO to a project's folder
+            
+            
+            try
+                % Find project
+                p = this.find(name);
+                
+                % Go to project
+                p.go();
             catch me
                 throwAsCaller(me);
             end
@@ -34,120 +201,108 @@ classdef manager
         end
         
         
-        function s = session(name, proj)
-            %% SESSION finds the given session and returns it as an EXPS.ESESSION object
+        function p = path(this, name)
+            %% PATH gets the path of the given project
             
             
             try
-                narginchk(2, 2);
+                % Find project
+                p = this.find(name);
                 
-                nargoutchk(0, 1);
-                
-                validateattributes(name, {'char'}, {'nonempty'}, mfilename, 'name');
-                validateattributes(proj, {'char'}, {'nonempty'}, mfilename, 'proj');
-            catch me
-                throwAsCaller(me);
-            end
-            
-            % Check and instantiate
-            try
-                % Check project exists
-                assert(exps.manager.project_exist(proj), 'PHILIPPTEMPEL:SIMTECH_SEILMODELLIERUNG:EXPERIMENTS:EXPS:MANAGER:SESSION:InvalidProjectName', 'Invalid project name given. Does the project exixst?');
-                % Check session exists
-                assert(exps.manager.session_exist(name, proj), 'PHILIPPTEMPEL:SIMTECH_SEILMODELLIERUNG:EXPERIMENTS:EXPS:MANAGER:SESSION:InvalidSessionName', 'Invalid session name given. There does not seem to be any project containing this session.');
-                
-                % Create a session object
-                s = exps.session(name, exps.project(proj));
+                p = p.Path;
             catch me
                 throwAsCaller(me);
             end
             
         end
         
+    end
+    
+    
+    
+    %% OVERRIDERS
+    methods
         
-        function t = trial(name, sess, proj)
-            %% TRIAL finds the given trial and returns it as an EXPS.ETRIAL object
+        function save(this)
+            %% SAVE this experiments manager instance
             
             
+            % Save the experiment projects to a file
             try
-                narginchk(3, 3);
+                % Get the projects
+                p = this.Projects;
                 
-                nargoutchk(0, 1);
+                % Save above variable into the file
+                save(exps.manager.filename, 'p');
                 
-                validateattributes(name, {'char'}, {'nonempty'}, mfilename, 'name');
-                validateattributes(sess, {'char'}, {'nonempty'}, mfilename, 'sess');
-                validateattributes(proj, {'char'}, {'nonempty'}, mfilename, 'proj');
+                % Free some memory
+                clear('p');
             catch me
                 throwAsCaller(me);
             end
             
-            % Check and instantiate
+        end
+        
+    end
+    
+    
+    
+    %% GETTERS
+    methods
+        
+    end
+    
+    
+    
+    %% PROTECTED METHODS
+    methods ( Access = protected )
+        
+        function load_projects_(this)
+            %% LOAD_PROJECTS_ loads the projects for this computer
+            
+            
+            % Load the projects
             try
-                % Check project exists
-                assert(exps.manager.project_exist(proj), 'PHILIPPTEMPEL:SIMTECH_SEILMODELLIERUNG:EXPERIMENTS:EXPS:MANAGER:TRIAL:InvalidProjectName', 'Invalid project name given. Does the project exixst?');
-                % Check session exists
-                assert(exps.manager.session_exist(sess, proj), 'PHILIPPTEMPEL:SIMTECH_SEILMODELLIERUNG:EXPERIMENTS:EXPS:MANAGER:TRIAL:InvalidSessionName', 'Invalid session name given. There does not seem to be any project containing this session.');
-                % Check trial exists
-                assert(exps.manager.trial_exist(name, sess, proj), 'PHILIPPTEMPEL:SIMTECH_SEILMODELLIERUNG:EXPERIMENTS:EXPS:MANAGER:TRIAL:InvalidTrialName', 'Invalid trial name given. There does not seem to be any project or project session containing this trial.');
+                % Create a matfile object
+                moFile = matfile(exps.manager.filename());
                 
-                % Create a trial object
-                t = exps.trial(name, exps.session(sess, exps.project(proj)));
+                % Get the variables inside the matfile
+                stVariables = whos(moFile);
+                
+                % If there are variables, we will get them
+                if numel(stVariables)
+                    % Find the first variable being of type 'exps.project'
+                    [~, idx] = find(strcmp({stVariables.class}, 'exps.project'), 1, 'first');
+                    
+                    % Get the projects and assign them
+                    this.Projects = moFile.(stVariables(idx).name);
+                end
             catch me
-                throwAsCaller(me);
+                % Init empty projects array
+                this.Projects = exps.project.empty(1, 0);
             end
             
-            
         end
         
         
-        function name = valid_name(name)
-            %% VALID_NAME turns the given name to a valid experimental folder name
+        function ps = closest_projects(this, name)
+            %% CLOSEST_PROJECTS finds the projects with a name closest to the needle
             
             
-            persistent ceInvalidChars
-            if isempty(ceInvalidChars)
-                ceInvalidChars = '[^a-zA-Z_0-9\-\ ]';
-            end
+            % Get the distance between the needle and all other projects' names
+            dists = cellfun(@(n) exps.manager.strdist(name, n), {this.Projects.Name});
+            % Sort the distances from shortest to longest
+            [dists, sortidx] = sort(dists);
             
-            % Delete all invalid characters
-            name = regexprep(name, ceInvalidChars, '');
+            % Now get all projects whose name distance is smaller than 10 (some
+            % random/arbitrary value)
+            sortidx = sortidx(dists < 10);
             
-            % Replace whitespace by hyphen
-            name = strrep(name, ' ', '-');
-            
-            % Lastly, lowercase everything
-            name = lower(name);
-            
-        end
-        
-        
-        function f = project_exist(proj)
-            %% PROJECT_EXIST checks if the given project exists
-            
-            
-            f = 7 == exist(fullfile(exppath(), exps.manager.valid_name(proj)), 'dir');
-            
-        end
-        
-        
-        function f = session_exist(sess, proj)
-            %% SESSION_EXIST checks if the given project session exists
-            
-            
-            f = 7 == exist(fullfile(exppath(), exps.manager.valid_name(proj), exps.manager.valid_name(sess)), 'dir');
-            
-        end
-        
-        
-        function f = trial_exist(trial, sess, proj)
-            %% TRIAL_EXIST checks if the given project session trial exists
-            
-            
-            f = 7 == exist(fullfile(exppath(), exps.manager.valid_name(proj), exps.manager.valid_name(sess), exps.manager.valid_name(trial)), 'dir');
+            % And return these projects
+            ps = this.Projects(sortidx);
             
         end
         
     end
     
 end
-
