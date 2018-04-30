@@ -29,6 +29,9 @@ classdef trial < handle & matlab.mixin.Heterogeneous
         % All media files of this experiment i.e., images and videos
         Media
         
+        % Path to the media files
+        MediaPath
+        
         % Path to the scope file
         ScopePath
         
@@ -123,24 +126,23 @@ classdef trial < handle & matlab.mixin.Heterogeneous
             
             
             try
-                assert(this.IsNew, 'PHILIPPTEMPEL:SIMTECH_SEILMODELLIERUNG:EXPERIMENTS:MATLAB:TRIAL:TrialNotNew', 'Cannot create trial folder: trial is not new.');
-            catch me
-                throwAsCaller(me);
-            end
-            
-            try
-                % Create this trials's folder
-                mkdir(this.Path);
+                % If the trial folder does not exist, create it
+                if ~this.Exists
+                    % Create this trials's folder
+                    mkdir(this.Path);
+                end
                 
                 % Create the 'media' directory
-                mkdir(fullfile(this.Path, 'media'));
+                if 0 == exist(this.MediaPath, 'dir')
+                    mkdir(this.MediaPath);
+                end
                 
                 % Here, we should copy all the files that are assigned to this
                 % new trial to the target trial's folder (i.e., media, scope,
                 % etc.)
             catch me
-                % Delete the directory i.e., 'cleanup'
-                rmdir(this.Path, 's');
+%                 % Delete the directory i.e., 'cleanup'
+%                 rmdir(this.Path, 's');
                 
                 throwAsCaller(me);
             end
@@ -177,6 +179,15 @@ classdef trial < handle & matlab.mixin.Heterogeneous
             
             
             p = fullfile(this, sprintf('%s.csv', this.ScopeName));
+            
+        end
+        
+        
+        function p = get.MediaPath(this)
+            %% GET.MEDIAPATH returns the path to the media directory
+            
+            
+            p = fullfile(this, this.MediaFolder);
             
         end
         

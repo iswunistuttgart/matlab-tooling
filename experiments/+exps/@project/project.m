@@ -82,22 +82,19 @@ classdef project < handle & matlab.mixin.Heterogeneous
             
             
             try
-                assert(this.IsNew, 'PHILIPPTEMPEL:SIMTECH_SEILMODELLIERUNG:EXPERIMENTS:MATLAB:PROJECT:ProjectNotNew', 'Cannot create project folder: project is not new.');
-            catch me
-                throwAsCaller(me);
-            end
-            
-            try
-                % Create this project's folder
-                mkdir(this.Path);
+                % If this project folder does not exist, create it
+                if ~this.Exists
+                    % Create this project's folder
+                    mkdir(this.Path);
+                end
                 
                 % Create each session
                 for iSess = 1:this.NSession
                     this.Session(iSess).create();
                 end
             catch me
-                % Delete the directory i.e., 'cleanup'
-                rmdir(this.Path, 's');
+%                 % Delete the directory i.e., 'cleanup'
+%                 rmdir(this.Path, 's');
                 
                 throwAsCaller(me);
             end
