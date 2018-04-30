@@ -147,6 +147,27 @@ classdef session < handle & matlab.mixin.Heterogeneous
     
     
     
+    %% SETTERS
+    methods
+        
+        function set.Trial(this, trial)
+            %% SET.TRIAL ensures each trial knows about its parent session
+            
+            
+            % Loop over each trial
+            for iTrial = 1:numel(trial)
+                % And set this session to be the trial's parent
+                trial(iTrial).Session = this;
+            end
+            
+            % And set the property
+            this.Trial = trial;
+        end
+        
+    end
+    
+    
+    
     %% OVERRIDERS
     methods
         

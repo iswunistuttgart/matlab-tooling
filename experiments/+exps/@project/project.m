@@ -87,7 +87,6 @@ classdef project < handle & matlab.mixin.Heterogeneous
                 throwAsCaller(me);
             end
             
-            
             try
                 % Create this project's folder
                 mkdir(this.Path);
@@ -145,6 +144,27 @@ classdef project < handle & matlab.mixin.Heterogeneous
             
             flag = ~this.Exists;
             
+        end
+        
+    end
+    
+    
+    
+    %% SETTERS
+    methods
+        
+        function set.Session(this, sess)
+            %% SET.SESSION ensures each session knows about its parent project
+            
+            
+            % Loop over each session
+            for iSess = 1:numel(sess)
+                % And set this project to be the session's parent
+                sess(iSess).Project = this;
+            end
+            
+            % And set the property
+            this.Session = sess;
         end
         
     end

@@ -8,21 +8,6 @@ classdef trial < handle & matlab.mixin.Heterogeneous
         % Name of the trial
         Name
         
-        % All images of this experiment
-        Images
-        
-        % All videos of this experiment
-        Videos
-        
-        % All media files of this experiment i.e., images and videos
-        Media
-        
-        % Path to the scope file
-        Scope
-        
-        % Path to the Input file
-        Input
-        
         % Corresponding parent session object for the trial
         Session@exps.session
         
@@ -34,6 +19,36 @@ classdef trial < handle & matlab.mixin.Heterogeneous
         
         % Path to the trial's folder
         Path
+        
+        % All images of this experiment
+        Image
+        
+        % All videos of this experiment
+        Video
+        
+        % All media files of this experiment i.e., images and videos
+        Media
+        
+        % Path to the scope file
+        ScopePath
+        
+        % Path to the Input file
+        InputPath
+        
+        % Flag if there are images
+        HasImage
+        
+        % Flag if there are videos
+        HasVideo
+        
+        % Flag if there is media or not
+        HasMedia
+        
+        % Flag if there is a scope file or not
+        HasScope
+        
+        % Flag if there is an input file or not
+        HasInput
         
         % Flag whether the trial exist or not. True if the folder path does
         % exist
@@ -51,8 +66,11 @@ classdef trial < handle & matlab.mixin.Heterogeneous
     %% HIDDEN PROPERTIES
     properties ( Constant , Hidden )
         
+        % Name of the media folder
+        MediaFolder = 'media'
+        
         % Extension of images to find automatically
-        ImageExtensions = {'cr2', 'png', 'jpeg', 'jpg', 'tiff'}
+        ImageExtensions = {'cr2', 'png', 'jpeg', 'jpg', 'tif', 'tiff'}
         
         % Extensions of videos to find automatically
         VideoExtensions = {'mp4', 'mov', 'mpg', 'mpeg', 'mkv'}
@@ -95,46 +113,6 @@ classdef trial < handle & matlab.mixin.Heterogeneous
             % Assign variable list of arguments
             for iArg = 1:2:numel(varargin)
                 this.(varargin{iArg}) = varargin{iArg + 1};
-            end
-            
-            % Get all media files
-            this.Media = dir(fullfile(this.Path, 'media'));
-            % Remove any folders from the content of the trials 'media'
-            % directory
-            this.Media([this.Media.isdir]) = [];
-            
-            % Grab all images from the array of image files
-            this.Images = this.Media(~cellfun(@isempty, regexp({this.Media.name}, sprintf('.*%s.$', strjoin(this.ImageExtensions, '|')))));
-            % If we found images, sort the naturally
-            if ~isempty(this.Images)
-                [~, idxSorted] = strnatsort({this.Images.name});
-                this.Images = this.Images(idxSorted);
-            end
-            
-            % Grab all videos from the array of media files
-            this.Videos = this.Media(~cellfun(@isempty, regexp({this.Media.name}, sprintf('.*%s.$', strjoin(this.VideoExtensions, '|')))));
-            % If we found videos, sort the naturally
-            if ~isempty(this.Videos)
-                [~, idxSorted] = strnatsort({this.Videos.name});
-                this.Videos = this.Videos(idxSorted);
-            end
-            
-            % Build the path to the scope file
-            chScopePath = fullfile(this.Path, sprintf('%s.csv', this.ScopeName));
-            % But only assign it if the file exists
-            if 2 == exist(chScopePath, 'file')
-                this.Scope = dir(chScopePath);
-            end
-            
-            % Build the path to the input file
-            chInputPath = fullfile(this.Path, sprintf('%s.tcsv', this.InputName));
-            % If there is no '.TCSV' file, we will check for a '.NC' file
-            if 2 ~= exist(chInputPath, 'file')
-                chInputPath = fullfile(this.Path, sprintf('%s.nc', this.InputName));
-            end
-            % But only assign it if the file exists
-            if 2 == exist(chInputPath, 'file')
-                this.Input = dir(chInputPath);
             end
             
         end
@@ -181,6 +159,101 @@ classdef trial < handle & matlab.mixin.Heterogeneous
             
             
             p = fullfile(this.Session, exps.manager.valid_name(this.Name));
+            
+        end
+        
+        
+        function p = get.InputPath(this)
+            %% GET.INPUTPATH returns the path to the input file
+            
+            
+            p = fullfile(this, sprintf('%s.nc', this.InputName));
+            
+        end
+        
+        
+        function p = get.ScopePath(this)
+            %% GET.SCOPEPATH returns the path to the scope file
+            
+            
+            p = fullfile(this, sprintf('%s.csv', this.ScopeName));
+            
+        end
+        
+        
+        function m = get.Media(this)
+            %% GET.MEDIA returns all media of this project
+            
+            
+            % Just return the scan of the directory
+            m = dir(fullfile(this, this.MediaFolder));
+            % Remove top-level directories
+            m(ismember({m.name}, {'.', '..'})) = [];
+            
+        end
+        
+        
+        function im = get.Image(this)
+            %% GET.IMAGE returns all images of this experiment
+            
+            
+            % Pass through to the media filtering function
+            im = this.filter_media(this.ImageExtensions);
+            
+        end
+        
+        
+        function vi = get.Video(this)
+            %% GET.VIDEO returns all videos of this experiment
+            
+            
+            % Pass through to the media filtering function
+            vi = this.filter_media(this.VideoExtensions);
+            
+        end
+        
+        
+        function f = get.HasInput(this)
+            %% GET.HASINPUT flags if there is an input file or not
+            
+            
+            f = 2 == exist(this.InputPath, 'file');
+            
+        end
+        
+        
+        function f = get.HasScope(this)
+            %% GET.HASSCOPE flags if there is a scope file or not
+            
+            
+            f = 2 == exist(this.ScopePath, 'file');
+            
+        end
+        
+        
+        function f = get.HasMedia(this)
+            %% GET.HASMEDIA flags if there is media files or not
+            
+            
+            f = 0 ~= numel(this.Media);
+            
+        end
+        
+        
+        function f = get.HasImage(this)
+            %% GET.HASIMAgE flags if there is image files or not
+            
+            
+            f = 0 ~= numel(this.Image);
+            
+        end
+        
+        
+        function f = get.HasVideo(this)
+            %% GET.HASVIDEO flags if there is videos files or not
+            
+            
+            f = 0 ~= numel(this.Video);
             
         end
         
@@ -232,6 +305,22 @@ classdef trial < handle & matlab.mixin.Heterogeneous
             
             
             ff = fullfile(this.Path, varargin{:});
+            
+        end
+        
+        
+        function fil = filter_media(this, exts)
+            %% FILTER_MEDIA filters the media by the given extension filter
+            
+            
+            % Get all media
+            m = this.Media;
+            
+            % Build the regexp
+            chRegexp = sprintf('\\.(%s)$', strjoin(exts, '|'));
+            
+            % Then filter
+            fil = m(~cellfun(@isempty, regexpi({m.name}, chRegexp)));
             
         end
         
