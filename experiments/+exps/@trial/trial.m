@@ -20,6 +20,12 @@ classdef trial < handle & matlab.mixin.Heterogeneous
         % Path to the trial's folder
         Path
         
+        % Config of the project
+        Config
+        
+        % Path to the config file
+        ConfigPath
+        
         % All images of this experiment
         Image
         
@@ -37,6 +43,9 @@ classdef trial < handle & matlab.mixin.Heterogeneous
         
         % Path to the Input file
         InputPath
+        
+        % Flag if there is a config file of this project
+        HasConfig
         
         % Flag if there are images
         HasImage
@@ -66,6 +75,7 @@ classdef trial < handle & matlab.mixin.Heterogeneous
     end
     
     
+    
     %% HIDDEN PROPERTIES
     properties ( Constant , Hidden )
         
@@ -92,6 +102,7 @@ classdef trial < handle & matlab.mixin.Heterogeneous
     methods
         
         function this = trial(name, varargin)
+            %% TRIAL creates a new trial object
             
             
             % Validate arguments
@@ -155,6 +166,23 @@ classdef trial < handle & matlab.mixin.Heterogeneous
     
     %% GETTERS
     methods
+        
+        function c = get.Config(this)
+            %% GET.CONFIG gets the config
+            
+            
+            % If there is a config file...
+            if this.HasConfig
+                % Load it
+                c = load(this.ConfigPath);
+            % No config file exists
+            else
+                % Default to an empty structure
+                c = struct();
+            end
+            
+        end
+        
         
         function p = get.Path(this)
             %% GET.PATH creates the path for this project's session's folder name
@@ -299,6 +327,29 @@ classdef trial < handle & matlab.mixin.Heterogeneous
     
     
     
+    %% SETTERS
+    methods
+        
+        function set.Config(this, c)
+            %% SET.CONFIG sets the config for this object
+            
+            
+            % Validate arguments
+            try
+                validateattributes(c, {'struct'}, {}, mfilename, 'Config');
+            catch me
+                throwAsCaller(me);
+            end
+            
+            % And save the config
+            save(this.ConfigPath, '-struct', 'c'); %#ok<MCSUP>
+            
+        end
+        
+    end
+    
+    
+    
     %% OVERRIDERS
     methods
         
@@ -334,6 +385,13 @@ classdef trial < handle & matlab.mixin.Heterogeneous
             fil = m(~cellfun(@isempty, regexpi({m.name}, chRegexp)));
             
         end
+        
+    end
+    
+    
+    
+    %% PROTECTED METHODS
+    methods ( Access = protected )
         
     end
     

@@ -9,7 +9,7 @@ classdef session < handle & matlab.mixin.Heterogeneous
         Name
         
         % All trials of this session
-        Trial@exps.trial = exps.trial.empty(0, 1)
+        Trial@exps.trial = exps.trial.empty(1, 0)
         
         % Corresponding parent project of this session
         Project@exps.project
@@ -19,6 +19,16 @@ classdef session < handle & matlab.mixin.Heterogeneous
     
     %% PUBLIC DEPENDENT PROPERTIES
     properties ( Dependent )
+        
+        % Config of the project
+        Config
+        
+        
+        % Path to the config file
+        ConfigPath
+        
+        % Flag if there is a config file of this project
+        HasConfig
         
         % Path to the sessions folder
         Path
@@ -67,9 +77,6 @@ classdef session < handle & matlab.mixin.Heterogeneous
                 this.(varargin{iArg}) = varargin{iArg + 1};
             end
             
-            % And find all trial
-            this.Trial = this.search_trials();
-            
         end
         
         
@@ -103,6 +110,41 @@ classdef session < handle & matlab.mixin.Heterogeneous
     
     %% GETTERS
     methods
+        
+        function c = get.Config(this)
+            %% GET.CONFIG gets the config
+            
+            
+            % If there is a config file...
+            if this.HasConfig
+                % Load it
+                c = load(this.ConfigPath);
+            % No config file exists
+            else
+                % Default to an empty structure
+                c = struct();
+            end
+            
+        end
+        
+        
+        function p = get.ConfigPath(this)
+            %% GET.CONFIGPATH gets the path to the config file of this project
+            
+            
+            p = fullfile(this.Path, 'config.mat');
+            
+        end
+        
+        
+        function f = get.HasConfig(this)
+            %% GET.HASCONFIG flags if there is a config MAT file for this project
+            
+            
+            f = 2 == exist(this.ConfigPath, 'file');
+            
+        end
+        
         
         function p = get.Path(this)
             %% GET.PATH creates the path for this project's session's folder name
@@ -146,6 +188,23 @@ classdef session < handle & matlab.mixin.Heterogeneous
     %% SETTERS
     methods
         
+        function set.Config(this, c)
+            %% SET.CONFIG sets the config for this object
+            
+            
+            % Validate arguments
+            try
+                validateattributes(c, {'struct'}, {}, mfilename, 'Config');
+            catch me
+                throwAsCaller(me);
+            end
+            
+            % And save the config
+            save(this.ConfigPath, '-struct', 'c'); %#ok<MCSUP>
+            
+        end
+        
+        
         function set.Trial(this, trial)
             %% SET.TRIAL ensures each trial knows about its parent session
             
@@ -158,6 +217,7 @@ classdef session < handle & matlab.mixin.Heterogeneous
             
             % And set the property
             this.Trial = trial;
+            
         end
         
     end
@@ -191,23 +251,23 @@ classdef session < handle & matlab.mixin.Heterogeneous
     %% PROTECTED METHODS
     methods ( Access = protected )
         
-        function t = search_trials(this)
-            %% SEARCH_TRIALS searches for all trials inside the current session folder path
-            
-            
-            % Get all directories inside the sessions's path
-            vTrialDirs = alldirs(this.Path);
-            % Homogenous mixing of session objects
-            esTrials = exps.trial.empty(0, 1);
-            % Loop over each session folder and make a session object for it
-            for iTrial = 1:numel(vTrialDirs)
-                esTrials(iTrial) = exps.trial(vTrialDirs(iTrial).name, 'Session', this);
-            end
-            
-            % And assign output quantitiy
-            t = esTrials;
-            
-        end
+%         function t = search_trials(this)
+%             %% SEARCH_TRIALS searches for all trials inside the current session folder path
+%             
+%             
+%             % Get all directories inside the sessions's path
+%             vTrialDirs = alldirs(this.Path);
+%             % Homogenous mixing of session objects
+%             esTrials = exps.trial.empty(0, 1);
+%             % Loop over each session folder and make a session object for it
+%             for iTrial = 1:numel(vTrialDirs)
+%                 esTrials(iTrial) = exps.trial(vTrialDirs(iTrial).name, 'Session', this);
+%             end
+%             
+%             % And assign output quantitiy
+%             t = esTrials;
+%             
+%         end
         
     end
     
