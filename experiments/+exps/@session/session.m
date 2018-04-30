@@ -78,23 +78,19 @@ classdef session < handle & matlab.mixin.Heterogeneous
             
             
             try
-                assert(this.IsNew, 'PHILIPPTEMPEL:SIMTECH_SEILMODELLIERUNG:EXPERIMENTS:MATLAB:SESSION:SessionNotNew', 'Cannot create session folder: session is not new.');
-            catch me
-                throwAsCaller(me);
-            end
-            
-            
-            try
-                % Create this sessions's folder
-                mkdir(this.Path);
+                % If this session folder does not exist, create it
+                if ~this.Exists
+                    % Create this sessions's folder
+                    mkdir(this.Path);
+                end
                 
                 % Create each trial
                 for iTrial = 1:this.NTrial
                     this.Trial(iTrial).create();
                 end
             catch me
-                % Delete the directory i.e., 'cleanup'
-                rmdir(this.Path, 's');
+%                 % Delete the directory i.e., 'cleanup'
+%                 rmdir(this.Path, 's');
                 
                 throwAsCaller(me);
             end
