@@ -1,6 +1,8 @@
 classdef session < handle & matlab.mixin.Heterogeneous
     % SESSION an experimental session object containing many trials
+
     
+    %% PUBLIC PROPERTIES
     properties
         
         % Human readable name of the session
@@ -9,9 +11,13 @@ classdef session < handle & matlab.mixin.Heterogeneous
         % All trials of this session
         Trial@exps.trial = exps.trial.empty(0, 1)
         
+        % Corresponding parent project of this session
+        Project@exps.project
+        
     end
     
     
+    %% PUBLIC DEPENDENT PROPERTIES
     properties ( Dependent )
         
         % Path to the sessions folder
@@ -30,29 +36,25 @@ classdef session < handle & matlab.mixin.Heterogeneous
     end
     
     
-    properties ( SetAccess = immutable )
-        
-        % Corresponding parent project of this session
-        Project@exps.project
-        
-    end
-    
-    
     
     %% GENERAL METHODS
     methods
         
-        function this = session(name, proj)
-            
+        function this = session(name, varargin)
+            %% SESSION creates a new experimental session project
             
             % Validate arguments
             try
-                narginchk(2, 2);
+                % SESSION(NAME)
+                % SESSION(NAME, 'Name', 'Value')
+                narginchk(1, Inf);
                 
+                % SESSION(NAME, ...)
+                % S = SESSION(NAME, ...)
                 nargoutchk(0, 1);
                 
+                % Validate the name
                 validateattributes(name, {'char'}, {'nonempty'}, mfilename, 'Name');
-                validateattributes(proj, {'exps.project'}, {'nonempty'}, mfilename, 'Proj');
             catch me
                 throwAsCaller(me);
             end
@@ -60,8 +62,10 @@ classdef session < handle & matlab.mixin.Heterogeneous
             % Set name
             this.Name = name;
             
-            % Set project
-            this.Project = proj;
+            % Assign variable list of arguments
+            for iArg = 1:2:numel(varargin)
+                this.(varargin{iArg}) = varargin{iArg + 1};
+            end
             
             % And find all trial
             this.Trial = this.search_trials();
@@ -70,7 +74,7 @@ classdef session < handle & matlab.mixin.Heterogeneous
         
         
         function create(this)
-            %% CREATE creates the folder structure for a new project
+            %% CREATE creates the folder structure for a new session
             
             
             try
@@ -108,7 +112,7 @@ classdef session < handle & matlab.mixin.Heterogeneous
             %% GET.PATH creates the path for this project's session's folder name
             
             
-            p = fullfile(this.Project.Path, exps.manager.valid_name(this.Name));
+            p = fullfile(this.Project, exps.manager.valid_name(this.Name));
             
         end
         
@@ -143,6 +147,51 @@ classdef session < handle & matlab.mixin.Heterogeneous
     
     
     
+    %% SETTERS
+    methods
+        
+        function set.Trial(this, trial)
+            %% SET.TRIAL ensures each trial knows about its parent session
+            
+            
+            % Loop over each trial
+            for iTrial = 1:numel(trial)
+                % And set this session to be the trial's parent
+                trial(iTrial).Session = this;
+            end
+            
+            % And set the property
+            this.Trial = trial;
+        end
+        
+    end
+    
+    
+    
+    %% OVERRIDERS
+    methods
+        
+        function p = path(this)
+            %% PATH returns the path of this project
+            
+            
+            p = this.Path;
+            
+        end
+        
+        
+        function ff = fullfile(this, varargin)
+            %% FULLFILE returns the full filepath of this trial
+            
+            
+            ff = fullfile(this.Path, varargin{:});
+            
+        end
+        
+    end
+    
+    
+    
     %% PROTECTED METHODS
     methods ( Access = protected )
         
@@ -153,11 +202,10 @@ classdef session < handle & matlab.mixin.Heterogeneous
             % Get all directories inside the sessions's path
             vTrialDirs = alldirs(this.Path);
             % Homogenous mixing of session objects
-%             esTrials = zeros(0, 1, 'like', @trial);
             esTrials = exps.trial.empty(0, 1);
             % Loop over each session folder and make a session object for it
             for iTrial = 1:numel(vTrialDirs)
-                esTrials(iTrial) = exps.trial(vTrialDirs(iTrial).name, this);
+                esTrials(iTrial) = exps.trial(vTrialDirs(iTrial).name, 'Session', this);
             end
             
             % And assign output quantitiy
