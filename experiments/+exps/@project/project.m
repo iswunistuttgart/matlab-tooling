@@ -6,6 +6,9 @@ classdef project < handle & matlab.mixin.Heterogeneous
         % Name of the project
         Name
         
+        % Path to project's root
+        Path
+        
         % All sessions found for the project
         Session@exps.session = exps.session.empty(0, 1)
         
@@ -13,9 +16,6 @@ classdef project < handle & matlab.mixin.Heterogeneous
     
     
     properties ( Dependent )
-        
-        % Path of the project's folder
-        Path
         
         % Number of project sessions
         NSession
@@ -37,23 +37,39 @@ classdef project < handle & matlab.mixin.Heterogeneous
     %% GENERAL METHODS
     methods
         
-        function this = project(name)
+        function this = project(pth, varargin)
             %% PROJECT creates a new project object
             
             
             % Validate arguments
             try
-                narginchk(1, 1);
+                % PROJECT(PATH)
+                % PROJECT(PATH, 'Name', 'Value', ...)
+                narginchk(1, Inf);
                 
+                % PROJECT(PATH)
+                % P = PROJECT(PATH)
                 nargoutchk(0, 1);
                 
-                validateattributes(name, {'char'}, {'nonempty'}, mfilename, 'name');
+                % Validate path
+                validateattributes(pth, {'char'}, {'nonempty'}, mfilename, 'path');
             catch me
                 throwAsCaller(me);
             end
             
-            % Set project name
-            this.Name = name;
+            % Set project path
+            this.Path = pth;
+            
+            % Assign variable list of arguments
+            for iArg = 1:2:numel(varargin)
+                this.(varargin{iArg}) = varargin{iArg + 1};
+            end
+            
+            % No name set?
+            if isempty(this.Name)
+                % Infer the name from the path
+                this.Name = this.infer_name();
+            end
             
             % Find all sessions
             this.Session = this.search_sessions();
@@ -95,17 +111,6 @@ classdef project < handle & matlab.mixin.Heterogeneous
     
     %% GETTERS
     methods
-        
-        function p = get.Path(this)
-            %% GET.PATH gets the project's folder path
-            
-            
-            % Turn the Project name to a MATLAB valid name and append this to
-            % the path from `exppath()`
-            p = fullfile(exppath(), exps.manager.valid_name(this.Name));
-            
-        end
-        
         
         function n = get.NSession(this)
             %% GET.NSESSION counts the number of sessions
@@ -149,101 +154,22 @@ classdef project < handle & matlab.mixin.Heterogeneous
     %% OVERRIDERS
     methods
         
-%         function varargout = subsref(this, s)
-%             %% SUBSREF overrides the subsref command
-%             
-%             
-%             switch s(1).type
-%                 case '.'
-%                     [varargout{1:nargout}] = builtin('subsref', this, s);
-% %                     if length(s) == 1
-% %                     % Implement this.PropertyName
-% %                         varargout{1} = this.(s.subs);
-% %                     elseif length(s) == 2 && strcmp(s(2).type,'()')
-% %                         % Implement this.PropertyName(indices)
-% %                         ...
-% %                     else
-% %                         [varargout{1:nargout}] = builtin('subsref',this,s);
-% %                     end
-%                 case '()'
-%                     [varargout{1:nargout}] = builtin('subsref', this.Session, s);
-% %                     if length(s) == 1
-% %                         % Implement this(indices)
-% %                         [varargout{1:nargout}] = this.Session(s.subs{1});
-% %                     elseif length(s) == 2 && strcmp(s(2).type,'.')
-% %                         % Implement this(ind).PropertyName
-% %                         ...
-% %                     elseif length(s) == 3 && strcmp(s(2).type,'.') && strcmp(s(3).type,'()')
-% %                         % Implement this(indices).PropertyName(indices)
-% %                         ...
-% %                     else
-% %                         % Use built-in for any other expression
-% %                         [varargout{1:nargout}] = builtin('subsref',this,s);
-% %                     end
-%                 case '{}'
-%                     [varargout{1:nargout}] = builtin('subsref', this, s);
-% %                     if length(s) == 1
-% %                         % Implement this{indices}
-% %                     ...
-% %                     elseif length(s) == 2 && strcmp(s(2).type,'.')
-% %                         % Implement this{indices}.PropertyName
-% %                         ...
-% %                     else
-% %                         % Use built-in for any other expression
-% %                         [varargout{1:nargout}] = builtin('subsref',this,s);
-% %                     end
-%                 otherwise
-%                     error('Not a valid indexing expression')
-%             end
-%         end
+        function p = path(this)
+            %% PATH returns the path of this project
+            
+            
+            p = this.Path;
+            
+        end
         
         
-%         function this = subsasgn(this,s,varargin)
-%             %% SUBSASGN
-%             
-%             
-%             switch s(1).type
-%                 case '.'
-%                     this = builtin('subsasgn', this, s, varargin{:});
-% %                     if length(s) == 1
-% %                         % Implement this.PropertyName = varargin{:};
-% %                         this.(s.subs) = varargin{:};
-% %                     elseif length(s) == 2 && strcmp(s(2).type,'()')
-% %                         % Implement this.PropertyName(indices) = varargin{:};
-% %                         this.(s(1).subs)(s(2).subs{1}) = varargin{:};
-% %                     else
-% %                         % Call built-in for any other case
-% %                         this = builtin('subsasgn',this,s,varargin);
-% %                     end
-%                 case '()'
-%                     this = builtin('subsasgn', this.Session, s, varargin{:});
-% %                     if length(s) == 1
-% %                         % Implement this(indices) = varargin{:};
-% %                     elseif length(s) == 2 && strcmp(s(2).type,'.')
-% %                         % Implement this(indices).PropertyName = varargin{:};
-% %                         ...
-% %                     elseif length(s) == 3 && strcmp(s(2).type,'.') && strcmp(s(3).type,'()')
-% %                         % Implement this(indices).PropertyName(indices) = varargin{:};
-% %                         ...
-% %                     else
-% %                         % Use built-in for any other expression
-% %                         this = builtin('subsasgn',this,s,varargin);
-% %                     end         
-%                 case '{}'
-%                     this = builtin('subsasgn', this, s, varargin{:});
-% %                     if length(s) == 1
-% %                         % Implement this{indices} = varargin{:}
-% %                         ...
-% %                     elseif length(s) == 2 && strcmp(s(2).type,'.')
-% %                         % Implement this{indices}.PropertyName = varargin{:}
-% %                         ...
-% %                         % Use built-in for any other expression
-% %                         this = builtin('subsasgn',this,s,varargin);
-% %                     end
-%                 otherwise
-%                     error('Not a valid indexing expression')
-%             end
-%         end
+        function ff = fullfile(this, varargin)
+            %% FULLFILE returns the full filepath of this trial
+            
+            
+            ff = fullfile(this.Path, varargin{:});
+            
+        end
         
     end
     
@@ -261,11 +187,24 @@ classdef project < handle & matlab.mixin.Heterogeneous
             esSessions = exps.session.empty(0, 1);
             % Loop over each session folder and make a session object for it
             for iSession = 1:numel(vSessionDirs)
-                esSessions(iSession) = exps.session(vSessionDirs(iSession).name, this);
+                esSessions(iSession) = exps.session(vSessionDirs(iSession).name, 'Project', this);
             end
             
             % And assign output quantitiy
             s = esSessions;
+            
+        end
+        
+        
+        function n = infer_name(this)
+            %% INFER_NAME infers the name of the project from the path
+            
+            
+            % Get the folder name
+            [~, n, ~] = fileparts(this.Path);
+            
+            % And now make it a valid 'experimental manager' folder name
+            n = exps.manager.valid_name(n);
             
         end
         

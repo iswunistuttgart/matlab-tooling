@@ -55,6 +55,27 @@ classdef manager < handle
             
         end
         
+        
+        function name = valid_name(name)
+            %% VALID_NAME turns the given name to a valid experimental folder name
+            
+            
+            persistent ceInvalidChars
+            if isempty(ceInvalidChars)
+                ceInvalidChars = '[^a-zA-Z_0-9\-\ ]';
+            end
+            
+            % Delete all invalid characters
+            name = regexprep(name, ceInvalidChars, '');
+            
+            % Replace whitespace by hyphen
+            name = strrep(name, ' ', '-');
+            
+            % Lastly, lowercase everything
+            name = lower(name);
+            
+        end
+        
     end
     
     
@@ -209,6 +230,7 @@ classdef manager < handle
                 % Find project
                 p = this.find(name);
                 
+                % Get path
                 p = p.Path;
             catch me
                 throwAsCaller(me);

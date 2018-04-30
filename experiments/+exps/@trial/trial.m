@@ -2,6 +2,7 @@ classdef trial < handle & matlab.mixin.Heterogeneous
     % TRIAL An experimental trial object containing information on all files
     
     
+    %% PUBLIC PROPERTIES
     properties
         
         % Name of the trial
@@ -22,9 +23,13 @@ classdef trial < handle & matlab.mixin.Heterogeneous
         % Path to the Input file
         Input
         
+        % Corresponding parent session object for the trial
+        Session@exps.session
+        
     end
     
     
+    %% PUBLIC DEPENDENT PROPERTIES
     properties ( Dependent )
         
         % Path to the trial's folder
@@ -43,22 +48,19 @@ classdef trial < handle & matlab.mixin.Heterogeneous
     end
     
     
-    properties ( SetAccess = immutable )
-        
-        % Corresponding parent session object for the trial
-        Session@exps.session
-        
-    end
-    
-    
+    %% HIDDEN PROPERTIES
     properties ( Constant , Hidden )
         
+        % Extension of images to find automatically
         ImageExtensions = {'cr2', 'png', 'jpeg', 'jpg', 'tiff'}
         
+        % Extensions of videos to find automatically
         VideoExtensions = {'mp4', 'mov', 'mpg', 'mpeg', 'mkv'}
         
+        % Name of the file containing the scope data (i.e., recorded data)
         ScopeName = 'scope'
         
+        % Name of the file providing the input to the experiment
         InputName = 'input'
         
     end
@@ -68,17 +70,21 @@ classdef trial < handle & matlab.mixin.Heterogeneous
     %% GENERAL METHODS
     methods
         
-        function this = trial(name, sess)
+        function this = trial(name, varargin)
             
             
             % Validate arguments
             try
-                narginchk(2, 2);
+                % TRIAL(NAME)
+                % TRIAL(NAME, 'Name', 'Value', ...);
+                narginchk(1, Inf);
                 
+                % TRIAL(NAME, ...)
+                % T = TRIAL(NAME, ...)
                 nargoutchk(0, 1);
                 
+                % Validate the name
                 validateattributes(name, {'char'}, {'nonempty'}, mfilename, 'name');
-                validateattributes(sess, {'exps.session'}, {'nonempty'}, mfilename, 'sess');
             catch me
                 throwAsCaller(me);
             end
@@ -86,8 +92,10 @@ classdef trial < handle & matlab.mixin.Heterogeneous
             % Assign the name
             this.Name = name;
             
-            % Assign the parent session
-            this.Session = sess;
+            % Assign variable list of arguments
+            for iArg = 1:2:numel(varargin)
+                this.(varargin{iArg}) = varargin{iArg + 1};
+            end
             
             % Get all media files
             this.Media = dir(fullfile(this.Path, 'media'));
@@ -142,7 +150,6 @@ classdef trial < handle & matlab.mixin.Heterogeneous
                 throwAsCaller(me);
             end
             
-            
             try
                 % Create this trials's folder
                 mkdir(this.Path);
@@ -173,7 +180,7 @@ classdef trial < handle & matlab.mixin.Heterogeneous
             %% GET.PATH creates the path for this project's session's folder name
             
             
-            p = fullfile(this.Session.Path, exps.manager.valid_name(this.Name));
+            p = fullfile(this.Session, exps.manager.valid_name(this.Name));
             
         end
         
@@ -201,6 +208,30 @@ classdef trial < handle & matlab.mixin.Heterogeneous
             
             
             p = this.Session.Project;
+            
+        end
+        
+    end
+    
+    
+    
+    %% OVERRIDERS
+    methods
+        
+        function p = path(this)
+            %% PATH returns the path of this trial
+            
+            
+            p = this.Path;
+            
+        end
+        
+        
+        function ff = fullfile(this, varargin)
+            %% FULLFILE returns the full filepath of this trial
+            
+            
+            ff = fullfile(this.Path, varargin{:});
             
         end
         
