@@ -205,6 +205,30 @@ classdef manager < handle
         end
         
         
+        function varargout = list(this, prop)
+            %% LIST the projects or a property of the projects
+            
+            
+            % Default property
+            if nargin < 2 || isempty(prop)
+                prop = 'Name';
+            end
+            
+            try
+                % Return output?
+                if nargout > 0
+                    varargout{1} = {this.Projects.(prop)};
+                % Directly display output
+                else
+                    display({this.Projects.(prop)});
+                end
+            catch me
+                throwAsCaller(me);
+            end
+            
+        end
+        
+        
         function go(this, name)
             %% GO to a project's folder
             
@@ -227,11 +251,8 @@ classdef manager < handle
             
             
             try
-                % Find project
-                p = this.find(name);
-                
-                % Get path
-                p = p.Path;
+                % Find project and get path of it
+                p = path(this.find(name));
             catch me
                 throwAsCaller(me);
             end
