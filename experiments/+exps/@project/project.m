@@ -1,6 +1,8 @@
 classdef project < handle & matlab.mixin.Heterogeneous
     % PROJECT is an experimental project object
     
+    
+    %% PUBLIC PROPERTIES
     properties
         
         % Name of the project
@@ -10,12 +12,22 @@ classdef project < handle & matlab.mixin.Heterogeneous
         Path
         
         % All sessions found for the project
-        Session@exps.session = exps.session.empty(0, 1)
+        Session@exps.session = exps.session.empty(1, 0);
         
     end
     
     
+    %% PUBLIC DEPENDENT PROPERTIES
     properties ( Dependent )
+        
+        % Config of the project
+        Config
+        
+        % Path to the config file
+        ConfigPath
+        
+        % Flag if there is a config file of this project
+        HasConfig
         
         % Number of project sessions
         NSession
@@ -71,9 +83,6 @@ classdef project < handle & matlab.mixin.Heterogeneous
                 this.Name = this.infer_name();
             end
             
-            % Find all sessions
-            this.Session = this.search_sessions();
-            
         end
         
         
@@ -101,12 +110,86 @@ classdef project < handle & matlab.mixin.Heterogeneous
             
         end
         
+        
+        function c = load_config(this)
+            %% LOAD_CONFIG loads the project's config file
+            
+            
+            % Load only if there is a config file
+            if this.HasConfig
+                % Load the file
+                c = load(this.ConfigPath);
+            % No config file exists
+            else
+                % so set an empty structure
+                c = struct();
+            end
+            
+            % Set config
+            this.Config = c;
+            
+        end
+        
+        
+        function save_config(this)
+            %% SAVE_CONFIG saves the project's config to a file
+            
+            
+            % Continue only if the config really is a struct
+            if isa(this.Config, 'struct')
+                % Get the config
+                c = this.Config;
+                
+                % Save the structure as separate variables
+                save(this.ConfigPath, '-struct', 'c');
+                
+                % Clear memory
+                clear('c');
+            end
+            
+        end
+        
     end
     
     
     
     %% GETTERS
     methods
+        
+        function c = get.Config(this)
+            %% GET.CONFIG gets the config
+            
+            
+            % If there is a config file...
+            if this.HasConfig
+                % Load it
+                c = load(this.ConfigPath);
+            % No config file exists
+            else
+                % Default to an empty structure
+                c = struct();
+            end
+            
+        end
+        
+        
+        function p = get.ConfigPath(this)
+            %% GET.CONFIGPATH gets the path to the config file of this project
+            
+            
+            p = fullfile(this.Path, 'config.mat');
+            
+        end
+        
+        
+        function f = get.HasConfig(this)
+            %% GET.HASCONFIG flags if there is a config MAT file for this project
+            
+            
+            f = 2 == exist(this.ConfigPath, 'file');
+            
+        end
+        
         
         function n = get.NSession(this)
             %% GET.NSESSION counts the number of sessions
@@ -122,6 +205,10 @@ classdef project < handle & matlab.mixin.Heterogeneous
             
             
             t = horzcat(this.Session.Trial);
+            
+            if isempty(t)
+                t = exps.trial.empty(1, 0);
+            end
             
         end
         
@@ -150,6 +237,23 @@ classdef project < handle & matlab.mixin.Heterogeneous
     %% SETTERS
     methods
         
+        function set.Config(this, c)
+            %% SET.CONFIG sets the config for this object
+            
+            
+            % Validate arguments
+            try
+                validateattributes(c, {'struct'}, {}, mfilename, 'Config');
+            catch me
+                throwAsCaller(me);
+            end
+            
+            % And save the config
+            save(this.ConfigPath, '-struct', 'c'); %#ok<MCSUP>
+            
+        end
+        
+        
         function set.Session(this, sess)
             %% SET.SESSION ensures each session knows about its parent project
             
@@ -162,6 +266,7 @@ classdef project < handle & matlab.mixin.Heterogeneous
             
             % And set the property
             this.Session = sess;
+            
         end
         
     end
@@ -193,25 +298,7 @@ classdef project < handle & matlab.mixin.Heterogeneous
     
     
     %% PROTECTED METHODS
-    methods
-        
-        function s = search_sessions(this)
-            
-            % Get all directories inside the project's path
-            vSessionDirs = alldirs(this.Path);
-            % Homogenous mixing of session objects
-%             esSessions = zeros(0, 1, 'like', @session);
-            esSessions = exps.session.empty(0, 1);
-            % Loop over each session folder and make a session object for it
-            for iSession = 1:numel(vSessionDirs)
-                esSessions(iSession) = exps.session(vSessionDirs(iSession).name, 'Project', this);
-            end
-            
-            % And assign output quantitiy
-            s = esSessions;
-            
-        end
-        
+    methods ( Access = protected )
         
         function n = infer_name(this)
             %% INFER_NAME infers the name of the project from the path
@@ -224,6 +311,24 @@ classdef project < handle & matlab.mixin.Heterogeneous
             n = exps.manager.valid_name(n);
             
         end
+        
+        
+%         function s = search_sessions(this)
+%             
+%             % Get all directories inside the project's path
+%             vSessionDirs = alldirs(this.Path);
+%             % Homogenous mixing of session objects
+% %             esSessions = zeros(0, 1, 'like', @session);
+%             esSessions = exps.session.empty(0, 1);
+%             % Loop over each session folder and make a session object for it
+%             for iSession = 1:numel(vSessionDirs)
+%                 esSessions(iSession) = exps.session(vSessionDirs(iSession).name, 'Project', this);
+%             end
+%             
+%             % And assign output quantitiy
+%             s = esSessions;
+%             
+%         end
         
     end
     
