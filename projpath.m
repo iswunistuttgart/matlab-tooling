@@ -1,5 +1,5 @@
-function p = pathdef()
-% PATHDEF returns the path definiton for this project
+function p = projpath()
+% PROJPATH returns the path definiton for this project
 %
 %   Outputs:
 %
