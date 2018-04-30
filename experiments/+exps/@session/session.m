@@ -251,24 +251,6 @@ classdef session < handle & matlab.mixin.Heterogeneous
     %% PROTECTED METHODS
     methods ( Access = protected )
         
-%         function t = search_trials(this)
-%             %% SEARCH_TRIALS searches for all trials inside the current session folder path
-%             
-%             
-%             % Get all directories inside the sessions's path
-%             vTrialDirs = alldirs(this.Path);
-%             % Homogenous mixing of session objects
-%             esTrials = exps.trial.empty(0, 1);
-%             % Loop over each session folder and make a session object for it
-%             for iTrial = 1:numel(vTrialDirs)
-%                 esTrials(iTrial) = exps.trial(vTrialDirs(iTrial).name, 'Session', this);
-%             end
-%             
-%             % And assign output quantitiy
-%             t = esTrials;
-%             
-%         end
-        
     end
     
 end

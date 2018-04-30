@@ -312,24 +312,6 @@ classdef project < handle & matlab.mixin.Heterogeneous
             
         end
         
-        
-%         function s = search_sessions(this)
-%             
-%             % Get all directories inside the project's path
-%             vSessionDirs = alldirs(this.Path);
-%             % Homogenous mixing of session objects
-% %             esSessions = zeros(0, 1, 'like', @session);
-%             esSessions = exps.session.empty(0, 1);
-%             % Loop over each session folder and make a session object for it
-%             for iSession = 1:numel(vSessionDirs)
-%                 esSessions(iSession) = exps.session(vSessionDirs(iSession).name, 'Project', this);
-%             end
-%             
-%             % And assign output quantitiy
-%             s = esSessions;
-%             
-%         end
-        
     end
     
 end
