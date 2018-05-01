@@ -371,6 +371,63 @@ classdef trial < handle & matlab.mixin.Heterogeneous
         end
         
         
+        function flag = isequal(this, that)
+            %% ISEQUAL compares THIS and THAT to be the same project
+            
+            
+            flag = strcmpi({this.Path}, {that.Path});
+            
+        end
+        
+        
+        function flag = isequaln(this, that)
+            %% ISEQUALN compares THIS and THAT to be the same project
+            
+            
+            flag = strcmpi({this.Path}, {that.Path});
+            
+        end
+        
+        
+        function flag = eq(this, that)
+            %% EQ compares if two PROJECT objects are the same
+            
+            
+            flag = strcmpi({this.Path}, {that.Path});
+            
+        end
+        
+        
+        function flag = neq(this, that)
+            %% NEQ compares if two PROJECT objects are not the same
+            
+            
+            flag = ~strcmpi({this.Path}, {that.Path});
+            
+        end
+        
+        
+        function c = char(this)
+            %% CHAR convers this object to a char
+            
+            
+            % Allow multiple arguments to be passed
+            if numel(this) > 1
+                c = {this.Name};
+            % Single argument passed, so just get its name
+            else
+                c = this.Name;
+            end
+            
+        end
+        
+    end
+    
+    
+    
+    %% PROTECTED METHODS
+    methods ( Access = protected )
+        
         function fil = filter_media(this, exts)
             %% FILTER_MEDIA filters the media by the given extension filter
             
@@ -385,13 +442,6 @@ classdef trial < handle & matlab.mixin.Heterogeneous
             fil = m(~cellfun(@isempty, regexpi({m.name}, chRegexp)));
             
         end
-        
-    end
-    
-    
-    
-    %% PROTECTED METHODS
-    methods ( Access = protected )
         
     end
     

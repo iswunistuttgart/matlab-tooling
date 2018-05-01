@@ -297,6 +297,67 @@ classdef manager < handle
     
     
     
+    %% SETTERS
+    methods
+        
+        function set.Projects(this, ps)
+            %% SET.PROJECTS validates the projects
+            
+            
+            % These will be our unique projects
+            P = exps.project.empty(1, 0);
+            ii = 1;
+            
+            % Loop over each item of this
+            while numel(ps)
+                % Pop the current object off of O
+                proj = ps(1);
+                ps(1) = [];
+                
+                % Find projects with matching paths
+                loMatches = proj == ps;
+                
+                % If there are no other matching paths, then we this project is
+                % unique
+                if ~any(loMatches)
+                    P = horzcat(P, proj);
+                % There are other objects that point to the same path so we will
+                % merge them
+                else
+                    % Convert the logical values to linear indexes
+                    idxMatches = find(loMatches);
+                    
+                    % Get the config
+                    stConfig = proj.Config;
+                    
+                    % Loop over each match and merge the config
+                    for iMatch = 1:numel(idxMatches)
+                        stConfig = mergestructs(stConfig, ps(idxMatches(iMatch)).Config);
+                    end
+                    
+                    % Set the updated config
+                    proj.Config = stConfig;
+                    
+                    % Append the unique array
+                    P = horzcat(P, proj);
+                    
+                    % And now remove all the projects that were a match
+                    ps(loMatches) = [];
+                end
+                
+                % Increase loop counter
+                ii = ii + 1;
+            end
+            
+            % Set the cleaned array of projects
+            this.Projects = P;
+            
+        end
+        
+    end
+    
+    
+    
     %% PROTECTED METHODS
     methods ( Access = protected )
         

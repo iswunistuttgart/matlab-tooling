@@ -23,7 +23,6 @@ classdef session < handle & matlab.mixin.Heterogeneous
         % Config of the project
         Config
         
-        
         % Path to the config file
         ConfigPath
         
@@ -209,14 +208,61 @@ classdef session < handle & matlab.mixin.Heterogeneous
             %% SET.TRIAL ensures each trial knows about its parent session
             
             
+            % First, make sure we don't have any duplicate sessions
+            
+            % These will be our unique projects
+            T = exps.session.empty(1, 0);
+            ii = 1;
+            
+            % Loop over each item of this
+            while numel(trial)
+                % Pop the current object off of O
+                proj = trial(1);
+                trial(1) = [];
+                
+                % Find projects with matching paths
+                loMatches = proj == trial;
+                
+                % If there are no other matching paths, then we this project is
+                % unique
+                if ~any(loMatches)
+                    T = horzcat(T, proj);
+                % There are other objects that point to the same path so we will
+                % merge them
+                else
+                    % Convert the logical values to linear indexes
+                    idxMatches = find(loMatches);
+                    
+                    % Get the config
+                    stConfig = proj.Config;
+                    
+                    % Loop over each match and merge the config
+                    for iMatch = 1:numel(idxMatches)
+                        stConfig = mergestructs(stConfig, trial(idxMatches(iMatch)).Config);
+                    end
+                    
+                    % Set the updated config
+                    proj.Config = stConfig;
+                    
+                    % Append the unique array
+                    T = horzcat(T, proj);
+                    
+                    % And now remove all the projects that were a match
+                    trial(loMatches) = [];
+                end
+                
+                % Increase loop counter
+                ii = ii + 1;
+            end
+            
             % Loop over each trial
-            for iTrial = 1:numel(trial)
+            for iTrial = 1:numel(T)
                 % And set this session to be the trial's parent
-                trial(iTrial).Session = this;
+                T(iTrial).Session = this;
             end
             
             % And set the property
-            this.Trial = trial;
+            this.Trial = T;
             
         end
         
@@ -241,6 +287,57 @@ classdef session < handle & matlab.mixin.Heterogeneous
             
             
             ff = fullfile(this.Path, varargin{:});
+            
+        end
+        
+        
+        function flag = isequal(this, that)
+            %% ISEQUAL compares THIS and THAT to be the same project
+            
+            
+            flag = strcmpi({this.Path}, {that.Path});
+            
+        end
+        
+        
+        function flag = isequaln(this, that)
+            %% ISEQUALN compares THIS and THAT to be the same project
+            
+            
+            flag = strcmpi({this.Path}, {that.Path});
+            
+        end
+        
+        
+        function flag = eq(this, that)
+            %% EQ compares if two PROJECT objects are the same
+            
+            
+            flag = strcmpi({this.Path}, {that.Path});
+            
+        end
+        
+        
+        function flag = neq(this, that)
+            %% NEQ compares if two PROJECT objects are not the same
+            
+            
+            flag = ~strcmpi({this.Path}, {that.Path});
+            
+        end
+        
+        
+        function c = char(this)
+            %% CHAR convers this object to a char
+            
+            
+            % Allow multiple arguments to be passed
+            if numel(this) > 1
+                c = {this.Name};
+            % Single argument passed, so just get its name
+            else
+                c = this.Name;
+            end
             
         end
         
