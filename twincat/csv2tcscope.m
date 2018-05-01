@@ -1,4 +1,4 @@
-function tcs = csv2tcsope(File, varargin)
+function tcs = csv2tcscope(File, varargin)
 % CSV2TCSCOPE converts a TwinCat CSV scope file to a TCSCOPE object
 %
 %   TCS = CSV2TCSCOPE(FILENAME) imports the TwinCat scope data CSV from file
