@@ -211,7 +211,7 @@ classdef session < handle & matlab.mixin.Heterogeneous
             % First, make sure we don't have any duplicate sessions
             
             % These will be our unique projects
-            T = exps.session.empty(1, 0);
+            T = exps.trial.empty(1, 0);
             ii = 1;
             
             % Loop over each item of this
