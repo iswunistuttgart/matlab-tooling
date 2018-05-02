@@ -330,13 +330,22 @@ classdef manager < handle
                     % Get the config
                     stConfig = proj.Config;
                     
-                    % Loop over each match and merge the config
+                    % We will also merge the sessions
+                    vSessions = proj.Session;
+                    
+                    % Loop over each match...
                     for iMatch = 1:numel(idxMatches)
+                        % Merge configs
                         stConfig = mergestructs(stConfig, ps(idxMatches(iMatch)).Config);
+                        % Merge sessions
+                        vSessions = horzcat(vSessions, ps(idxMatches(iMatch)).Session);
                     end
                     
                     % Set the updated config
                     proj.Config = stConfig;
+                    % And set the updated session (this will automatically be
+                    % cleaned by exps.session.set.Session)
+                    proj.Session = vSessions;
                     
                     % Append the unique array
                     P = horzcat(P, proj);
