@@ -15,8 +15,11 @@ function AF = abspath(varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-05-02
+% Date: 2018-05-03
 % Changelog:
+%   2018-05-03
+%       * Fix function not returning the canonical path if an absolute path with
+%       traversing i.e., '..', was given
 %   2018-05-02
 %       * Initial release
 
@@ -74,8 +77,11 @@ F = java.io.File(f);
 % If the path isn't already absolute, we need to prepend the current working
 % directory
 if ~F.isAbsolute()
-    f = java.io.File(fullfile(pwd, f)).getCanonicalPath();
+    F = java.io.File(fullfile(pwd, f));
 end
+
+% And get the canonical path
+f = char(F.getCanonicalPath());
 
 
 end
