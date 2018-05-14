@@ -16,7 +16,15 @@ function startup()
 
 %% Do your code magic here
 
+% Set random number generator to a set or pre-defined options
 setrng()
+
+% Copy all ExportSetup files to where MATLAB will look for them
+try
+    copyfile(fullfile(fileparts(mfilename('fullpath')), 'plot', 'ExportSetup', '*.txt'), fullfile(prefdir(0), 'ExportSetup'));
+catch me
+    warning(me.identifier, '%s', me.message);
+end
 
 
 end
