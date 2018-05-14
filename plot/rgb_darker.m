@@ -22,8 +22,10 @@ function darker = rgb_darker(rgb, factor, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-08-01
+% Date: 2018-05-14
 % Changelog:
+%   2018-05-14
+%       * Remove `fix` to keep original precision
 %   2017-08-01
 %       * Add option 'AsInteger' to allow returning the darker RGB as integer
 %       values
@@ -77,7 +79,7 @@ chAsInteger = parseswitcharg(ip.Results.AsInteger);
 %% Do your code magic here
 
 % Turn the RGB value darker
-darker = fix(aRgb.*(1 - dFactor)*100)/100;
+darker = aRgb.*(1 - dFactor);
 
 % Turn floats into integers as requested by the user
 if strcmp(chAsInteger, 'on')
