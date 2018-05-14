@@ -1,0 +1,34 @@
+function p = projpath()
+% PROJPATH returns this project's paths for MATLAB search path
+%
+%   Outputs:
+%
+%   P                   1xN cell array of paths needed to be added to MATLAB's
+%                       search path
+
+
+
+%% File information
+% Author: {{AUTHOR}}
+% Date: {{DATE}}
+% Changelog:
+%   {{DATE}}
+%       * Initial release
+
+
+
+%% Build all paths
+
+chPath = fileparts(fullfile(mfilename('fullpath')));
+
+p = { ...
+    chPath ...
+};
+
+
+end
+
+%------------- END OF CODE --------------
+% Please send suggestions for improvement of this file to the original author as
+% can be found in the header Your contribution towards improving this function
+% will be acknowledged in the "Changes" section of the header

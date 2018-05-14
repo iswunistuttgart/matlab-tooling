@@ -13,33 +13,48 @@ function funcnew(Name, varargin)
 %
 %   Inputs:
 %
-%   NAME:   Name of the function. Can also be a fully qualified file name from
-%           which the function name will then be extracted.
+%   NAME:               Name of the function. Can also be a fully qualified file
+%                       name from which the function name will then be
+%                       extracted.
 %
-%   ARGIN:  Cell array of input variable names. If empty, function will not take
-%           any arguments. Placeholder 'varargin' can be used by liking. Note
-%           that, any variable name occuring after 'varargin' will be striped.
+%   ARGIN:              Cell array of input variable names. If empty, function
+%                       will not take any arguments. Placeholder 'varargin' can
+%                       be used by liking. Note that, any variable name occuring
+%                       after 'varargin' will be striped.
 %
-%   ARGOUT: Cell array of output variable names. If empty i.e., {}, function
-%           will not return any arguments. Placeholder 'varargout' may be used
-%           by requirement. Note that, any variable name occuring after
-%           'varargout' will be striped.
+%   ARGOUT              Cell array of output variable names. If empty i.e., {},
+%                       function will not return any arguments. Placeholder
+%                       'varargout' may be used by requirement. Note that, any
+%                       variable name occuring after 'varargout' will be
+%                       striped.
 %
 %   Optional Inputs -- specified as parameter value pairs
-%   Author      Author string to be set. Most preferable you'd use something
-%               like
-%               'Firstname Lastname <author-email@example.com>'
+%
+%   Author          Author string to be set. Most preferable you'd use something
+%                   like
+%                   'Firstname Lastname <author-email@example.com>'
 %   
-%   Description Description of function which is usually the first line after
-%               the function declaration and contains the function name in all
-%               caps.
+%   Description     Description of function which is usually the first line
+%                   after the function declaration and contains the function
+%                   name in all caps.
+%
+%   Templtae        Path to a template file that should be used instead of the
+%                   default `functiontemplate.mtpl` found in this function's
+%                   root directory.
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-03-05
+% Date: 2018-05-14
 % Changelog:
+%   2018-05-14
+%       * A custom defined template file path can be given now, too
+%       * Additionally, if no custom template file path was givent, a file
+%       template matching the target function name will be searched and used if
+%       found. For example, if a function called `myfun` was to be created, we
+%       look for a file called `myfun.mtpl` somewhere on the MATLAB path and load
+%       this instead of `functiontemplate.mtpl`
 %   2017-03-05
 %       * Really fix incorrcet determination of the next major column depending
 %       on the length of the input arguments and dividable by 4
@@ -115,12 +130,25 @@ addParameter(ip, 'Silent', 'off', valFcn_Silent);
 valFcn_Overwrite = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no'}, mfilename, 'Overwrite'));
 addParameter(ip, 'Overwrite', 'off', valFcn_Overwrite);
 
+% Template: Char; non-empty
+valFcn_Template = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Template');
+addParameter(ip, 'Template', '', valFcn_Template);
+
 % Configuration of input parser
 ip.KeepUnmatched = true;
 ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
+    % FUNCNEW(NAME)
+    % FUNCNEW(NAME, IN)
+    % FUNCNEW(NAME, IN, OUT)
+    % FUNCNEW(NAME, IN, OUT, 'Name', 'Value', ...)
+    narginchk(1, Inf);
+    
+    % FUNCNEW(...)
+    nargoutchk(0, 0);
+    
     args = [{Name}, varargin];
     
     parse(ip, args{:});
@@ -157,10 +185,21 @@ chAuthor = ip.Results.Author;
 chSilent = parseswitcharg(ip.Results.Silent);
 % Overwrite existing?
 chOverwrite = parseswitcharg(ip.Results.Overwrite);
+% Path to template file
+chTemplate = ip.Results.Template;
 
 %%% Local variables
-% Path to function template file
-chTemplateFilepath = fullfile(fileparts(mfilename('fullpath')), 'functiontemplate.mtpl');
+% No templtae file given?
+if isempty(chTemplate)
+    % Check if a template for this function name exists
+    if 2 == exist(sprintf('%s.mtpl', chFunction_Name), 'file')
+        % Get the fully qualified file path to the function template name
+        chTemplateFilepath = which(sprintf('%s.mtpl', chFunction_Name));
+    else
+        % Then use the default function template
+        chTemplateFilepath = fullfile(fileparts(mfilename('fullpath')), 'functiontemplate.mtpl');
+    end
+end
 % Date of creation of the file
 chDate = datestr(now, 'yyyy-mm-dd');
 % Target file path
