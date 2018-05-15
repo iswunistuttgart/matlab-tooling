@@ -1,0 +1,9 @@
+mirror2github:
+  stage: deploy
+  script:
+    - git push --mirror https://${CI_GITHUB_USERNAME}:${CI_GITHUB_PASSWORD}@github.com/iswunistuttgart/matlab-tooling.git
+  tags:
+    - shell
+    - linux
+  only:
+    - master
