@@ -39,8 +39,11 @@ function [varargout] = ruler(Axis, Position, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-11-21
+% Date: 2018-05-16
 % Changelog:
+%   2018-05-16
+%       * Remove optional argument 'LineSpec' which screwed up unmatched
+%       argument processing
 %   2017-11-21
 %       * Fix error in processing unmatched input parser arguments if there were
 %       none given
@@ -67,10 +70,6 @@ addRequired(ip, 'Axis', valFcn_Axis);
 % Allow the plot to have user-defined spec
 valFcn_Position = @(x) validateattributes(x, {'double'}, {'vector', 'nonempty'}, mfilename, 'Position');
 addRequired(ip, 'Position', valFcn_Position);
-
-% Some style spec for the home position to plot?
-valFcn_LineSpec = @(x) validateattributes(x, {'cell', 'numeric'}, {'nonempty'}, mfilename, 'LineSpec');
-addOptional(ip, 'LineSpec', {}, valFcn_LineSpec);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
