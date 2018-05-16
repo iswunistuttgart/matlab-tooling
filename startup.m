@@ -21,7 +21,7 @@ setrng()
 
 % Copy all ExportSetup files to where MATLAB will look for them
 try
-    copyfile(fullfile(fileparts(mfilename('fullpath')), 'plot', 'ExportSetup', '*.txt'), fullfile(prefdir(0), 'ExportSetup'));
+    copyfile(fullfile(fileparts(mfilename('fullpath')), 'plotstyles', '*.txt'), fullfile(prefdir(0), 'ExportSetup'));
 catch me
     warning(me.identifier, '%s', me.message);
 end
