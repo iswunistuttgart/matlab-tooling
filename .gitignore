@@ -2,6 +2,7 @@
 wiki/
 *.wiki/
 temp/*
+plotstyles/.installed
 
 # Worktree folders
 wt-*
