@@ -47,11 +47,13 @@ function success = pack_files_and_dependencies(Files, Target, varargin)
 %% File information
 % Author: Christoph Hinze <christoph.hinze@isw.uni-stuttgart.de>
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2015-11-19
+% Date: 2018-05-19
 % Todo:
 %   * Scan source code of files for keywords like LOAD, TEXTREAD or FOPEN, this
 %   still has to be done manually.
 % Changelog:
+%   2018-05-19
+%       * Add `narginchk` and `nargoutchk`
 %   2017-08-31
 %       * Introduce input parser for input parsing
 %       * Turn argument 'bGenerateMatlabDepList' into 'DependenciesList' and
@@ -118,6 +120,12 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
+    % PACK_FILES_AND_DEPENDENCIES(FILES, TARGET)
+    % PACK_FILES_AND_DEPENDENCIES(FILES, TARGET, 'Name', 'Value', ...)
+    narginchk(2, Inf);
+    % PACK_FILES_AND_DEPENDENCIES(FILES, TARGET)
+    nargoutchk(0, 0);
+    
     args = [{Files}, {Target}, varargin];
     
     parse(ip, args{:});
@@ -150,6 +158,8 @@ loTargetExists = exist(chTargetDir, 'dir') == 7;
 if loTargetExists && ~isempty(allfiles(chTargetDir)) && ~strcmp('on', chOverwrite)
     chOverwrite = '';
     
+    % As long as the user isn't deciding on 'no' for overwriting the files, ask
+    % him/her what to do now
     while ~ ( strcmpi(chOverwrite, 'y') || strcmpi(chOverwrite, 'n') )
         chOverwrite = input('The specified target directory already exists. Nevertheless use this directory and override contents with the same name? (y/N) ', 's');
     end %while
@@ -194,12 +204,21 @@ end
 
 % Loop over all given files
 for iFile = 1:length(ceFiles)
-   if ~copyfile(ceFiles{iFile}, chTargetDir, 'f')
-      warning('ISWUNISTUTTGART:MATLAB_TOOLBOX:PACKFILESANDDEPENDENCIES:FileNotCopied', 'File %s could not be copied.', escapepath(ceFiles{iFile})); 
-   end
+    % Conver the file path to somethign that's understood for copying
+    [f, d] = path2copyable(ceFiles{iFile});
+    % If the target directory does not exist (in case of packages or classes
+    % possible)
+    if 7 ~= exist(fullfile(chTargetDir, d), 'dir')
+        % Create the target folder
+        mkdir(fullfile(chTargetDir, d));
+    end
+    % Now copy the file to its target directory
+    if ~copyfile(ceFiles{iFile}, fullfile(chTargetDir, d, f), 'f')
+        warning('ISWUNISTUTTGART:MATLAB_TOOLBOX:PACKFILESANDDEPENDENCIES:FileNotCopied', 'File %s could not be copied.', escapepath(ceFiles{iFile})); 
+    end
 end
 
-
+% Create a list of dependencies?
 if strcmp('on', chCreateDependenciesList)
     chDependenciesFile_Path = fullpath(fullfile(chTargetDir, chDependenciesFile));
     % Open the dependecies file
@@ -224,12 +243,92 @@ end
 % Get the last warning
 [~, chWarnID] = lastwarn;
 % Check if the last warning's ID was created by this function
-loSuccess = isempty(strfind(chWarnID, 'ISWUNISTUTTGART:MATLAB_TOOLBOX:PACKFILESANDDEPENDENCIES'));
+loSuccess = ~contains(chWarnID, 'ISWUNISTUTTGART:MATLAB_TOOLBOX:PACKFILESANDDEPENDENCIES');
 
 
 
 %% Assign output quantities
 success = loSuccess;
+
+
+end
+
+
+function [f, d] = path2copyable(p)
+%% PATH2COPYABLE converts a file path to something copyable
+%
+%   [F, D] = PATH2COPYABLE(P) converts the path P to a file into a filename F
+%   and a directory D that contains the given file. If filepath P points to a
+%   packaged or classed file, then D will be the directory necessary to create
+%   and F will be the target filename. If filepath P points to a file not within
+%   a package, D will be empty
+%
+%   Inputs
+%
+%   P                   Char of a file path to a file to inspect.
+%
+%   Outputs:
+%
+%   F                   Filename of the file to copy.
+%
+%   D                   Directory of the file in case it is inside a package or
+%                       is a class.
+
+
+
+%% File information
+% Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
+% Date: 2018-05-19
+% Changelog:
+%   2018-05-19
+%       * Initial release
+
+
+
+%% Process path
+
+try
+    % [F, D] = PATH2COPYABLE(P)
+    narginchk(1, 1);
+    % [F, D] = PATH2COPYABLE(P)
+    nargoutchk(2, 2);
+    
+    % Make sure P is a char array
+    validateattributes(p, {'char'}, {'nonempty'}, [mfilename , '/path2copyable'], 'p');
+    % And make sure P is a path to an existing file
+    assert(2 == exist(p, 'file'), 'File does not exist');
+catch me
+    throwAsCaller(me);
+end
+
+% Split the path into directory, filename, and extension
+[chFile_Path, chFile_Name, chFile_Ext] = fileparts(p);
+
+%%% Now we will need to inspect the file path
+% First, split the file path by the directory separator
+ceFile_PathComponents = strsplit(chFile_Path, filesep);
+% If the current path contains a class folder (starting with '@'), a package
+% folder (starting with '+'), or is inside a `private` function directory,
+% we need to remember that as we need to recreate this folder in the target
+% directory
+cePackagePath = ceFile_PathComponents(contains(ceFile_PathComponents, {'@', '+', 'private'}));
+
+% Now we have the relative path of the file i.e., both the final filename as
+% well as any class or package folder names above the file
+
+
+
+%% Assign output quantities
+% Build a valid directory name for the given file by concatenating all found
+% package and class folder path components
+if ~isempty(cePackagePath)
+    d = fullfile(cePackagePath{:});
+else
+    d = [];
+end
+
+% And the filename of what to copy
+f = [chFile_Name , chFile_Ext];
 
 
 end
