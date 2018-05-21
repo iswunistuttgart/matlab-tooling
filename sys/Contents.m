@@ -12,7 +12,6 @@
 %   focus_editor                - gives programmatic focus to the editor
 %   humansize                   - Default decimals
 %   iif                         - Allows conditionals in inline and anonymous functions
-%   install_styles              - installes all styles stored in `styles` into the user's
 %   isinpath                    - Checks whether the given path is part of MATLAB's environment path
 %   matlab_logo                 - 
 %   pack_files_and_dependencies - packs dependent files into one folder
