@@ -152,7 +152,7 @@ try
         
         % Write the files
         for iFile = 1:numel(vFiles)
-            fprintf(hFid, '  * <kbd>%s</kbd>: %s', vFiles(iFile).name, vFiles(iFile).desc);
+            fprintf(hFid, '  * `%s`: %s', vFiles(iFile).name, vFiles(iFile).desc);
             fprintf(hFid, newline());
         end
         
