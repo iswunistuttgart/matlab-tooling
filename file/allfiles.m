@@ -46,8 +46,10 @@ function Files = allfiles(d, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-04-10
+% Date: 2018-05-21
 % Changelog:
+%   2018-05-21
+%       * Fix incorrect passing of arguments to recursive call
 %   2018-04-10
 %       * Fix 'extension' handling by defaulting prefix and suffix to ''
 %   2018-01-22
@@ -147,6 +149,23 @@ chRecurse = parseswitcharg(ip.Results.Recurse);
 % Get all the files in the given directory
 stFiles = dir(chDir);
 
+% Build list of arguments for recursing
+if strcmp('on', chRecurse)
+    ceArgsRecurse = { ...
+        'IncludeHidden', chIncludeHidden ...
+        , 'Recurse', 'on' ...
+    };
+    if ~isempty(chExtension)
+        ceArgsRecurse = horzcat(ceArgsRecurse, 'Extension', chExtension);
+    end
+    if ~isempty(chPrefix)
+        ceArgsRecurse = horzcat(ceArgsRecurse, 'Prefix', chPrefix);
+    end
+    if ~isempty(chSuffix)
+        ceArgsRecurse = horzcat(ceArgsRecurse, 'Suffix', chSuffix);
+    end
+end
+
 % Proceed only from here on if there were any files found
 if ~isempty(stFiles)
     % Remove the system entries '.' and '..'
@@ -168,11 +187,7 @@ if ~isempty(stFiles)
         for iDir = 1:numel(idxDirs)
             % And merge with the files found in the subdirectory
             stFiles = vertcat(stFiles, allfiles(fullfile(chDir, stFiles(idxDirs(iDir)).name) ...
-                , 'Extension', chExtension ...
-                , 'Prefix', chPrefix ...
-                , 'Suffix', chSuffix ...
-                , 'IncludeHidden', chIncludeHidden ...
-                , 'Recurse', 'on' ...
+                , ceArgsRecurse{:} ...
             ));
         end
     end
