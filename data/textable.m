@@ -415,24 +415,24 @@ classdef textable < handle ...
                 if strcmp('on', this.TableEnv)
                     % Open the table
                     textable.open_env(hFid, 'table');
-                    fprintf(hFid, '\n');
+                    fprintf(hFid, newline());
                     
                     % Center table?
                     if strcmp('on', this.Centering)
                         textable.write_macro(hFid, 'centering');
-                        fprintf(hFid, '\n');
+                        fprintf(hFid, newline());
                     end
                     
                     % Write a caption?
                     if ~isempty(this.Caption)
                         textable.write_macro(hFid, 'caption', this.Caption);
-                        fprintf(hFid, '\n');
+                        fprintf(hFid, newline());
                     end
                     
                     % Write a label?
                     if ~isempty(this.Label)
                         textable.write_macro(hFid, 'label', this.Label);
-                        fprintf(hFid, '\n');
+                        fprintf(hFid, newline());
                     end
                 end
                 
@@ -534,7 +534,7 @@ classdef textable < handle ...
                         end
                     end
                     % Break line
-                    fprintf(hFid, '\n');
+                    fprintf(hFid, newline());
                     % Add additional spacing for the first column?
                     if loFirstColumn
                         fprintf(hFid, ' & ');
@@ -559,7 +559,7 @@ classdef textable < handle ...
                 end
                 
                 % New line
-                fprintf(hFid, '\n');
+                fprintf(hFid, newline());
                 
                 % Now we can add the data
                 for iData = 1:nRows
@@ -594,7 +594,7 @@ classdef textable < handle ...
                     % Switch to new line
                     if iData ~= nRows
                         % And newline
-                        fprintf(hFid, '\n');
+                        fprintf(hFid, newline());
                     end
                 end
                 
@@ -608,16 +608,16 @@ classdef textable < handle ...
                 end
                 
                 % And newline
-                fprintf(hFid, '\n');
+                fprintf(hFid, newline());
                 
                 % Close the tabular
                 textable.close_env(hFid, 'tabular');
-                fprintf(hFid, '\n');
+                fprintf(hFid, newline());
                 
                 % Close the table
                 if strcmp('on', this.TableEnv)
                     textable.close_env(hFid, 'table');
-                    fprintf(hFid, '\n');
+                    fprintf(hFid, newline());
                 end
                 
             catch me
