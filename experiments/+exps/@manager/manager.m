@@ -46,7 +46,7 @@ classdef manager < handle
             end
 
             % Build the filename
-            f = fullfile(userpath, sprintf('projects_%s.mat', matlab.lang.makeValidName(sid)));
+            f = fullfile(userpath, sprintf('experiments_%s.mat', matlab.lang.makeValidName(sid)));
             
         end
         
