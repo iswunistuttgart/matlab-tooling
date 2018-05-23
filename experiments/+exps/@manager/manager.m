@@ -30,18 +30,13 @@ classdef manager < handle
             %% FILENAME returns the computer aware filename of the projects file
             
             
-            % Call the system command `hostname` and check its result status
-            [dStatus, chComputername] = system('hostname');
-
-            % If the previous command call failed, we will need to infer the computer name
-            % from an environment variable
-            if dStatus ~= 0
-                % On windows
-                if ispc
-                    chComputername = getenv('COMPUTERNAME');
-                % On anything else
-                else      
-                    chComputername = getenv('HOSTNAME');
+            % @see https://undocumentedmatlab.com/blog/unique-computer-id
+            sid = '';
+            ni = java.net.NetworkInterface.getNetworkInterfaces;
+            while ni.hasMoreElements
+                addr = ni.nextElement.getHardwareAddress;
+                if ~isempty(addr)
+                    sid = [sid, '.', sprintf('%.2X', typecast(addr, 'uint8'))];
                 end
             end
             
@@ -51,7 +46,7 @@ classdef manager < handle
             end
 
             % Build the filename
-            f = fullfile(userpath, sprintf('experiments_%s.mat', matlab.lang.makeValidName(chComputername)));
+            f = fullfile(userpath, sprintf('projects_%s.mat', matlab.lang.makeValidName(sid)));
             
         end
         
