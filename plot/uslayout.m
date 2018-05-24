@@ -7,12 +7,11 @@ function varargout = uslayout(layout, varargin)
 %   USLAYOUT(HAX, LAYOUT) applies the layout to the given axes.
 %
 %   Usage:
-%       hf = figure();
-%       hax = axes('Parent', hf);
+%       figure();
 %       t = 0:0.1:10;
 %       plot(t, sin(t));
 %       hold('on');
-%       uslayout(hax, 'Zwei Inhalte');
+%       uslayout('Zwei Inhalte');
 %       hold('off');
 %
 %   Inputs:
@@ -40,8 +39,10 @@ function varargout = uslayout(layout, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-05-15
+% Date: 2018-05-24
 % Changelog:
+%   2018-05-24
+%       * Remove explicit creation of an axes handle in the usage example
 %   2018-05-15
 %       * Add all necessary layouts to this function
 %       * Add support for passing additional adjustment to the style through to
