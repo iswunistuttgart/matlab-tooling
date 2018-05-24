@@ -7,7 +7,8 @@ function varargout = uslayout(layout, varargin)
 %   USLAYOUT(HAX, LAYOUT) applies the layout to the given axes.
 %
 %   Usage:
-%       figure();
+%       hf = figure();
+%       hax = axes('Parent', hf);
 %       t = 0:0.1:10;
 %       plot(t, sin(t));
 %       hold('on');
