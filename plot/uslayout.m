@@ -34,13 +34,18 @@ function varargout = uslayout(layout, varargin)
 %                       '2 Text quer + 2 Bilder quer'
 %                       'Text + Eckige Bilder'
 %                       'Leer'
+%
+%   See also:
+%   USLINESTYLES
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-05-24
+% Date: 2018-05-25
 % Changelog:
+%   2018-05-25
+%       * Reference USLINESTYLES in help block
 %   2018-05-24
 %       * Remove explicit creation of an axes handle in the usage example
 %   2018-05-15
