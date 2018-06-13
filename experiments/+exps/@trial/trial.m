@@ -421,6 +421,19 @@ classdef trial < handle & matlab.mixin.Heterogeneous
             
         end
         
+        
+        function t = csv2tcscope(this)
+            %% CSV2TCSCOPE loads the scope CSV file for this object
+            
+            
+            try
+                t = csv2tcscope(this.ScopePath);
+            catch me
+                throwAsCaller(me);
+            end
+            
+        end
+        
     end
     
     
