@@ -88,6 +88,9 @@ classdef trial < handle & matlab.mixin.Heterogeneous
         % Extensions of videos to find automatically
         VideoExtensions = {'mp4', 'mov', 'mpg', 'mpeg', 'mkv'}
         
+        % Name of the file containing configuration data
+        ConfigName = 'config'
+        
         % Name of the file containing the scope data (i.e., recorded data)
         ScopeName = 'scope'
         
@@ -184,11 +187,29 @@ classdef trial < handle & matlab.mixin.Heterogeneous
         end
         
         
+        function f = get.HasConfig(this)
+            %% GET.HASCONFIG flags if there is a config or not
+            
+            
+            f = 2 == exist(this.ConfigPath, 'file');
+            
+        end
+        
+        
         function p = get.Path(this)
             %% GET.PATH creates the path for this project's session's folder name
             
             
             p = fullfile(this.Session, exps.manager.valid_name(this.Name));
+            
+        end
+        
+        
+        function p = get.ConfigPath(this)
+            %% GET.CONFIGPATH returns the path to the config file
+            
+            
+            p = fullfile(this, sprintf('%s.mat', this.ConfigName));
             
         end
         
