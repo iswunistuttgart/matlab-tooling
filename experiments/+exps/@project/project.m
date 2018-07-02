@@ -287,12 +287,12 @@ classdef project < handle & matlab.mixin.Heterogeneous
                     stConfig = proj.Config;
                     
                     % Store trials
-                    vTrials = proj.Trials;
+                    vTrials = proj.Trial;
                     
                     % Loop over each match and merge the config
                     for iMatch = 1:numel(idxMatches)
                         stConfig = mergestructs(stConfig, sess(idxMatches(iMatch)).Config);
-                        vTrials = horzcat(vTrials, proj(idxMatches(iMatch)).Trial);
+                        vTrials = horzcat(vTrials, sess(idxMatches(iMatch)).Trial);
                     end
                     
                     % Set the updated config
