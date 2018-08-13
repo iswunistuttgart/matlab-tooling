@@ -1,14 +1,16 @@
 %% RESTART executes a few functions to reset MATLAB workspace
 %
-%   Reset of the MATLAB workspace is done more ressource friendly than a
-%   ```clear all``` would be.
+%   Reset of the MATLAB workspace done more ressource friendly than a
+%   ```clear('all')``` is.
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-04-10
+% Date: 2018-08-11
 % Changelog:
+%   2018-08-11
+%       * Add file footer
 %   2018-04-10
 %       * Change function calls to parantheses syntax
 %   2017-08-04
@@ -49,3 +51,9 @@ end
 
 % For a clean start we will of course need a clean command window
 clc
+
+%------------- END OF CODE --------------
+% Please send suggestions for improvement of this file to the original
+% author as can be found in the header
+% Your contribution towards improving this function will be acknowledged in
+% the "Changes" section of the header
