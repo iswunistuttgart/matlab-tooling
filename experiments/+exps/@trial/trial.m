@@ -1,4 +1,5 @@
-classdef trial < handle & matlab.mixin.Heterogeneous
+classdef trial < handle ...
+        & matlab.mixin.Heterogeneous
     % TRIAL An experimental trial object containing information on all files
     
     
