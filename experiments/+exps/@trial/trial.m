@@ -136,16 +136,22 @@ classdef trial < handle ...
         end
         
         
-        function create(this)
+        function varargout = create(this)
             %% CREATE creates the folder structure for a new project
             
             
             try
-                % If the trial folder does not exist, create it
-                if ~this.Exists
-                    % Create this trials's folder
-                    mkdir(this.Path);
-                end
+                % CREATE(THIS)
+                narginchk(1, 1);
+                
+                % CREATE(THIS)
+                % SUCCESS = CREATE(THIS)
+                % [SUCCESS, MESSAGE] = CREATE(THIS)
+                % [SUCCESS, MESSAGE, MESSAGEID] = CREATE(THIS)
+                nargoutchk(0, 3);
+                
+                % Create this trials's folder
+                [loSuccess, chMessage, chMessageId] = mkdir(this.Path);
                 
                 % Create the 'media' directory
                 if 0 == exist(this.MediaPath, 'dir')
@@ -155,6 +161,27 @@ classdef trial < handle ...
                 % Here, we should copy all the files that are assigned to this
                 % new trial to the target trial's folder (i.e., media, scope,
                 % etc.)
+                
+                % Create each session
+                for iSess = 1:this.NSession
+                    this.Session(iSess).create();
+                end
+                
+                % Success logical
+                if nargout > 0
+                  varargout{1} = loSuccess;
+                end
+                
+                % Return message
+                if nargout > 1
+                  varargout{2} = chMessage;
+                end
+                
+                % Return message ID
+                if nargout > 2
+                  varargout{3} = chMessageId;
+                end
+                
             catch me
 %                 % Delete the directory i.e., 'cleanup'
 %                 rmdir(this.Path, 's');
@@ -384,6 +411,15 @@ classdef trial < handle ...
         end
         
         
+        function varargout = mkdir(this)
+            %% MKDIR creates the directory for this experimental trial
+            
+            
+            [varargout{1:nargout}] = this.create();
+            
+        end
+        
+        
         function ff = fullfile(this, varargin)
             %% FULLFILE returns the full filepath of this trial
             
@@ -396,8 +432,19 @@ classdef trial < handle ...
         function flag = isequal(this, that)
             %% ISEQUAL compares THIS and THAT to be the same project
             
-            
-            flag = strcmpi({this.Path}, {that.Path});
+            if isa(this, 'exps.trial') && isa(that, 'exps.trial')
+                flag = strcmpi({this.Path}, {that.Path});
+            else
+                if isa(this, 'char')
+                    chNeedle = this;
+                    ceHaystack = {that.Name};
+                elseif isa(that, 'char')
+                    chNeedle = that;
+                    ceHaystack = {this.Name};
+                end
+                
+                flag = strcmpi(chNeedle, ceHaystack);
+            end
             
         end
         
@@ -405,8 +452,19 @@ classdef trial < handle ...
         function flag = isequaln(this, that)
             %% ISEQUALN compares THIS and THAT to be the same project
             
-            
-            flag = strcmpi({this.Path}, {that.Path});
+            if isa(this, 'exps.trial') && isa(that, 'exps.trial')
+                flag = strcmpi({this.Path}, {that.Path});
+            else
+                if isa(this, 'char')
+                    chNeedle = this;
+                    ceHaystack = {that.Name};
+                elseif isa(that, 'char')
+                    chNeedle = that;
+                    ceHaystack = {this.Name};
+                end
+                
+                flag = strcmpi(chNeedle, ceHaystack);
+            end
             
         end
         
@@ -415,7 +473,19 @@ classdef trial < handle ...
             %% EQ compares if two PROJECT objects are the same
             
             
-            flag = strcmpi({this.Path}, {that.Path});
+            if isa(this, 'exps.trial') && isa(that, 'exps.trial')
+                flag = strcmpi({this.Path}, {that.Path});
+            else
+                if isa(this, 'char')
+                    chNeedle = this;
+                    ceHaystack = {that.Name};
+                elseif isa(that, 'char')
+                    chNeedle = that;
+                    ceHaystack = {this.Name};
+                end
+                
+                flag = strcmpi(chNeedle, ceHaystack);
+            end
             
         end
         
@@ -423,8 +493,19 @@ classdef trial < handle ...
         function flag = neq(this, that)
             %% NEQ compares if two PROJECT objects are not the same
             
-            
-            flag = ~strcmpi({this.Path}, {that.Path});
+            if isa(this, 'exps.trial') && isa(that, 'exps.trial')
+                flag = ~strcmpi({this.Path}, {that.Path});
+            else
+                if isa(this, 'char')
+                    chNeedle = this;
+                    ceHaystack = {that.Name};
+                elseif isa(that, 'char')
+                    chNeedle = that;
+                    ceHaystack = {this.Name};
+                end
+                
+                flag = ~strcmpi(chNeedle, ceHaystack);
+            end
             
         end
         

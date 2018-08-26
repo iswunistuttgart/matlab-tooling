@@ -79,21 +79,49 @@ classdef session < handle & matlab.mixin.Heterogeneous
         end
         
         
-        function create(this)
+        function varargout = create(this)
             %% CREATE creates the folder structure for a new session
             
             
             try
-                % If this session folder does not exist, create it
-                if ~this.Exists
-                    % Create this sessions's folder
-                    mkdir(this.Path);
-                end
+                % CREATE(THIS)
+                narginchk(1, 1);
+                
+                % CREATE(THIS)
+                % SUCCESS = CREATE(THIS)
+                % [SUCCESS, MESSAGE] = CREATE(THIS)
+                % [SUCCESS, MESSAGE, MESSAGEID] = CREATE(THIS)
+                nargoutchk(0, 3);
+                
+                
+                % Create this sessions's folder
+                [loSuccess, chMessage, chMessageId] = mkdir(this.Path);
                 
                 % Create each trial
                 for iTrial = 1:this.NTrial
                     this.Trial(iTrial).create();
                 end
+                
+                % Create each session
+                for iSess = 1:this.NSession
+                    this.Session(iSess).create();
+                end
+                
+                % Success logical
+                if nargout > 0
+                  varargout{1} = loSuccess;
+                end
+                
+                % Return message
+                if nargout > 1
+                  varargout{2} = chMessage;
+                end
+                
+                % Return message ID
+                if nargout > 2
+                  varargout{3} = chMessageId;
+                end
+                
             catch me
 %                 % Delete the directory i.e., 'cleanup'
 %                 rmdir(this.Path, 's');
@@ -273,6 +301,68 @@ classdef session < handle & matlab.mixin.Heterogeneous
     %% OVERRIDERS
     methods
         
+        function s = find(this, name)
+            %% FIND a single trial by name
+            
+            
+            try
+                % Find matching names
+                idxMatches = ismember({this.Trial.Name}, name);
+                
+                % Make sure we found any project
+                assert(any(idxMatches), 'PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:SESSION:FIND:TrialNotFound', 'Trial could not be found because it does not exist or names are too ambigious.');
+                
+                % And return the data
+                s = this.Trial(idxMatches);
+            catch me
+                % No match, so let's suggest projects based on their string
+                % distance
+                pclose = this.closest_trials(name);
+                
+                % Found similarly sounding trials?
+                if ~isempty(pclose)
+                    throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:SESSION:FIND:TrialNotFound', 'Trial could not be found. Did you maybe mean one of the following trials?\n%s', strjoin(arrayfun(@(pp) pp.Name, pclose, 'UniformOutput', false), '\n')), me));
+                else
+                    throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:SESSION:FIND:TrialNotFound', 'Trial could not be found. Make sure there is no typo in the name and that the trial exists.'), me));
+                end
+            end
+            
+        end
+        
+        
+        function varargout = mkdir(this)
+            %% MKDIR creates the directory for this experimental session
+            
+            
+            [varargout{1:nargout}] = this.create();
+            
+        end
+        
+        
+        function varargout = list(this, prop)
+            %% LIST sessions or a property of sessions
+            
+            
+            % Default property
+            if nargin < 2 || isempty(prop)
+                prop = 'Name';
+            end
+            
+            try
+                % Return output?
+                if nargout > 0
+                    varargout{1} = {this.Trial.(prop)};
+                % Directly display output
+                else
+                    disp({this.Trial.(prop)});
+                end
+            catch me
+                throwAsCaller(me);
+            end
+            
+        end
+        
+        
         function p = path(this)
             %% PATH returns the path of this project
             
@@ -347,6 +437,24 @@ classdef session < handle & matlab.mixin.Heterogeneous
     
     %% PROTECTED METHODS
     methods ( Access = protected )
+        
+        function ps = closest_trials(this, name)
+            %% CLOSEST_TRIALS finds trials with a name closest to the needle
+            
+            
+            % Get the distance between the needle and all other trials' names
+            dists = cellfun(@(n) exps.manager.strdist(name, n), {this.Trial.Name});
+            % Sort the distances from shortest to longest
+            [dists, sortidx] = sort(dists);
+            
+            % Now get all sessions whose name distance is smaller than 10 (some
+            % random/arbitrary value)
+            sortidx = sortidx(dists < 10);
+            
+            % And return these trials
+            ps = this.Trial(sortidx);
+            
+        end
         
     end
     

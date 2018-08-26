@@ -86,21 +86,43 @@ classdef project < handle & matlab.mixin.Heterogeneous
         end
         
         
-        function create(this)
+        function varargout = create(this)
             %% CREATE creates the folder structure for a new project
             
             
             try
-                % If this project folder does not exist, create it
-                if ~this.Exists
-                    % Create this project's folder
-                    mkdir(this.Path);
-                end
+                % CREATE(THIS)
+                narginchk(1, 1);
+                
+                % CREATE(THIS)
+                % SUCCESS = CREATE(THIS)
+                % [SUCCESS, MESSAGE] = CREATE(THIS)
+                % [SUCCESS, MESSAGE, MESSAGEID] = CREATE(THIS)
+                nargoutchk(0, 3);
+                
+                % Create this project's folder
+                [loSuccess, chMessage, chMessageId] = mkdir(this.Path);
                 
                 % Create each session
                 for iSess = 1:this.NSession
                     this.Session(iSess).create();
                 end
+                
+                % Success logical
+                if nargout > 0
+                  varargout{1} = loSuccess;
+                end
+                
+                % Return message
+                if nargout > 1
+                  varargout{2} = chMessage;
+                end
+                
+                % Return message ID
+                if nargout > 2
+                  varargout{3} = chMessageId;
+                end
+                
             catch me
 %                 % Delete the directory i.e., 'cleanup'
 %                 rmdir(this.Path, 's');
@@ -329,6 +351,68 @@ classdef project < handle & matlab.mixin.Heterogeneous
     %% OVERRIDERS
     methods
         
+        function s = find(this, name)
+            %% FIND a single session by name
+            
+            
+            try
+                % Find matching names
+                idxMatches = ismember({this.Session.Name}, name);
+                
+                % Make sure we found any project
+                assert(any(idxMatches), 'PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:SessionNotFound', 'Session could not be found because it does not exist or names are too ambigious.');
+                
+                % And return the data
+                s = this.Session(idxMatches);
+            catch me
+                % No match, so let's suggest session based on their string
+                % distance
+                pclose = this.closest_sessions(name);
+                
+                % Found similarly sounding sessions?
+                if ~isempty(pclose)
+                    throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:SessionNotFound', 'Session could not be found. Did you maybe mean one of the following sessions?\n%s', strjoin(arrayfun(@(pp) pp.Name, pclose, 'UniformOutput', false), '\n')), me));
+                else
+                    throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:SessionNotFound', 'Session could not be found. Make sure there is no typo in the name and that the session exists.'), me));
+                end
+            end
+            
+        end
+        
+        
+        function varargout = mkdir(this)
+            %% MKDIR creates the directory for this experimental project
+            
+            
+            [varargout{1:nargout}] = this.create();
+            
+        end
+        
+        
+        function varargout = list(this, prop)
+            %% LIST sessions or a property of sessions
+            
+            
+            % Default property
+            if nargin < 2 || isempty(prop)
+                prop = 'Name';
+            end
+            
+            try
+                % Return output?
+                if nargout > 0
+                    varargout{1} = {this.Session.(prop)};
+                % Directly display output
+                else
+                    disp({this.Session.(prop)});
+                end
+            catch me
+                throwAsCaller(me);
+            end
+            
+        end
+        
+        
         function p = path(this)
             %% PATH returns the path of this project
             
@@ -405,7 +489,7 @@ classdef project < handle & matlab.mixin.Heterogeneous
     methods ( Access = protected )
         
         function n = infer_name(this)
-            %% INFER_NAME infers the name of the project from the path
+            %% INFER_NAME infers the name of this project from the path
             
             
             % Get the folder name
@@ -413,6 +497,25 @@ classdef project < handle & matlab.mixin.Heterogeneous
             
             % And now make it a valid 'experimental manager' folder name
             n = exps.manager.valid_name(n);
+            
+        end
+        
+        
+        function ps = closest_sessions(this, name)
+            %% CLOSEST_SESSIONS finds sessions with a name closest to the needle
+            
+            
+            % Get the distance between the needle and all other sessions' names
+            dists = cellfun(@(n) exps.manager.strdist(name, n), {this.Session.Name});
+            % Sort the distances from shortest to longest
+            [dists, sortidx] = sort(dists);
+            
+            % Now get all sessions whose name distance is smaller than 10 (some
+            % random/arbitrary value)
+            sortidx = sortidx(dists < 10);
+            
+            % And return these sessions
+            ps = this.Session(sortidx);
             
         end
         

@@ -71,6 +71,56 @@ classdef manager < handle
             
         end
         
+        
+%         function o = makehere(type)
+%             %% MAKEHERE makes this folder a new experiments PROEJCT, SESSION, or TRIAL
+%             
+%             
+%             try
+%                 % EXPS.MANAGER.MAKEHERE(TYPE)
+%                 narginchk(1, Inf);
+%                 
+%                 % EXPS.MANAGER.MAKEHERE(TYPE)
+%                 % O = EXPS.MANAGER.MAKEHERE(TYPE)
+%                 nargoutchk(0, 1);
+%                 
+%                 validatestring(lower(type), {'project', 'session', 'trial'}, mfilename, 'type');
+%             catch me
+%                 throwAsCaller(me);
+%             end
+%             
+%             % Make a new object of the given type
+%             switch lower(type)
+%                 % Make new project
+%                 case 'project'
+%                     o = exps.project(pwd);
+%                 % Make new session
+%                 case 'session'
+%                     % Get this folder's parent folder
+%                     chParent = fullfile(pwd, '..');
+%                     
+%                     % Find project in the parent's folder
+%                     try
+%                         this = exps.manager;
+%                         epParent = strcmp({this.Projects.Path}, chParent);
+%                     end
+%                     
+%                     % Create new object
+%                     o = exps.session('[unnamed]');
+%                     
+%                     % Assign the parent if it exists
+%                     if 1 == exist('epParent', 'var') && ~isempty(epParent)
+%                         o.Project = epParent;
+%                     end
+%                     
+%                     % And done
+%                 % Make new trial
+%                 case 'trial'
+%                     o = exps.trial(pwd);
+%             end
+%             
+%         end
+        
     end
     
     
@@ -171,6 +221,21 @@ classdef manager < handle
         end
         
         
+        function varargout = reset(this)
+          %% RESET this object i.e., load a new one
+          
+          
+          % Create new object instance
+          this = exps.manager();
+          
+          % Assign output?
+          if nargout
+              varargout{1} = this;
+          end
+          
+        end
+        
+        
         function p = find(this, name)
             %% FIND a single project by name
             
@@ -201,7 +266,7 @@ classdef manager < handle
         
         
         function varargout = list(this, prop)
-            %% LIST the projects or a property of the projects
+            %% LIST projects or a property of projects
             
             
             % Default property
@@ -215,7 +280,7 @@ classdef manager < handle
                     varargout{1} = {this.Projects.(prop)};
                 % Directly display output
                 else
-                    display({this.Projects.(prop)});
+                    disp({this.Projects.(prop)});
                 end
             catch me
                 throwAsCaller(me);
