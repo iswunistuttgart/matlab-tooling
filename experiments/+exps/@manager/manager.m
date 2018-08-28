@@ -31,14 +31,15 @@ classdef manager < handle
             
             
             % @see https://undocumentedmatlab.com/blog/unique-computer-id
-            sid = '';
-            ni = java.net.NetworkInterface.getNetworkInterfaces;
-            while ni.hasMoreElements
-                addr = ni.nextElement.getHardwareAddress;
-                if ~isempty(addr)
-                    sid = [sid, '.', sprintf('%.2X', typecast(addr, 'uint8'))];
-                end
-            end
+%             sid = '';
+%             ni = java.net.NetworkInterface.getNetworkInterfaces;
+%             while ni.hasMoreElements
+%                 addr = ni.nextElement.getHardwareAddress;
+%                 if ~isempty(addr)
+%                     sid = [sid, '.', sprintf('%.2X', typecast(addr, 'uint8'))];
+%                 end
+%             end
+            sid = sprintf('%.2X', typecast(java.net.NetworkInterface.getByInetAddress(java.net.InetAddress.getLocalHost()).getHardwareAddress, 'uint8'));
             
             % Check userpath is not empty
             if isempty(userpath)
