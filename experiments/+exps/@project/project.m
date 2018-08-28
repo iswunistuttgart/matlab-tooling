@@ -45,6 +45,15 @@ classdef project < handle & matlab.mixin.Heterogeneous
     end
     
     
+    %% PROTECTED PROPERTIES
+    properties ( Access = protected )
+      
+      % Actual loaded config
+      Config_ = struct();
+      
+    end
+    
+    
     
     %% GENERAL METHODS
     methods
@@ -82,6 +91,9 @@ classdef project < handle & matlab.mixin.Heterogeneous
                 % Infer the name from the path
                 this.Name = this.infer_name();
             end
+            
+            % Load configuration
+            this.Config = this.load_config();
             
         end
         
@@ -147,9 +159,6 @@ classdef project < handle & matlab.mixin.Heterogeneous
                 c = struct();
             end
             
-            % Set config
-            this.Config = c;
-            
         end
         
         
@@ -163,7 +172,11 @@ classdef project < handle & matlab.mixin.Heterogeneous
                 c = this.Config;
                 
                 % Save the structure as separate variables
-                save(this.ConfigPath, '-struct', 'c');
+                try
+                  save(this.ConfigPath, '-struct', 'c');
+                catch me
+                  warning(me.identifier, '%s', me.message);
+                end
                 
                 % Clear memory
                 clear('c');
@@ -182,15 +195,8 @@ classdef project < handle & matlab.mixin.Heterogeneous
             %% GET.CONFIG gets the config
             
             
-            % If there is a config file...
-            if this.HasConfig
-                % Load it
-                c = load(this.ConfigPath);
-            % No config file exists
-            else
-                % Default to an empty structure
-                c = struct();
-            end
+            % Get private property
+            c = this.Config_;
             
         end
         
@@ -270,8 +276,8 @@ classdef project < handle & matlab.mixin.Heterogeneous
                 throwAsCaller(me);
             end
             
-            % And save the config
-            save(this.ConfigPath, '-struct', 'c'); %#ok<MCSUP>
+            % Set validated property
+            this.Config_ = c;
             
         end
         
@@ -352,29 +358,56 @@ classdef project < handle & matlab.mixin.Heterogeneous
     methods
         
         function s = find(this, name)
-            %% FIND a single session by name
+            %% FIND project inside projects or session inside a projecft
+            %
+            % If THIS is a single session, then NAME is assumed a trial
             
-            
-            try
-                % Find matching names
-                idxMatches = ismember({this.Session.Name}, name);
-                
-                % Make sure we found any project
-                assert(any(idxMatches), 'PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:SessionNotFound', 'Session could not be found because it does not exist or names are too ambigious.');
-                
-                % And return the data
-                s = this.Session(idxMatches);
-            catch me
-                % No match, so let's suggest session based on their string
-                % distance
-                pclose = this.closest_sessions(name);
-                
-                % Found similarly sounding sessions?
-                if ~isempty(pclose)
-                    throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:SessionNotFound', 'Session could not be found. Did you maybe mean one of the following sessions?\n%s', strjoin(arrayfun(@(pp) pp.Name, pclose, 'UniformOutput', false), '\n')), me));
-                else
-                    throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:SessionNotFound', 'Session could not be found. Make sure there is no typo in the name and that the session exists.'), me));
-                end
+            % THIS == 'Session 01'
+            if isa(this, 'exps.project') && numel(this) == 1
+              try
+                  % Find matching names
+                  idxMatches = ismember({this.Session.Name}, name);
+
+                  % Make sure we found any project
+                  assert(any(idxMatches), 'PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:SessionNotFound', 'Session could not be found because it does not exist or names are too ambigious.');
+
+                  % And return the data
+                  s = this.Session(idxMatches);
+              catch me
+                  % No match, so let's suggest session based on their string
+                  % distance
+                  pclose = exps.manager.closest(this.Sesion, name);
+
+                  % Found similarly sounding sessions?
+                  if ~isempty(pclose)
+                      throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:SessionNotFound', 'Session could not be found. Did you maybe mean one of the following sessions?\n%s', strjoin(arrayfun(@(pp) pp.Name, pclose, 'UniformOutput', false), '\n')), me));
+                  else
+                      throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:SessionNotFound', 'Session could not be found. Make sure there is no typo in the name and that the session exists.'), me));
+                  end
+              end
+            % THESE == 'Project 01'
+            else
+              try
+                  % Find matching names
+                  idxMatches = ismember({this.Name}, name);
+
+                  % Make sure we found any project
+                  assert(any(idxMatches), 'PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:ProjecftNotFound', 'Session could not be found because it does not exist or names are too ambigious.');
+
+                  % And return the data
+                  s = this(idxMatches);
+              catch me
+                  % No match, so let's suggest session based on their string
+                  % distance
+                  pclose = exps.manager.closest(this, name);
+
+                  % Found similarly sounding sessions?
+                  if ~isempty(pclose)
+                      throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:ProjecftNotFound', 'Session could not be found. Did you maybe mean one of the following sessions?\n%s', strjoin(arrayfun(@(pp) pp.Name, pclose, 'UniformOutput', false), '\n')), me));
+                  else
+                      throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:ProjecftNotFound', 'Session could not be found. Make sure there is no typo in the name and that the session exists.'), me));
+                  end
+              end
             end
             
         end
@@ -497,25 +530,6 @@ classdef project < handle & matlab.mixin.Heterogeneous
             
             % And now make it a valid 'experimental manager' folder name
             n = exps.manager.valid_name(n);
-            
-        end
-        
-        
-        function ps = closest_sessions(this, name)
-            %% CLOSEST_SESSIONS finds sessions with a name closest to the needle
-            
-            
-            % Get the distance between the needle and all other sessions' names
-            dists = cellfun(@(n) exps.manager.strdist(name, n), {this.Session.Name});
-            % Sort the distances from shortest to longest
-            [dists, sortidx] = sort(dists);
-            
-            % Now get all sessions whose name distance is smaller than 10 (some
-            % random/arbitrary value)
-            sortidx = sortidx(dists < 10);
-            
-            % And return these sessions
-            ps = this.Session(sortidx);
             
         end
         

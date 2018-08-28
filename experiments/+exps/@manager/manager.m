@@ -126,7 +126,7 @@ classdef manager < handle
     
     
     %% STATIC PROTECTED METHODS
-    methods ( Static, Access = protected )
+    methods ( Static )
         
         function d = strdist(r, b, krk, cas)
             %% STRDIST computes distances between strings
@@ -201,6 +201,24 @@ classdef manager < handle
                 d = horzcat(d, dl(end,end));
             end
             
+        end
+        
+        
+        function clo = closest(haystack, needle)
+            %% CLOSEST finds the objects inside HAYSTACK that are closest to a NEEDLE
+            
+            
+            % Get the distance between the needle and all other trials' names
+            dists = cellfun(@(n) exps.manager.strdist(needle, n), {haystack.Name});
+            % Sort the distances from shortest to longest
+            [dists, sortidx] = sort(dists);
+            
+            % Now get all sessions whose name distance is smaller than 10 (some
+            % random/arbitrary value)
+            sortidx = sortidx(dists < 10);
+            
+            % And return these trials
+            clo = haystack(sortidx);
         end
         
     end

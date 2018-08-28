@@ -45,6 +45,15 @@ classdef session < handle & matlab.mixin.Heterogeneous
     end
     
     
+    %% PROTECTED PROPERTIES
+    properties ( Access = protected )
+      
+      % Actual loaded config
+      Config_ = struct();
+      
+    end
+    
+    
     
     %% GENERAL METHODS
     methods
@@ -76,6 +85,9 @@ classdef session < handle & matlab.mixin.Heterogeneous
                 this.(varargin{iArg}) = varargin{iArg + 1};
             end
             
+            % Load configuration
+            this.Config = this.load_config();
+            
         end
         
         
@@ -102,9 +114,9 @@ classdef session < handle & matlab.mixin.Heterogeneous
                     this.Trial(iTrial).create();
                 end
                 
-                % Create each session
-                for iSess = 1:this.NSession
-                    this.Session(iSess).create();
+                % Create each trial
+                for iTrial = 1:this.NTrial
+                    this.Trial(iTrial).create();
                 end
                 
                 % Success logical
@@ -131,6 +143,46 @@ classdef session < handle & matlab.mixin.Heterogeneous
             
         end
         
+        
+        function c = load_config(this)
+            %% LOAD_CONFIG loads the project's config file
+            
+            
+            % Load only if there is a config file
+            if this.HasConfig
+                % Load the file
+                c = load(this.ConfigPath);
+            % No config file exists
+            else
+                % so set an empty structure
+                c = struct();
+            end
+            
+        end
+        
+        
+        function save_config(this)
+            %% SAVE_CONFIG saves the project's config to a file
+            
+            
+            % Continue only if the config really is a struct
+            if isa(this.Config, 'struct')
+                % Get the config
+                c = this.Config;
+                
+                % Save the structure as separate variables
+                try
+                  save(this.ConfigPath, '-struct', 'c');
+                catch me
+                  warning(me.identifier, '%s', me.message);
+                end
+                
+                % Clear memory
+                clear('c');
+            end
+            
+        end
+        
     end
     
     
@@ -142,15 +194,7 @@ classdef session < handle & matlab.mixin.Heterogeneous
             %% GET.CONFIG gets the config
             
             
-            % If there is a config file...
-            if this.HasConfig
-                % Load it
-                c = load(this.ConfigPath);
-            % No config file exists
-            else
-                % Default to an empty structure
-                c = struct();
-            end
+            c = this.Config_;
             
         end
         
@@ -226,8 +270,8 @@ classdef session < handle & matlab.mixin.Heterogeneous
                 throwAsCaller(me);
             end
             
-            % And save the config
-            save(this.ConfigPath, '-struct', 'c'); %#ok<MCSUP>
+            % Set config
+            this.Config_ = c;
             
         end
         
@@ -302,29 +346,56 @@ classdef session < handle & matlab.mixin.Heterogeneous
     methods
         
         function s = find(this, name)
-            %% FIND a single trial by name
+            %% FIND session inside sessions or trial inside a session
+            %
+            % If THIS is a single session, then NAME is assumed a trial
             
-            
-            try
-                % Find matching names
-                idxMatches = ismember({this.Trial.Name}, name);
-                
-                % Make sure we found any project
-                assert(any(idxMatches), 'PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:SESSION:FIND:TrialNotFound', 'Trial could not be found because it does not exist or names are too ambigious.');
-                
-                % And return the data
-                s = this.Trial(idxMatches);
-            catch me
-                % No match, so let's suggest projects based on their string
-                % distance
-                pclose = this.closest_trials(name);
-                
-                % Found similarly sounding trials?
-                if ~isempty(pclose)
-                    throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:SESSION:FIND:TrialNotFound', 'Trial could not be found. Did you maybe mean one of the following trials?\n%s', strjoin(arrayfun(@(pp) pp.Name, pclose, 'UniformOutput', false), '\n')), me));
-                else
-                    throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:SESSION:FIND:TrialNotFound', 'Trial could not be found. Make sure there is no typo in the name and that the trial exists.'), me));
-                end
+            % THIS == 'Trial 01'
+            if isa(this, 'exps.session') && numel(this) == 1
+              try
+                  % Find matching names
+                  idxMatches = ismember({this.Trial.Name}, name);
+
+                  % Make sure we found any project
+                  assert(any(idxMatches), 'PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:SESSION:FIND:TrialNotFound', 'Trial could not be found because it does not exist or names are too ambigious.');
+
+                  % And return the data
+                  s = this.Trial(idxMatches);
+              catch me
+                  % No match, so let's suggest projects based on their string
+                  % distance
+                  pclose = exps.manager.closest(this.Trial, name);
+
+                  % Found similarly sounding trials?
+                  if ~isempty(pclose)
+                      throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:SESSION:FIND:TrialNotFound', 'Trial could not be found. Did you maybe mean one of the following trials?\n%s', strjoin(arrayfun(@(pp) pp.Name, pclose, 'UniformOutput', false), '\n')), me));
+                  else
+                      throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:SESSION:FIND:TrialNotFound', 'Trial could not be found. Make sure there is no typo in the name and that the trial exists.'), me));
+                  end
+              end
+            % THESE == 'Session 01'
+            else
+              try
+                  % Find matching names
+                  idxMatches = ismember({this.Name}, name);
+
+                  % Make sure we found any project
+                  assert(any(idxMatches), 'PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:SESSION:FIND:SessionNotFound', 'Trial could not be found because it does not exist or names are too ambigious.');
+
+                  % And return the data
+                  s = this(idxMatches);
+              catch me
+                  % No match, so let's suggest projects based on their string
+                  % distance
+                  pclose = exps.manager.closest(this, name);
+
+                  % Found similarly sounding trials?
+                  if ~isempty(pclose)
+                      throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:SESSION:FIND:SessionNotFound', 'Trial could not be found. Did you maybe mean one of the following trials?\n%s', strjoin(arrayfun(@(pp) pp.Name, pclose, 'UniformOutput', false), '\n')), me));
+                  else
+                      throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:SESSION:FIND:SessionNotFound', 'Trial could not be found. Make sure there is no typo in the name and that the trial exists.'), me));
+                  end
+              end
             end
             
         end
@@ -437,24 +508,6 @@ classdef session < handle & matlab.mixin.Heterogeneous
     
     %% PROTECTED METHODS
     methods ( Access = protected )
-        
-        function ps = closest_trials(this, name)
-            %% CLOSEST_TRIALS finds trials with a name closest to the needle
-            
-            
-            % Get the distance between the needle and all other trials' names
-            dists = cellfun(@(n) exps.manager.strdist(name, n), {this.Trial.Name});
-            % Sort the distances from shortest to longest
-            [dists, sortidx] = sort(dists);
-            
-            % Now get all sessions whose name distance is smaller than 10 (some
-            % random/arbitrary value)
-            sortidx = sortidx(dists < 10);
-            
-            % And return these trials
-            ps = this.Trial(sortidx);
-            
-        end
         
     end
     
