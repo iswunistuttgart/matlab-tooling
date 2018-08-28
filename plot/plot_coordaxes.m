@@ -1,4 +1,4 @@
-function plot_coordaxes(varargin)
+function varargout = plot_coordaxes(varargin)
 % PLOT_COORDAXES Add a frame of reference to the current plot
 % 
 %   PLOT_COORDAXES() adds a reference frame with axes coinciding with the
@@ -19,6 +19,8 @@ function plot_coordaxes(varargin)
 %   inputs using name/value pairs.
 %
 %   PLOT_COORDAXES(ax, ...) adds reference frame to the given axes.
+%
+%   H = PLOT_COORDAXES(...) returns the axes quiver object handles.
 %
 %   Optional Inputs -- specified as parameter value pairs
 %
@@ -63,8 +65,10 @@ function plot_coordaxes(varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2016-12-03
+% Date: 2018-08-26
 % Changelog:
+%   2018-08-26
+%       * Add return argument
 %   2016-12-03
 %       * Rename to plot_coordaxes
 %       * Update docs and make structure match other help docs' structure
@@ -120,9 +124,16 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
+    % PLOT_COORDAXES();
+    narginchk(0, Inf);
+    
+    % PLOT_COORDAXES();
+    % H = PLOT_COORDAXES();
+    nargoutchk(0, 1);
+    
     [haTarget, args, ~] = axescheck(varargin{:});
     
-    parse(ip, args{:});
+    ip.parse(args{:});
 catch me
     throwAsCaller(me);
 end
@@ -224,6 +235,15 @@ end
 
 % Make sure the figure is being drawn before anything else is done
 drawnow
+
+
+
+%% Assign output quantities
+
+% H = PLOT_COORDAXES(...)
+if nargout > 0
+  varargout{1} = hQuiver;
+end
 
 
 end
