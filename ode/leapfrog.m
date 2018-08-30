@@ -85,7 +85,7 @@ nFuncEval = 0;
 % Parse the ODE arguments using MATLAB's built-in ODEARGUMENTS function
 [nEquations, vTspan, nTime, next, dTime_0, dTime_T, dTime_Dirn, y0, f0, odeArgs, odefun, ...
  stOptions, threshold, rtol, normcontrol, normy, hmax, htry, htspan, dataType] = ...
-    odearguments(loFHUsed, chSolverName, odefun, tsp, [x0(:); v0(:)], stOptions, varargin);
+    odearguments(loFHUsed, chSolverName, odefun, tsp, x0, stOptions, {v0});
 
 % ODE function was once evaluated inside ODEARGUMENTS
 nFuncEval = nFuncEval + 1;
@@ -108,7 +108,7 @@ dStepsizeDouble = 2*dStepsize;
 % nMass_Type == 1: M
 % nMass_Type == 2: M(t)
 % nMass_Type == 3: M(t, y)
-[nMass_Type, aMass_0, fhMass, ceMass_arg, stMass_Options] = odemass(loFHUsed, odefun, dTime_0, y0, stOptions, varargin);
+[nMass_Type, aMass_0, fhMass, ceMass_arg, stMass_Options] = odemass(loFHUsed, odefun, dTime_0, x0, stOptions, {v0});
 % Stucture containing information on the mass matrix
 stMass = struct( ...
     'Type', nMass_Type ...
