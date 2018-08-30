@@ -83,6 +83,7 @@ classdef leapfrog < matlab.unittest.TestCase
   
   
   
+  %% TESTMETHODTEARDOWN
   methods ( TestMethodTeardown )
     
     function fillFigure(this)
@@ -144,6 +145,8 @@ classdef leapfrog < matlab.unittest.TestCase
   end
 
   
+  
+  %% TESTS
   methods ( Test )
       
     function drivenHarmonicOscillator(this)
