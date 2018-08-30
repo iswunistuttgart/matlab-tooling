@@ -84,9 +84,9 @@ nFuncEval = 0;
 nFuncEval = nFuncEval + 1;
 
 % Get step size from options
-dStepsize = odeget(stOptions, 'MaxStep', 0, 'fast');
+dStepsize = odeget(stOptions, 'MaxStep', -1, 'fast');
 % No step size given in options, so infer it from vTspan
-if dStepsize == 0
+if dStepsize == -1
   % Set the step size from the step size inferred in ODEARGUMENTS
   dStepsize = htspan;
 end
@@ -257,7 +257,7 @@ while ~done
     tcurr = tnew;
     
     % We are done if the new time value is the final time value
-    done = abs(tnew - dTime_T) < dStepsize;
+    done = tnew > dTime_T;
 end
 
 % Finalize data
