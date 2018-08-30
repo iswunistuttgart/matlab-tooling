@@ -1,4 +1,4 @@
-function varargout = leapfrog(odefun, tspan, x0, v0, options, varargin)%#codegen
+function varargout = leapfrog(odefun, tsp, x0, v0, options, varargin)%#codegen
 % LEAPFROG implements Leapfrog integration of ODEs
 %
 %   SOL = LEAPFROG(ODEFUN, TSPAN, X0, V0) performs Leapfrog integration of the
@@ -45,8 +45,13 @@ function varargout = leapfrog(odefun, tspan, x0, v0, options, varargin)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-08-23
+% Date: 2018-08-30
 % Changelog:
+%   2018-08-30
+%       * Code cleanup
+%       * Fix step size calculation such that final value of T matches the given
+%       final time value
+%       * Also fix missing the last time step value in the integration process
 %   2018-08-23
 %       * Initial release
 
@@ -80,7 +85,7 @@ nFuncEval = 0;
 % Parse the ODE arguments using MATLAB's built-in ODEARGUMENTS function
 [nEquations, vTspan, nTime, next, dTime_0, dTime_T, dTime_Dirn, y0, f0, odeArgs, odefun, ...
  stOptions, threshold, rtol, normcontrol, normy, hmax, htry, htspan, dataType] = ...
-    odearguments(loFHUsed, chSolverName, odefun, tspan, [x0(:); v0(:)], stOptions, varargin);
+    odearguments(loFHUsed, chSolverName, odefun, tsp, [x0(:); v0(:)], stOptions, varargin);
 
 % ODE function was once evaluated inside ODEARGUMENTS
 nFuncEval = nFuncEval + 1;
@@ -90,13 +95,8 @@ dStepsize = odeget(stOptions, 'MaxStep', -1, 'fast');
 
 % No step size given in options, so infer it from vTspan
 if dStepsize == -1
-  if numel(vTspan) > 2
-    dStepsize = vTspan(2) - vTspan(1);
-  % Time span is given as [T0, Tf], so we will use the difference between final
-  % and initial time to infer the step size
-  else
-    dStepsize = 0.1*abs(dTime_T - dTime_0);
-  end
+  % Get the default step size from the call to `ODEARGUMENTS`
+  dStepsize = htspan;
 end
 % Pre-calculate half of the step size
 dStepsizeHalf = 1/2*dStepsize;
@@ -177,8 +177,9 @@ vFull(:,nout) = v0;
   , stOptsFsolve ...
 );
 % Calculate the velocity at (n-1/2)
-vHalf(:,nout) = vFull(:,nout) - dStepsizeHalf*aFull(:,nout);
-% Update function evaluation count due to `fsolve` used for initial acceleration
+vHalf(:,nout) = vFull(:,nout) - dStepsizeHalf*aFull(:,nout);  
+% Advance function evaluation counter by the number of function evaluations
+% inside `fsolve`
 nFuncEval = nFuncEval + output.funcCount;
 
 % Keep track of if we're done integrating or not
@@ -187,9 +188,11 @@ done = false;
 while ~done
   
   % Current time value
-  tN = tFull(nout);
+  tN = round((nout - 1)*dStepsize, 1/dStepsize);
+%   tN = tFull(nout);
   % Next time value
-  tNp1 = tN + dStepsize;
+  tNp1 = round(nout*dStepsize, 1/dStepsize);
+%   tNp1 = tN + dStepsize;
   
   % Current position x_n
   xN = xFull(:,nout);
@@ -203,11 +206,14 @@ while ~done
   %%% Calculate the corrected acceleration at the current time step a_n
   % Predict an acceleration for the current time step based on solving the ODE
   % M*a = f for the current position but the previous velocity
-  aNPred = fsolve( ...
+  [aNPred, ~, ~, output] = fsolve( ...
       @(atest) leapfrog_acceleration(odefun, tN, xN, vNm12, atest, stMass) ...
     , aN ...
     , stOptsFsolve ...
   );
+  % Advance function evaluation counter by the number of function evaluations
+  % inside `fsolve`
+  nFuncEval = nFuncEval + output.funcCount;
 
   % Calculate a predicted velocity \hat{v}_(n + 1/2)
   vNp12Pred = vNm12 + dStepsize*aNPred;
@@ -226,6 +232,9 @@ while ~done
       , aNPred ...
       , stOptsFsolve ...
     );
+  % Advance function evaluation counter by the number of function evaluations
+  % inside `fsolve`
+  nFuncEval = nFuncEval + output.funcCount;
   
   % Calculate next velocity v_(n + 1/2)
   vNp12 = vNm12 + dStepsize*aN;
@@ -235,11 +244,7 @@ while ~done
   
   % Update time step counter
   nout = nout + 1;
-    
-  % Add to function evaluation count the number of function evaluations inside
-  % `fsolve`
-  nFuncEval = nFuncEval + output.funcCount;
-
+  
   % Enlarge time and solution storage if it's insufficiently small
   if nout > length(tFull)
     tFull = [tFull, zeros(1, nChunk, dataType)];
@@ -249,7 +254,7 @@ while ~done
     vHalf = [vHalf, zeros(nEquations, nChunk, dataType)];
   end
   
-  % Update next velocity
+  % Update next time value
   tFull(:,nout) = tNp1;
   
   % Update next position
@@ -263,173 +268,16 @@ while ~done
   
   % Update current acceleration
   aFull(:,nout - 1) = aN;
-    
+  
   % We are done if the new time value is the final time value
-  done = abs(tNp1 - dTime_T) < dStepsize;
+  done = tNp1 > dTime_T;
   
 end
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-%% Leapfrog With Damping
-% if loDamping
-%   while ~done
-%     
-%     % Get current time
-%     tcurr = tout(nout);
-%     % Next time values: full and half
-%     tnew = tcurr + dStepsize;
-%     
-%     % Position, velocity, and acceleration at the current full-time step
-%     xFull = xoutFull(nout,:);
-%     vFull = voutFull(nout,:);
-%     aFull = ainFull(nout,:);
-%     
-%     % Position, velocity, and accelerationa t the previous half-time step
-%     xHalf = xinHalf(nout,:);
-%     vHalf = vinHalf(nout,:);
-%     
-%     % Predict the next half velocity
-% %     vnewHalf = vCurr + 
-%     
-%     % Correct the next half velocity
-%     vnewHalf = (xnew - xoutFull(nout - 1,:))/(dStepsizeDouble);
-%     
-%     % Advance current output time
-%     nout = nout + 1;
-%     
-%     % Add to function evaluation count the number of function evaluations inside
-%     % `fsolve`
-%     nFuncEval = nFuncEval + output.funcCount;
-%     
-%     % Enlarge time and solution storage if it's insufficiently small
-%     if nout > length(tout)
-%       tout = [tout, zeros(1, nChunk, dataType)];
-%       xoutFull = [xoutFull, zeros(nEquations, nChunk, dataType)];
-%       voutFull = [voutFull, zeros(nEquations, nChunk, dataType)];
-%       ainFull = [ainFull, zeros(nEquations, nChunk, dataType)];
-%     end
-%     
-%     % Update the internal states
-%     tout(nout) = tnew;
-%     xoutFull(nout,:) = xnewFull;
-%     voutFull(nout,:) = vnewFull;
-%     ainFull(nout,:) = anewFull;
-%     
-%     % We are done if the new time value is the final time value
-%     done = abs(tnew - dTime_T) < dStepsize;
-%   end
-% end
-
-
-
-
-% %% Leapfrog Without Damping
-% if ~loDamping
-%   % Continue while not having reached the final position
-%   while ~done
-%     
-%     % Get current time
-%     tcurr = tFull(nout);
-%     % Next time values: full and half
-%     tnew = tcurr + dStepsize;
-%     
-%     % Position, velocity, and acceleration at current time step
-%     xFull = xFull(nout,:);
-%     vFull = vFull(nout,:);
-%     aFull = vHalf(nout,:);
-%     % Position, velocity, and acceleration at half a time step prior
-%     xHalf = xinHalf(nout,:);
-%     vHalf = vHalf(nout,:);
-%     
-% %     % Calculate half-step velocity
-% %     vnewHalf = vFull + aFull.*dStepsizeHalf;
-% %     
-% %     % Calculate full-step position
-% %     xnewFull = xFull + vnewHalf*dStepsize;
-%     
-%     % Determine acceleration at next time step
-%     anewFull = fsolve(...
-%       @(atest) leapfrog_fsolve(odefun, tnew, xFull, [], atest, stMass) ...
-%       , aFull ...
-%       , stOptsFsolve ...
-%     );
-%     
-%     % Calculate full+half-step velocity
-%     vnewFull = vnewHalf + anewFull.*dStepsizeHalf;
-%     
-%     % Advance current output time
-%     nout = nout + 1;
-%     
-%     % Add to function evaluation count the number of function evaluations inside
-%     % `fsolve`
-%     nFuncEval = nFuncEval + output.funcCount;
-%     
-%     % Enlarge time and solution storage if it's insufficiently small
-%     if nout > length(tFull)
-%       tFull = [tFull, zeros(1, nChunk, dataType)];
-%       xFull = [xFull, zeros(nEquations, nChunk, dataType)];
-%       vFull = [vFull, zeros(nEquations, nChunk, dataType)];
-%       vHalf = [vHalf, zeros(nEquations, nChunk, dataType)];
-%       xinHalf = [xinHalf, zeros(nEquations, nChunk, dataType)];
-%       vHalf = [vHalf, zeros(nEquations, nChunk, dataType)];
-%     end
-%     
-%     % Update the internal states
-%     tFull(nout) = tnew;
-%     xFull(nout,:) = xnewFull;
-%     vFull(nout,:) = vnewFull;
-%     vHalf(nout,:) = anewFull;
-%     
-%     % We are done if the new time value is the final time value
-%     done = abs(tnew - dTime_T) < dStepsize;
-%     
-%   end
-%   
-% end
-
 % Finalize data
-tFull = tFull(1:nout);
-xout = xFull(:,1:nout);
-vout = vFull(:,1:nout);
+tFull = tFull(1:(nout-1));
+xout = xFull(:,1:(nout-1));
+vout = vFull(:,1:(nout-1));
 
 
 
