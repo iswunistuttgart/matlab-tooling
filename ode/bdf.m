@@ -35,8 +35,11 @@ function varargout = bdf(odefun, tspan, y0, options, varargin)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-08-20
+% Date: 2018-08-30
 % Changelog:
+%   2018-08-30
+%       * Use the step size calculated in ODEARGUMENTS if the actual step size
+%       is not given in OPTIONS
 %   2018-08-20
 %       * Initial release
 
@@ -84,13 +87,8 @@ nFuncEval = nFuncEval + 1;
 dStepsize = odeget(stOptions, 'MaxStep', 0, 'fast');
 % No step size given in options, so infer it from vTspan
 if dStepsize == 0
-  if numel(vTspan) > 2
-    dStepsize = vTspan(2) - vTspan(1);
-  % Time span is given as [T0, Tf], so we will use the difference between final
-  % and initial time to infer the step size
-  else
-    dStepsize = 0.1*abs(dTime_T - dTime_0);
-  end
+  % Set the step size from the step size inferred in ODEARGUMENTS
+  dStepsize = htspan;
 end
 
 % Handle mass matrix
