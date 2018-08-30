@@ -1,17 +1,20 @@
-function [] = stopalltimers()
+function stopalltimers()
 % STOPALLTIMERS stops all timers whether they are visible or not
 %
 %   STOPALLTIMERS stops all currently running timers regardless their
 %   visibility. Displays a warning if a timer could not be stopped.
 %
-%   See also: timerfindall stop
+%   See also:
+%   TIMERFINDALL TIMER/STOP
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-01-21
+% Date: 2018-08-26
 % Changelog:
+%   2018-08-26
+%       * Revert back to a simple for-loop. Feels more real looping, doesn't it?
 %   2017-01-21
 %       * Make use of arrayfun over simple loops
 %   2016-09-02
@@ -21,13 +24,14 @@ function [] = stopalltimers()
 
 %% Do your code magic here
 % Get all timers
-tiTimers = timerfindall;
+tiTimers = timerfindall();
 
-% Filter running timers
-tiTimers = tiTimers(cell2mat(arrayfun(@(ti) strcmp(ti.Running, 'on'), tiTimers, 'UniformOutput', false)));
-
-% Loop over running fiters and stop each of these
-arrayfun(@(ti) stop(ti), tiTimers, 'UniformOutput', false);
+% Loop over each timer and stop it if it's running
+for iT = 1:numel(tiTimers)
+  if strcmp(tiTimers(iT).Running, 'on')
+    stop(tiTimers(iT));
+  end
+end
 
 
 end

@@ -27,5 +27,6 @@
 %   isupper       - True for uppercase letters.
 %   isxdigit      - True for hexadecimal digits.
 %   ord           - returns the ordinal for the given number
+%   tspan         - creates a properly and evenly spaced vector
 %   wraprad       - Map angles measured in radians to the interval [-pi,pi).
 %   xkron         - Kronecker tensor product.

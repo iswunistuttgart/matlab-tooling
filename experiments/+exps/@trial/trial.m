@@ -45,6 +45,15 @@ classdef trial < handle ...
         % Path to the Input file
         InputPath
         
+        % Number of media objects
+        NMedia
+        
+        % Number of videos
+        NVideo
+        
+        % Number of images
+        NImage
+        
         % Flag if there is a config file of this project
         HasConfig
         
@@ -101,6 +110,15 @@ classdef trial < handle ...
     end
     
     
+    %% PROTECTED PROPERTIES
+    properties ( Access = protected )
+      
+      % Actual loaded config
+      Config_ = struct();
+      
+    end
+    
+    
     
     %% GENERAL METHODS
     methods
@@ -133,19 +151,28 @@ classdef trial < handle ...
                 this.(varargin{iArg}) = varargin{iArg + 1};
             end
             
+            % Load configuration
+            this.Config = this.load_config();
+            
         end
         
         
-        function create(this)
+        function varargout = create(this)
             %% CREATE creates the folder structure for a new project
             
             
             try
-                % If the trial folder does not exist, create it
-                if ~this.Exists
-                    % Create this trials's folder
-                    mkdir(this.Path);
-                end
+                % CREATE(THIS)
+                narginchk(1, 1);
+                
+                % CREATE(THIS)
+                % SUCCESS = CREATE(THIS)
+                % [SUCCESS, MESSAGE] = CREATE(THIS)
+                % [SUCCESS, MESSAGE, MESSAGEID] = CREATE(THIS)
+                nargoutchk(0, 3);
+                
+                % Create this trials's folder
+                [loSuccess, chMessage, chMessageId] = mkdir(this.Path);
                 
                 % Create the 'media' directory
                 if 0 == exist(this.MediaPath, 'dir')
@@ -155,11 +182,67 @@ classdef trial < handle ...
                 % Here, we should copy all the files that are assigned to this
                 % new trial to the target trial's folder (i.e., media, scope,
                 % etc.)
+                
+                % Success logical
+                if nargout > 0
+                  varargout{1} = loSuccess;
+                end
+                
+                % Return message
+                if nargout > 1
+                  varargout{2} = chMessage;
+                end
+                
+                % Return message ID
+                if nargout > 2
+                  varargout{3} = chMessageId;
+                end
+                
             catch me
 %                 % Delete the directory i.e., 'cleanup'
 %                 rmdir(this.Path, 's');
                 
                 throwAsCaller(me);
+            end
+            
+        end
+        
+        
+        function c = load_config(this)
+            %% LOAD_CONFIG loads the project's config file
+            
+            
+            % Load only if there is a config file
+            if this.HasConfig
+                % Load the file
+                c = load(this.ConfigPath);
+            % No config file exists
+            else
+                % so set an empty structure
+                c = struct();
+            end
+            
+        end
+        
+        
+        function save_config(this)
+            %% SAVE_CONFIG saves the project's config to a file
+            
+            
+            % Continue only if the config really is a struct
+            if isa(this.Config, 'struct')
+                % Get the config
+                c = this.Config;
+                
+                % Save the structure as separate variables
+                try
+                  save(this.ConfigPath, '-struct', 'c');
+                catch me
+                  warning(me.identifier, '%s', me.message);
+                end
+                
+                % Clear memory
+                clear('c');
             end
             
         end
@@ -175,15 +258,7 @@ classdef trial < handle ...
             %% GET.CONFIG gets the config
             
             
-            % If there is a config file...
-            if this.HasConfig
-                % Load it
-                c = load(this.ConfigPath);
-            % No config file exists
-            else
-                % Default to an empty structure
-                c = struct();
-            end
+            c = this.Config_;
             
         end
         
@@ -274,6 +349,33 @@ classdef trial < handle ...
         end
         
         
+        function n = get.NMedia(this)
+            %% GET.NMEDIA counts the number of media objects of this trial
+            
+            
+            n = numel(this.Media);
+            
+        end
+        
+        
+        function n = get.NVideo(this)
+            %% GET.NVIDEO counts the number of videos of this trial
+            
+            
+            n = numel(this.Video);
+            
+        end
+        
+        
+        function n = get.NImage(this)
+            %% GET.NIMAGE counts the number of images of this trial
+            
+            
+            n = numel(this.Image);
+            
+        end
+        
+        
         function f = get.HasInput(this)
             %% GET.HASINPUT flags if there is an input file or not
             
@@ -296,7 +398,7 @@ classdef trial < handle ...
             %% GET.HASMEDIA flags if there is media files or not
             
             
-            f = 0 ~= numel(this.Media);
+            f = 0 ~= this.NMedia;
             
         end
         
@@ -305,7 +407,7 @@ classdef trial < handle ...
             %% GET.HASIMAgE flags if there is image files or not
             
             
-            f = 0 ~= numel(this.Image);
+            f = 0 ~= this.NImage;
             
         end
         
@@ -314,7 +416,7 @@ classdef trial < handle ...
             %% GET.HASVIDEO flags if there is videos files or not
             
             
-            f = 0 ~= numel(this.Video);
+            f = 0 ~= this.NVideo;
             
         end
         
@@ -363,8 +465,8 @@ classdef trial < handle ...
                 throwAsCaller(me);
             end
             
-            % And save the config
-            save(this.ConfigPath, '-struct', 'c'); %#ok<MCSUP>
+            % Set validated property
+            this.Config_ = c;
             
         end
         
@@ -375,11 +477,49 @@ classdef trial < handle ...
     %% OVERRIDERS
     methods
         
+        function s = find(this, name)
+            %% FIND a trial amongst trials
+            
+            
+            try
+                % Find matching names
+                idxMatches = ismember({this.Name}, name);
+                
+                % Make sure we found any project
+                assert(any(idxMatches), 'PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:SESSION:FIND:TrialNotFound', 'Trial could not be found because it does not exist or names are too ambigious.');
+                
+                % And return the data
+                s = this(idxMatches);
+            catch me
+                % No match, so let's suggest projects based on their string
+                % distance
+                pclose = exps.manager.closest(this, name);
+                
+                % Found similarly sounding trials?
+                if ~isempty(pclose)
+                    throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:SESSION:FIND:TrialNotFound', 'Trial could not be found. Did you maybe mean one of the following trials?\n%s', strjoin(arrayfun(@(pp) pp.Name, pclose, 'UniformOutput', false), '\n')), me));
+                else
+                    throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:SESSION:FIND:TrialNotFound', 'Trial could not be found. Make sure there is no typo in the name and that the trial exists.'), me));
+                end
+            end
+            
+        end
+        
+        
         function p = path(this)
             %% PATH returns the path of this trial
             
             
             p = this.Path;
+            
+        end
+        
+        
+        function varargout = mkdir(this)
+            %% MKDIR creates the directory for this experimental trial
+            
+            
+            [varargout{1:nargout}] = this.create();
             
         end
         
@@ -396,8 +536,19 @@ classdef trial < handle ...
         function flag = isequal(this, that)
             %% ISEQUAL compares THIS and THAT to be the same project
             
-            
-            flag = strcmpi({this.Path}, {that.Path});
+            if isa(this, 'exps.trial') && isa(that, 'exps.trial')
+                flag = strcmpi({this.Path}, {that.Path});
+            else
+                if isa(this, 'char')
+                    chNeedle = this;
+                    ceHaystack = {that.Name};
+                elseif isa(that, 'char')
+                    chNeedle = that;
+                    ceHaystack = {this.Name};
+                end
+                
+                flag = strcmpi(chNeedle, ceHaystack);
+            end
             
         end
         
@@ -405,8 +556,19 @@ classdef trial < handle ...
         function flag = isequaln(this, that)
             %% ISEQUALN compares THIS and THAT to be the same project
             
-            
-            flag = strcmpi({this.Path}, {that.Path});
+            if isa(this, 'exps.trial') && isa(that, 'exps.trial')
+                flag = strcmpi({this.Path}, {that.Path});
+            else
+                if isa(this, 'char')
+                    chNeedle = this;
+                    ceHaystack = {that.Name};
+                elseif isa(that, 'char')
+                    chNeedle = that;
+                    ceHaystack = {this.Name};
+                end
+                
+                flag = strcmpi(chNeedle, ceHaystack);
+            end
             
         end
         
@@ -415,7 +577,19 @@ classdef trial < handle ...
             %% EQ compares if two PROJECT objects are the same
             
             
-            flag = strcmpi({this.Path}, {that.Path});
+            if isa(this, 'exps.trial') && isa(that, 'exps.trial')
+                flag = strcmpi({this.Path}, {that.Path});
+            else
+                if isa(this, 'char')
+                    chNeedle = this;
+                    ceHaystack = {that.Name};
+                elseif isa(that, 'char')
+                    chNeedle = that;
+                    ceHaystack = {this.Name};
+                end
+                
+                flag = strcmpi(chNeedle, ceHaystack);
+            end
             
         end
         
@@ -423,14 +597,25 @@ classdef trial < handle ...
         function flag = neq(this, that)
             %% NEQ compares if two PROJECT objects are not the same
             
-            
-            flag = ~strcmpi({this.Path}, {that.Path});
+            if isa(this, 'exps.trial') && isa(that, 'exps.trial')
+                flag = ~strcmpi({this.Path}, {that.Path});
+            else
+                if isa(this, 'char')
+                    chNeedle = this;
+                    ceHaystack = {that.Name};
+                elseif isa(that, 'char')
+                    chNeedle = that;
+                    ceHaystack = {this.Name};
+                end
+                
+                flag = ~strcmpi(chNeedle, ceHaystack);
+            end
             
         end
         
         
         function c = char(this)
-            %% CHAR convers this object to a char
+            %% CHAR converts this object to a char
             
             
             % Allow multiple arguments to be passed
@@ -444,16 +629,65 @@ classdef trial < handle ...
         end
         
         
+        function c = cellstr(this, varargin)
+            %% CELLSTR converts this object to a cell string
+            
+            
+            % Allow multiple arguments to be passed
+            if numel(this) > 1
+                c = cellstr({this.Name}, varargin{:});
+            % Single argument passed, so just get its name
+            else
+                c = cellstr(this.Name, varargin{:});
+            end
+          
+        end
+        
+        
         function t = csv2tcscope(this)
             %% CSV2TCSCOPE loads the scope CSV file for this object
             
             
             try
+                validateattributes(this, {'exps.trial'}, {'scalar'}, mfilename, 'csv2tscope');
+                
                 t = csv2tcscope(this.ScopePath);
             catch me
                 throwAsCaller(me);
             end
             
+        end
+        
+        
+        function vr = VideoReader(this, varargin)
+            %% VIDEOREADER creates a VideoReader object of the trial
+            
+            
+             try
+                % VIDEOREADER(THIS)
+                % VIDEOREADER(THIS, Name, Value, ...)
+                narginchk(1, Inf);
+                
+                % VIDEOREADER(THIS)
+                % VR = VIDEOREADER(THIS)
+                nargoutchk(0, 1);
+                
+                % Make sure we have a single trial given
+                validateattributes(this, {'exps.trial'}, {'scalar'}, mfilename, 'VideoReader');
+                
+                % Create empty array holding all our video reader objects
+                vr = VideoReader.empty(1, 0);
+                
+                % Loop over each video
+                for iVideo = 1:this.NVideo
+                  % Create a video reader object of the video file
+                  vr(iVideo) = VideoReader(fullfile(this.Video(iVideo).folder, this.Video(iVideo).name), varargin{:});
+                end
+                
+             catch me
+                 throwAsCaller(me);
+             end
+          
         end
         
     end

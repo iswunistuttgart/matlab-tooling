@@ -114,7 +114,8 @@ function [varargout] = anim2d(X, Y, varargin)
 %       video file extension/type, otherwise it won't work. Allowed values can
 %       be inferred from VideoWriter
 %
-%   See also TIMER VIDEOWRITER WRITEVIDEO GETFRAME
+%   See also
+%   TIMER VIDEOWRITER WRITEVIDEO GETFRAME
 %
 %   KNOWN BUGS:
 %   Due to some weird behavior (of feval probably) the order of plots is changed

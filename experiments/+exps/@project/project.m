@@ -45,6 +45,15 @@ classdef project < handle & matlab.mixin.Heterogeneous
     end
     
     
+    %% PROTECTED PROPERTIES
+    properties ( Access = protected )
+      
+      % Actual loaded config
+      Config_ = struct();
+      
+    end
+    
+    
     
     %% GENERAL METHODS
     methods
@@ -83,24 +92,49 @@ classdef project < handle & matlab.mixin.Heterogeneous
                 this.Name = this.infer_name();
             end
             
+            % Load configuration
+            this.Config = this.load_config();
+            
         end
         
         
-        function create(this)
+        function varargout = create(this)
             %% CREATE creates the folder structure for a new project
             
             
             try
-                % If this project folder does not exist, create it
-                if ~this.Exists
-                    % Create this project's folder
-                    mkdir(this.Path);
-                end
+                % CREATE(THIS)
+                narginchk(1, 1);
+                
+                % CREATE(THIS)
+                % SUCCESS = CREATE(THIS)
+                % [SUCCESS, MESSAGE] = CREATE(THIS)
+                % [SUCCESS, MESSAGE, MESSAGEID] = CREATE(THIS)
+                nargoutchk(0, 3);
+                
+                % Create this project's folder
+                [loSuccess, chMessage, chMessageId] = mkdir(this.Path);
                 
                 % Create each session
                 for iSess = 1:this.NSession
                     this.Session(iSess).create();
                 end
+                
+                % Success logical
+                if nargout > 0
+                  varargout{1} = loSuccess;
+                end
+                
+                % Return message
+                if nargout > 1
+                  varargout{2} = chMessage;
+                end
+                
+                % Return message ID
+                if nargout > 2
+                  varargout{3} = chMessageId;
+                end
+                
             catch me
 %                 % Delete the directory i.e., 'cleanup'
 %                 rmdir(this.Path, 's');
@@ -125,9 +159,6 @@ classdef project < handle & matlab.mixin.Heterogeneous
                 c = struct();
             end
             
-            % Set config
-            this.Config = c;
-            
         end
         
         
@@ -141,7 +172,11 @@ classdef project < handle & matlab.mixin.Heterogeneous
                 c = this.Config;
                 
                 % Save the structure as separate variables
-                save(this.ConfigPath, '-struct', 'c');
+                try
+                  save(this.ConfigPath, '-struct', 'c');
+                catch me
+                  warning(me.identifier, '%s', me.message);
+                end
                 
                 % Clear memory
                 clear('c');
@@ -160,15 +195,8 @@ classdef project < handle & matlab.mixin.Heterogeneous
             %% GET.CONFIG gets the config
             
             
-            % If there is a config file...
-            if this.HasConfig
-                % Load it
-                c = load(this.ConfigPath);
-            % No config file exists
-            else
-                % Default to an empty structure
-                c = struct();
-            end
+            % Get private property
+            c = this.Config_;
             
         end
         
@@ -248,8 +276,8 @@ classdef project < handle & matlab.mixin.Heterogeneous
                 throwAsCaller(me);
             end
             
-            % And save the config
-            save(this.ConfigPath, '-struct', 'c'); %#ok<MCSUP>
+            % Set validated property
+            this.Config_ = c;
             
         end
         
@@ -329,6 +357,95 @@ classdef project < handle & matlab.mixin.Heterogeneous
     %% OVERRIDERS
     methods
         
+        function s = find(this, name)
+            %% FIND project inside projects or session inside a projecft
+            %
+            % If THIS is a single session, then NAME is assumed a trial
+            
+            % THIS == 'Session 01'
+            if isa(this, 'exps.project') && numel(this) == 1
+              try
+                  % Find matching names
+                  idxMatches = ismember({this.Session.Name}, name);
+
+                  % Make sure we found any project
+                  assert(any(idxMatches), 'PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:SessionNotFound', 'Session could not be found because it does not exist or names are too ambigious.');
+
+                  % And return the data
+                  s = this.Session(idxMatches);
+              catch me
+                  % No match, so let's suggest session based on their string
+                  % distance
+                  pclose = exps.manager.closest(this.Sesion, name);
+
+                  % Found similarly sounding sessions?
+                  if ~isempty(pclose)
+                      throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:SessionNotFound', 'Session could not be found. Did you maybe mean one of the following sessions?\n%s', strjoin(arrayfun(@(pp) pp.Name, pclose, 'UniformOutput', false), '\n')), me));
+                  else
+                      throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:SessionNotFound', 'Session could not be found. Make sure there is no typo in the name and that the session exists.'), me));
+                  end
+              end
+            % THESE == 'Project 01'
+            else
+              try
+                  % Find matching names
+                  idxMatches = ismember({this.Name}, name);
+
+                  % Make sure we found any project
+                  assert(any(idxMatches), 'PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:ProjecftNotFound', 'Session could not be found because it does not exist or names are too ambigious.');
+
+                  % And return the data
+                  s = this(idxMatches);
+              catch me
+                  % No match, so let's suggest session based on their string
+                  % distance
+                  pclose = exps.manager.closest(this, name);
+
+                  % Found similarly sounding sessions?
+                  if ~isempty(pclose)
+                      throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:ProjecftNotFound', 'Session could not be found. Did you maybe mean one of the following sessions?\n%s', strjoin(arrayfun(@(pp) pp.Name, pclose, 'UniformOutput', false), '\n')), me));
+                  else
+                      throwAsCaller(addCause(MException('PHILIPPTEMPEL:MATLAB_TOOLING:EXPERIMENTS:EXPS:PROJECT:FIND:ProjecftNotFound', 'Session could not be found. Make sure there is no typo in the name and that the session exists.'), me));
+                  end
+              end
+            end
+            
+        end
+        
+        
+        function varargout = mkdir(this)
+            %% MKDIR creates the directory for this experimental project
+            
+            
+            [varargout{1:nargout}] = this.create();
+            
+        end
+        
+        
+        function varargout = list(this, prop)
+            %% LIST sessions or a property of sessions
+            
+            
+            % Default property
+            if nargin < 2 || isempty(prop)
+                prop = 'Name';
+            end
+            
+            try
+                % Return output?
+                if nargout > 0
+                    varargout{1} = {this.Session.(prop)};
+                % Directly display output
+                else
+                    disp({this.Session.(prop)});
+                end
+            catch me
+                throwAsCaller(me);
+            end
+            
+        end
+        
+        
         function p = path(this)
             %% PATH returns the path of this project
             
@@ -405,7 +522,7 @@ classdef project < handle & matlab.mixin.Heterogeneous
     methods ( Access = protected )
         
         function n = infer_name(this)
-            %% INFER_NAME infers the name of the project from the path
+            %% INFER_NAME infers the name of this project from the path
             
             
             % Get the folder name
