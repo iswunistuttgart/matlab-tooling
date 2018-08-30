@@ -1,6 +1,8 @@
-% FUNCTION
+% FUNC
 %
 % Files
+%   _odeget        - ODEGET Get ODE OPTIONS parameters.
+%   _odeset        - ODESET Create/alter ODE OPTIONS structure.
 %   funcname       - returns the current function's name
 %   funcnew        - creates a new function file based on a template
 %   funcren        - renames the function to a new name

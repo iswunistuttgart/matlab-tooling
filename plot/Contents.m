@@ -14,6 +14,7 @@
 %   isfig                          - checks whether the given handle is a figure handle or not
 %   isplot2d                       - Check the given axes against being a 2D plot i.e., created by plot()
 %   isplot3d                       - Check the given axes against being a 3D plot i.e., created by plot3()
+%   lame                           - plots the LAMÉ superellipses
 %   max_fig                        - maximizes the current or given figure
 %   maxplotvalue                   - Determine the maximum plotted value along all axes
 %   minplotvalue                   - Determine the minimum plotted value along all axes
@@ -34,3 +35,4 @@
 %   shadow3                        - plots a 3D shadow3 plot of all data into the given axes onto the given
 %   usdistcolors                   - creates distinguishable colors complying with University of
 %   uslayout                       - applies the corresponding figure to University of Stuttgarts
+%   uslinestyles                   - creates a list of N unique lineseries plot styles
