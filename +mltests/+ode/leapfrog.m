@@ -1,243 +1,319 @@
 classdef leapfrog < matlab.unittest.TestCase
-    % LEAPFROG tests the leapfrog integration algorithm
+  % LEAPFROG tests the leapfrog integration algorithm
+  
+  
+  %% CLASS PROPERTIES
+  properties
     
+    % Maximum mass
+    m_ = 10;
+    % Actual mass
+    m
     
-    properties ( TestParameter )
+    % Damping
+    D = 0.01;
+    
+    % Eigenfrequency
+    omega0 = 6/(2*pi);
+    
+    % Maximum initial position
+    x0_ = 0.0;
+    % Actual initial position
+    x0
+    % Maximum initial velocity
+    v0_ = 1.0;
+    % Actual initial velocity
+    v0
+    
+    % Maximum magnitude of external foorce
+    f0 = 5.0;
+    % Time till force decays
+    Tf = 10.0;
+    % Scaling of eriodic frequency of external force wrt Eigenfrequency
+    w = 0.8;
+    
+    % Step size
+    h = 1e-2;
+    % Final time
+    T = 20.0;
+    
+    % Figure window handle
+    HFig
+    
+    % Simulation result: time
+    t
+    % Simulation result: position
+    x
+    % Simulation result: velocity
+    v
+    % Name of test just run
+    testname
+    
+  end
+  
+  
+  %% TESTPARAMETERS
+  properties ( TestParameter )
+
+  end
+  
+  
+  
+  %% TESTMETHODSETUP
+  methods ( TestMethodSetup )
+    
+    function createFigure(this)
+      %% CREATEFIGURE creates the target figure
+      
+      % Create an invisible figure
+      this.HFig = figure('Visible', 'off');
       
     end
     
     
-    methods ( Test )
+    function randomizeParameters(this)
       
-        function drivenHarmonicOscillator(this)
-          
-          m = 1;
-          D = 0.00;
-          omega0 = 6/(2*pi);
-          x0 = 0.0;
-          v0 = 1.0;
-          f0 = 5.0;
-          T = 10.0;
-          w = 0.8*omega0;
-          
-          function F = frc(t, x, v)
-            F = f0.*cos(w.*(t - 20)).*exp(-(t./T).^2);
-          end
-          
-          function f = ode_rhs(t, x, v)
-            f = -omega0^2*x - 2*D*omega0*v + frc(t, x, v)/m;
-          end
-          
-          [t, x, v] = leapfrog(@ode_rhs, 0:1e-2:60, x0, v0);
-          
-          figure;
-          subplot(2, 1, 1);
-          plot(t, x, t, frc(t, x, v));
-          subplot(2, 1, 2);
-          plot(t, v);
-          
-          
-        end
-        
-%         function onVanDerPol1(this)
-%             %% ONVANDERPOL tests the BDF on van-der-Pols ODE
-%             %
-%             %   MU in van-der-Pol's ODE is set to 1. Everything else is
-%             %   unchanged.
-%             %   Results are compared against ODE15S.
-%             
-%             
-%             % Time vector
-%             tspan = 0:1e-3:2;
-%             % Initial state
-%             y0 = [2; 0];
-%             
-%             % Solve with MATLAB's built-in ODE15S
-%             [tf, yf] = ode15s(@vdp1, tspan, y0, odeset());
-%             % Compare aginst our result
-%             [tb, yb] = leapfrog(@(t, x, v) vdp1(t, [x(:); v(:)]), tspan, y0(1:end/2), y0(end/2+1:end));
-%             
-%             % New figure
-%             hf = figure;
-%             % Set figure name
-%             hf.Name = sprintf('%s with %s', func2str(@vdp1), 'leapfrog');
-%             % First subplot is result
-%             hax(1) = subplot(2, 1, 1, 'Parent', hf);
-%             % Plot data
-%             hp = plot( ...
-%                 hax(1) ...
-%                 , tf, yf(:,1) ...
-%                 , tb, yb(:,1) ...
-%             );
-%             % Adjust plotted lines
-%             hp(1).Color = [0, 1, 0];
-%             hp(1).LineStyle = '-';
-%             hp(2).Color = [1, 0, 0];
-%             hp(2).LineStyle = '-';
-%             ylabel(hax(1), 'Solution');
-%             % Second axis is error
-%             hax(2) = subplot(2, 1, 2, 'Parent', hf);
-%             % Plot data
-%             plot( ...
-%                 hax(2) ...
-%                 , tf, abs(yf - yb)./((abs(yf) + abs(yb))/2) ...
-%             );
-%             ylabel(hax(2), 'Relative error');
-%             
-%             % Update figure
-%             drawnow();
-%             
-%         end
-        
-        
-%         function onVanDerPol1_WithMassStateIndependent(this)
-%             %% ONVANDERPOL_WITHMASSSTATEINDEPENDENT tests the BDF on van-der-Pols ODE
-%             %
-%             %   MU in van-der-Pols ODE is set to 1. The ODE's mass matrix is
-%             %   artifically set to 4. Mass matrix's state dependence is set to
-%             %   none.
-%             %   Results are compared against ODE15S.
-%             
-%             
-%             % Time vector
-%             tspan = 0:1e-3:2;
-%             % Initial state
-%             y0 = [2; 0];
-%             
-%             % Solve with MATLAB's built-in ODE15S
-%             [tf, yf] = ode15s(@vdp1, tspan, y0, odeset());
-%             % Compare aginst our result
-%             [tb, yb] = leapfrog(@vdp1_s, tspan, y0(1:end/2), y0(end/2+1:end), odeset('MaxOrder', 'Mass', @(t) 4.*eye([2, 2]), 'MStateDependence', 'none'));
-%             
-%             % New figure
-%             hf = figure;
-%             % Set figure name
-%             hf.Name = sprintf('%s with %s', func2str(@vdp1), 'leapfrog');
-%             % First subplot is result
-%             hax(1) = subplot(2, 1, 1, 'Parent', hf);
-%             % Plot data
-%             hp = plot( ...
-%                 hax(1) ...
-%                 , tf, yf(:,1) ...
-%                 , tb, yb(:,1) ...
-%             );
-%             % Adjust plotted lines
-%             hp(1).Color = [0, 1, 0];
-%             hp(1).LineStyle = '-';
-%             hp(2).Color = [1, 0, 0];
-%             hp(2).LineStyle = '-';
-%             ylabel(hax(1), 'Solution');
-%             % Second axis is error
-%             hax(2) = subplot(2, 1, 2, 'Parent', hf);
-%             % Plot data
-%             plot( ...
-%                 hax(2) ...
-%                 , tf, abs(yf - yb)./((abs(yf) + abs(yb))/2) ...
-%             );
-%             ylabel(hax(2), 'Relative error');
-%             
-%             % Update figure
-%             drawnow();
-%             
-%         end
-        
-        
-%         function onVanDerPol1_WithMassStateDepencent(this)
-%             %% ONVANDERPOL_WITHMASSSTATEDEPENDENT tests the BDF on van-der-Pols ODE
-%             %
-%             %   MU in van-der-Pols ODE is set to 1. The ODE's mass matrix is
-%             %   artifically set to 4. Mass matrix's state dependence is set to
-%             %   none.
-%             %   Results are compared against ODE15S.
-%             
-%             
-%             % Time vector
-%             tspan = 0:1e-3:2;
-%             % Initial state
-%             y0 = [2; 0];
-%             
-%             % Solve with MATLAB's built-in ODE15S
-%             [tf, yf] = ode15s(@vdp1, tspan, y0, odeset());
-%             % Compare aginst our result
-%             [tb, yb] = leapfrog(@vdp1_s, tspan, y0(1:end/2), y0(end/2+1:end), odeset('MaxOrder', 'Mass', @(t, y) 4.*eye([2, 2]), 'MStateDependence', 'strong'));
-%             
-%             % New figure
-%             hf = figure;
-%             % Set figure name
-%             hf.Name = sprintf('%s with %s', func2str(@vdp1), 'leapfrog');
-%             % First subplot is result
-%             hax(1) = subplot(2, 1, 1, 'Parent', hf);
-%             % Plot data
-%             hp = plot( ...
-%                 hax(1) ...
-%                 , tf, yf(:,1) ...
-%                 , tb, yb(:,1) ...
-%             );
-%             % Adjust plotted lines
-%             hp(1).Color = [0, 1, 0];
-%             hp(1).LineStyle = '-';
-%             hp(2).Color = [1, 0, 0];
-%             hp(2).LineStyle = '-';
-%             ylabel(hax(1), 'Solution');
-%             % Second axis is error
-%             hax(2) = subplot(2, 1, 2, 'Parent', hf);
-%             % Plot data
-%             plot( ...
-%                 hax(2) ...
-%                 , tf, abs(yf - yb)./((abs(yf) + abs(yb))/2) ...
-%             );
-%             ylabel(hax(2), 'Relative error');
-%             
-%             % Update figure
-%             drawnow();
-%             
-%         end
-        
-        
-%         function onVanDerPol1000(this, odefun)
-%             
-%             
-%             % Time vector
-%             tspan = 0:1e-3:10;
-%             % Initial state
-%             y0 = [2; 0];
-%             
-%             % Solve with MATLAB's built-on ODE15s
-%             [tf, yf] = ode15s(@vdp1000, tspan, y0);
-%             % Compare aginst our result
-%             [tb, yb] = odefun(@vdp1000, tspan, y0, odeset('MaxOrder'));
-%             
-%             % New figure
-%             hf = figure;
-%             % Set figure name
-%             hf.Name = sprintf('%s with %s', func2str(@vdp1000), sprintf('bdf%g'));
-%             % First subplot is result
-%             hax(1) = subplot(2, 1, 1, 'Parent', hf);
-%             % Plot data
-%             hp = plot( ...
-%                 hax ...
-%                 , tf, yf(:,1) ...
-%                 , tb, yb(:,1) ...
-%             );
-%             % Adjust plotted lines
-%             hp(1).Color = [0, 1, 0];
-%             hp(1).LineStyle = '-';
-%             hp(2).Color = [1, 0, 0];
-%             hp(2).LineStyle = '-';
-%             ylabel(hax(1), 'Solution');
-%             % Second axis is error
-%             hax(2) = subplot(2, 1, 2, 'Parent', hf);
-%             % Plot data
-%             plot( ...
-%                 hax ...
-%                 , tf, abs(yf - yb)./((abs(yf) + abs(yb))/2) ...
-%             );
-%             ylabel(hax(2), 'Relative error');
-%             
-%         end
-        
+      this.m = this.m_*(1 + rand([1, 1]));
+      this.x0 = this.x0_.*rand([1, 1]);
+      this.v0 = this.v0_.*rand([1, 1]);
+      
+    end
+    
+  end
+  
+  
+  
+  methods ( TestMethodTeardown )
+    
+    function fillFigure(this)
+      %% FILLFIGURE with simulation results
+      
+      
+      % Select figure
+      figure(this.HFig);
+      
+      % Get test name: remove the class name from the testname
+      this.testname = last(strsplit(this.testname, '.'));
+      
+      % Set name of figure
+      this.HFig.Name = this.testname;
+      
+      % Position/Positions
+      hax(1) = subplot(2, 1, 1 ...
+        , 'Parent', this.HFig ...
+      );
+      plot(hax(1) ...
+        , this.t, this.x ...
+      );
+      xlabel(hax(1) ...
+        , 'Time $t / \mathrm{s}$' ...
+        , 'Interpreter', 'latex' ...
+      );
+      ylabel(hax(1) ...
+        , 'Position $x / \mathrm{m}$' ...
+        , 'Interpreter', 'latex' ...
+      );
+      
+      % Velocity/Velocities
+      hax(2) = subplot(2, 1, 2 ...
+        , 'Parent', this.HFig ...
+      );
+      plot(hax(2) ...
+        , this.t, this.v ...
+      );
+      xlabel(hax(2) ...
+        , 'Time $t / \mathrm{s}$' ...
+        , 'Interpreter', 'latex' ...
+      );
+      ylabel(hax(2) ...
+        , 'Velocity $\dot{x} / \mathrm{m}\mathrm{s}^{-1}$' ...
+        , 'Interpreter', 'latex' ...
+      );
+      
+      % Update drawing
+      drawnow();
+      
+      % Save figure to file
+      saveas(this.HFig, this.testname, 'tiff');
+      
+      % Close figure
+      close(this.HFig);
+      
+    end
+    
+  end
+
+  
+  methods ( Test )
+      
+    function drivenHarmonicOscillator(this)
+      %% DRIVENHAROMONICOSCILLATOR
+
+      tsp = tspan(0, this.T, this.h);
+
+      function F = frc(t_, x_, v_)
+        F = this.f0.*cos(this.w.*this.omega0.*(t_ - 20)).*exp(-(t_./this.Tf).^2);
+      end
+
+      function f = ode_rhs(t_, x_, v_)
+        f = (-this.omega0^2*x_ - 2*this.D*this.omega0*v_ + frc(t_, x_, v_))/this.m;
+      end
+
+      [this.t, this.x, this.v] = leapfrog(@ode_rhs, tsp, this.x0, this.v0);
+
+      this.assertNotEmpty(this.t);
+      this.assertNotEmpty(this.x);
+      this.assertNotEmpty(this.v);
+      this.assertSize(this.t, size(tsp));
+      this.assertSize(this.x, [numel(tsp), 1]);
+      this.assertSize(this.v, [numel(tsp), 1]);
+      this.assertEqual(this.t, tsp, 'AbsTol', 1000*eps);
+      
+      this.testname = funcname();
+
+    end
+
+
+    function drivenHarmonicOscillator_ConstantMassMatrix(this)
+      %% DRIVENHAROMONICOSCILLATOR_CONSTANTMASSMATRIX
+
+      tsp = tspan(0, this.T, this.h);
+
+      function F = frc(t_, x_, v_)
+        F = this.f0.*cos(this.w.*this.omega0.*(t_ - 20)).*exp(-(t_./this.Tf).^2);
+      end
+
+      function f = ode_rhs(t_, x_, v_)
+        f = -this.omega0^2*x_ - 2*this.D*this.omega0*v_ + frc(t_, x_, v_);
+      end
+
+      [this.t, this.x, this.v] = leapfrog(@ode_rhs, tsp, this.x0, this.v0, odeset('Mass', this.m));
+
+      this.assertNotEmpty(this.t);
+      this.assertNotEmpty(this.x);
+      this.assertNotEmpty(this.v);
+      this.assertSize(this.t, size(tsp));
+      this.assertSize(this.x, [numel(tsp), 1]);
+      this.assertSize(this.v, [numel(tsp), 1]);
+      this.assertEqual(this.t, tsp, 'AbsTol', 1000*eps);
+      
+      this.testname = funcname();
+
+    end
+
+
+%     function drivenHarmonicOscillator_TimeDependentMassMatrix(this)
+%       %% DRIVENHAROMONICOSCILLATOR_TIMEDEPENDENTMASSMATRIX
+% 
+%       tsp = tspan(0, this.T, this.h);
+% 
+%       function F = frc(t_, x_, v_)
+%         F = this.f0.*cos(this.w.*this.omega0.*(t_ - 20)).*exp(-(t_./this.Tf).^2);
+%       end
+% 
+%       function f = ode_rhs(t_, x_, v_)
+%         f = -this.omega0^2*x_ - 2*this.D*this.omega0*v_ + frc(t_, x_, v_);
+%       end
+% 
+%       [this.t, this.x, this.v] = leapfrog(@ode_rhs, tsp, this.x0, this.v0, odeset('Mass', @(t_) this.m, 'MStateDependence', 'none'));
+% 
+%       this.assertNotEmpty(this.t);
+%       this.assertNotEmpty(this.x);
+%       this.assertNotEmpty(this.v);
+%       this.assertSize(this.t, size(tsp));
+%       this.assertSize(this.x, [numel(tsp), 1]);
+%       this.assertSize(this.v, [numel(tsp), 1]);
+%       this.assertEqual(this.t, tsp, 'AbsTol', 1000*eps);
+%       
+%       this.testname = funcname();
+% 
+%     end
+
+
+    function drivenHarmonicOscillator_StateDependentMassMatrix(this)
+      %% DRIVENHAROMONICOSCILLATOR_STATEDEPENDENTMASSMATRIX
+
+      tsp = tspan(0, this.T, this.h);
+
+      function F = frc(t_, x_, v_)
+        F = this.f0.*cos(this.w.*this.omega0.*(t_ - 20)).*exp(-(t_./this.Tf).^2);
+      end
+
+      function f = ode_rhs(t_, x_, v_)
+        f = -this.omega0^2*x_ - 2*this.D*this.omega0*v_ + frc(t_, x_, v_);
+      end
+
+      [this.t, this.x, this.v] = leapfrog(@ode_rhs, tsp, this.x0, this.v0, odeset('Mass', @(t_, x_, v_) this.m));
+
+      this.assertNotEmpty(this.t);
+      this.assertNotEmpty(this.x);
+      this.assertNotEmpty(this.v);
+      this.assertSize(this.t, size(tsp));
+      this.assertSize(this.x, [numel(tsp), 1]);
+      this.assertSize(this.v, [numel(tsp), 1]);
+      this.assertEqual(this.t, tsp, 'AbsTol', 1000*eps);
+      
+      this.testname = funcname();
+
     end
     
     
+    function drivenHarmonicOscillators(this)
+      %% DRIVENHAROMONICOSCILLATORS
+
+      tsp = tspan(0, this.T, this.h);
+
+      function F = frc(t_, x_, v_)
+        F = this.f0.*cos(this.w.*this.omega0.*(t_ - 20)).*exp(-(t_./this.Tf).^2);
+      end
+
+      function f = ode_rhs(t_, x_, v_)
+        f = (-this.omega0^2.*x_ - 2*this.D.*this.omega0.*v_ + frc(t_, x_, v_))./this.m;
+      end
+
+      [this.t, this.x, this.v] = leapfrog(@ode_rhs, tsp, this.x0.*rand(3, 1), this.v0.*rand(3, 1));
+
+      this.assertNotEmpty(this.t);
+      this.assertNotEmpty(this.x);
+      this.assertNotEmpty(this.v);
+      this.assertSize(this.t, size(tsp));
+      this.assertSize(this.x, [numel(tsp), 3]);
+      this.assertSize(this.v, [numel(tsp), 3]);
+      this.assertEqual(this.t, tsp, 'AbsTol', 1000*eps);
+      
+      this.testname = funcname();
+
+    end
+
+
+    function drivenHarmonicOscillators_StateDependentMassMatrix(this)
+      %% DRIVENHAROMONICOSCILLATORS_STATEDEPENDENTMASSMATRIX
+
+      tsp = tspan(0, this.T, this.h);
+
+      function F = frc(t_, x_, v_)
+        F = this.f0.*cos(this.w.*this.omega0.*(t_ - 20)).*exp(-(t_./this.Tf).^2);
+      end
+
+      function f = ode_rhs(t_, x_, v_)
+        f = -this.omega0^2.*x_ - 2*this.D.*this.omega0.*v_ + frc(t_, x_, v_);
+      end
+
+      [this.t, this.x, this.v] = leapfrog(@ode_rhs, tsp, this.x0.*rand(3, 1), this.v0.*rand(3, 1), odeset('Mass', @(t_, x_, v_) this.m));
+
+      this.assertNotEmpty(this.t);
+      this.assertNotEmpty(this.x);
+      this.assertNotEmpty(this.v);
+      this.assertSize(this.t, size(tsp));
+      this.assertSize(this.x, [numel(tsp), 3]);
+      this.assertSize(this.v, [numel(tsp), 3]);
+      this.assertEqual(this.t, tsp, 'AbsTol', 1000*eps);
+      
+      this.testname = funcname();
+
+    end
+
+  end
+  
 end
 
