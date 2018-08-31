@@ -81,11 +81,11 @@ else  % ode-file used   (ignored when solver == ODE15I)
 end
 
 y0 = y0(:);
-% if strcmp(solver, 'leapfrog')
-%   neq = length(y0)/2;
-% else
+if strcmp(solver, 'leapfrog')
+  neq = length(y0)/2;
+else
   neq = length(y0);
-% end
+end
 
 % Test that tspan is internally consistent.
 if any(isnan(tspan))
