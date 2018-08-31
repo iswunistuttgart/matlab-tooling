@@ -67,6 +67,7 @@ else % ode-file
     case 'm', massType = 1;
     case 'm(t)', massType = 2;
     case 'm(t,y)', massType = 3;
+    case 'm(t,x,v)', massType = 3;
     otherwise
       error(message('MATLAB:odemass:InvalidMassProp', mass));
   end
