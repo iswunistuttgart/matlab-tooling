@@ -46,8 +46,14 @@ function Files = allfiles(d, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-05-21
+% Date: 2018-08-31
 % Changelog:
+%   2018-08-31
+%       * Change name/value parameter EXTENSION to an optional parameter, that
+%       now may also be left empty to gather all files
+%       * Update to more object-oriented approach to using INPUTPARSER. All
+%       methods that involve the IP are now called on the IP object rather than
+%       passing the IP object as first argument
 %   2018-05-21
 %       * Fix incorrect passing of arguments to recursive call
 %   2018-04-10
@@ -77,27 +83,27 @@ ip = inputParser;
 
 % Optional: Directory. Char. Non-empty.
 valFcn_Dir = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Dir');
-addRequired(ip, 'Dir', valFcn_Dir);
+ip.addRequired('Dir', valFcn_Dir);
 
 % Parameter: Extension. Char. Non-empty.
-valFcn_Extension = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Extension');
-addParameter(ip, 'Extension', '', valFcn_Extension);
+valFcn_Extension = @(x) validateattributes(x, {'char'}, {}, mfilename, 'Extension');
+ip.addOptional('Extension', '', valFcn_Extension);
 
 % Paramter: Prefix. Char. Non-empty.
 valFcn_Prefix = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Prefix');
-addParameter(ip, 'Prefix', '', valFcn_Prefix);
+ip.addParameter('Prefix', '', valFcn_Prefix);
 
 % Parameter: Suffix. Char. Non-empty.
 valFcn_Suffix = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Suffix');
-addParameter(ip, 'Suffix', '', valFcn_Suffix);
+ip.addParameter('Suffix', '', valFcn_Suffix);
 
 % Parameter: IncludeHidden. Char. Matches {on, yes, off, no}
 valFcn_IncludeHidden = @(x) any(validatestring(lower(x), {'on', 'yes', 'off', 'no'}, mfilename, 'IncludeHidden'));
-addParameter(ip, 'IncludeHidden', 'off', valFcn_IncludeHidden);
+ip.addParameter('IncludeHidden', 'off', valFcn_IncludeHidden);
 
 % Parameter: Recurse. Char. Matches {on, yes, off, no}
 valFcn_Recurse = @(x) any(validatestring(lower(x), {'on', 'yes', 'off', 'no'}, mfilename, 'Recurse'));
-addParameter(ip, 'Recurse', 'off', valFcn_Recurse);
+ip.addParameter('Recurse', 'off', valFcn_Recurse);
 
 % Configuration of input parser
 ip.KeepUnmatched = true;
@@ -106,7 +112,7 @@ ip.FunctionName = mfilename;
 % Parse the provided inputs
 try
     % Default argument fallback
-    if nargin == 0 || isempty(d)
+    if nargin == 0 || isempty(d) || 0 == exist('d', 'var')
         d = pwd;
     end
     
@@ -119,7 +125,7 @@ try
     
     args = [{d}, varargin];
     
-    parse(ip, args{:});
+    ip.parse(args{:});
 catch me
     throwAsCaller(me);
 end

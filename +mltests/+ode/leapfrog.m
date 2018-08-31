@@ -59,6 +59,30 @@ classdef leapfrog < matlab.unittest.TestCase
   
   
   
+  %% ODE CALLBACKS
+  methods
+    
+    function dydt = drivenHarmonicOscillator_rhs(this, t_, y_)
+      %% DRIVENHARMONICOSCILLATOR_RHS
+      
+      
+      dydt = (-this.omega0^2*y_(1:end/2) - 2*this.D*this.omega0*y_(end/2+1:end) + this.drivenHarmonicOscillator_force(t_, y_))/this.m;
+      
+    end
+    
+    
+    function F = drivenHarmonicOscillator_force(this, t, y)
+      %% DRIVENHARMONICOSCILLATOR_FORCE
+      
+      
+      F = this.f0.*cos(this.w.*this.omega0.*(t - 20)).*exp(-(t./this.Tf).^2);
+      
+    end
+    
+  end
+  
+  
+  
   %% TESTMETHODSETUP
   methods ( TestMethodSetup )
     
@@ -72,6 +96,8 @@ classdef leapfrog < matlab.unittest.TestCase
     
     
     function randomizeParameters(this)
+      %% RANDOMIZEPARAMETERS to have more randomized simulations
+      
       
       this.m = this.m_*(1 + rand([1, 1]));
       this.x0 = this.x0_.*rand([1, 1]);
@@ -89,6 +115,11 @@ classdef leapfrog < matlab.unittest.TestCase
     function fillFigure(this)
       %% FILLFIGURE with simulation results
       
+      
+      % Stop execution if test failed
+      if isempty(this.testname)
+        return
+      end
       
       % Select figure
       figure(this.HFig);
@@ -114,6 +145,7 @@ classdef leapfrog < matlab.unittest.TestCase
         , 'Position $x / \mathrm{m}$' ...
         , 'Interpreter', 'latex' ...
       );
+      xlim(hax(1), this.t([1, end]));
       
       % Velocity/Velocities
       hax(2) = subplot(2, 1, 2 ...
@@ -130,12 +162,13 @@ classdef leapfrog < matlab.unittest.TestCase
         , 'Velocity $\dot{x} / \mathrm{m}\mathrm{s}^{-1}$' ...
         , 'Interpreter', 'latex' ...
       );
+      xlim(hax(2), this.t([1, end]));
       
       % Update drawing
       drawnow();
       
       % Save figure to file
-      saveas(this.HFig, this.testname, 'tiff');
+      saveas(this.HFig, fullfile(fileparts(mfilename('fullpath')), this.testname), 'tiff');
       
       % Close figure
       close(this.HFig);
@@ -148,21 +181,13 @@ classdef leapfrog < matlab.unittest.TestCase
   
   %% TESTS
   methods ( Test )
-      
+    
     function drivenHarmonicOscillator(this)
       %% DRIVENHAROMONICOSCILLATOR
 
       tsp = tspan(0, this.T, this.h);
 
-      function F = frc(t_, x_, v_)
-        F = this.f0.*cos(this.w.*this.omega0.*(t_ - 20)).*exp(-(t_./this.Tf).^2);
-      end
-
-      function f = ode_rhs(t_, x_, v_)
-        f = (-this.omega0^2*x_ - 2*this.D*this.omega0*v_ + frc(t_, x_, v_))/this.m;
-      end
-
-      [this.t, this.x, this.v] = leapfrog(@ode_rhs, tsp, this.x0, this.v0);
+      [this.t, this.x, this.v] = leapfrog(@this.drivenHarmonicOscillator_rhs, tsp, this.x0, this.v0);
 
       this.assertNotEmpty(this.t);
       this.assertNotEmpty(this.x);
@@ -170,7 +195,6 @@ classdef leapfrog < matlab.unittest.TestCase
       this.assertSize(this.t, size(tsp));
       this.assertSize(this.x, [numel(tsp), 1]);
       this.assertSize(this.v, [numel(tsp), 1]);
-      this.assertEqual(this.t, tsp, 'AbsTol', 1000*eps);
       
       this.testname = funcname();
 
@@ -182,15 +206,7 @@ classdef leapfrog < matlab.unittest.TestCase
 
       tsp = tspan(0, this.T, this.h);
 
-      function F = frc(t_, x_, v_)
-        F = this.f0.*cos(this.w.*this.omega0.*(t_ - 20)).*exp(-(t_./this.Tf).^2);
-      end
-
-      function f = ode_rhs(t_, x_, v_)
-        f = -this.omega0^2*x_ - 2*this.D*this.omega0*v_ + frc(t_, x_, v_);
-      end
-
-      [this.t, this.x, this.v] = leapfrog(@ode_rhs, tsp, this.x0, this.v0, odeset('Mass', this.m));
+      [this.t, this.x, this.v] = leapfrog(@this.drivenHarmonicOscillator_rhs, tsp, this.x0, this.v0, odeset('Mass', this.m));
 
       this.assertNotEmpty(this.t);
       this.assertNotEmpty(this.x);
@@ -198,7 +214,6 @@ classdef leapfrog < matlab.unittest.TestCase
       this.assertSize(this.t, size(tsp));
       this.assertSize(this.x, [numel(tsp), 1]);
       this.assertSize(this.v, [numel(tsp), 1]);
-      this.assertEqual(this.t, tsp, 'AbsTol', 1000*eps);
       
       this.testname = funcname();
 
@@ -210,15 +225,7 @@ classdef leapfrog < matlab.unittest.TestCase
 % 
 %       tsp = tspan(0, this.T, this.h);
 % 
-%       function F = frc(t_, x_, v_)
-%         F = this.f0.*cos(this.w.*this.omega0.*(t_ - 20)).*exp(-(t_./this.Tf).^2);
-%       end
-% 
-%       function f = ode_rhs(t_, x_, v_)
-%         f = -this.omega0^2*x_ - 2*this.D*this.omega0*v_ + frc(t_, x_, v_);
-%       end
-% 
-%       [this.t, this.x, this.v] = leapfrog(@ode_rhs, tsp, this.x0, this.v0, odeset('Mass', @(t_) this.m, 'MStateDependence', 'none'));
+%       [this.t, this.x, this.v] = leapfrog(@this.drivenHarmonicOscillator_rhs, tsp, this.x0, this.v0, odeset('Mass', @(t_) this.m, 'MStateDependence', 'none'));
 % 
 %       this.assertNotEmpty(this.t);
 %       this.assertNotEmpty(this.x);
@@ -238,15 +245,15 @@ classdef leapfrog < matlab.unittest.TestCase
 
       tsp = tspan(0, this.T, this.h);
 
-      function F = frc(t_, x_, v_)
+      function F = frc(t_, y_)
         F = this.f0.*cos(this.w.*this.omega0.*(t_ - 20)).*exp(-(t_./this.Tf).^2);
       end
 
-      function f = ode_rhs(t_, x_, v_)
-        f = -this.omega0^2*x_ - 2*this.D*this.omega0*v_ + frc(t_, x_, v_);
+      function f = ode_rhs(t_, y_)
+        f = -this.omega0^2*y_(1) - 2*this.D*this.omega0*y_(2) + frc(t_, y_);
       end
 
-      [this.t, this.x, this.v] = leapfrog(@ode_rhs, tsp, this.x0, this.v0, odeset('Mass', @(t_, x_, v_) this.m));
+      [this.t, this.x, this.v] = leapfrog(@ode_rhs, tsp, this.x0, this.v0, odeset('Mass', @(t_, y_) this.m));
 
       this.assertNotEmpty(this.t);
       this.assertNotEmpty(this.x);
@@ -254,7 +261,6 @@ classdef leapfrog < matlab.unittest.TestCase
       this.assertSize(this.t, size(tsp));
       this.assertSize(this.x, [numel(tsp), 1]);
       this.assertSize(this.v, [numel(tsp), 1]);
-      this.assertEqual(this.t, tsp, 'AbsTol', 1000*eps);
       
       this.testname = funcname();
 
@@ -266,15 +272,7 @@ classdef leapfrog < matlab.unittest.TestCase
 
       tsp = tspan(0, this.T, this.h);
 
-      function F = frc(t_, x_, v_)
-        F = this.f0.*cos(this.w.*this.omega0.*(t_ - 20)).*exp(-(t_./this.Tf).^2);
-      end
-
-      function f = ode_rhs(t_, x_, v_)
-        f = (-this.omega0^2.*x_ - 2*this.D.*this.omega0.*v_ + frc(t_, x_, v_))./this.m;
-      end
-
-      [this.t, this.x, this.v] = leapfrog(@ode_rhs, tsp, this.x0.*rand(3, 1), this.v0.*rand(3, 1));
+      [this.t, this.x, this.v] = leapfrog(@this.drivenHarmonicOscillator_rhs, tsp, this.x0.*rand(3, 1), this.v0.*rand(3, 1));
 
       this.assertNotEmpty(this.t);
       this.assertNotEmpty(this.x);
@@ -282,7 +280,6 @@ classdef leapfrog < matlab.unittest.TestCase
       this.assertSize(this.t, size(tsp));
       this.assertSize(this.x, [numel(tsp), 3]);
       this.assertSize(this.v, [numel(tsp), 3]);
-      this.assertEqual(this.t, tsp, 'AbsTol', 1000*eps);
       
       this.testname = funcname();
 
@@ -294,15 +291,7 @@ classdef leapfrog < matlab.unittest.TestCase
 
       tsp = tspan(0, this.T, this.h);
 
-      function F = frc(t_, x_, v_)
-        F = this.f0.*cos(this.w.*this.omega0.*(t_ - 20)).*exp(-(t_./this.Tf).^2);
-      end
-
-      function f = ode_rhs(t_, x_, v_)
-        f = -this.omega0^2.*x_ - 2*this.D.*this.omega0.*v_ + frc(t_, x_, v_);
-      end
-
-      [this.t, this.x, this.v] = leapfrog(@ode_rhs, tsp, this.x0.*rand(3, 1), this.v0.*rand(3, 1), odeset('Mass', @(t_, x_, v_) this.m));
+      [this.t, this.x, this.v] = leapfrog(@this.drivenHarmonicOscillator_rhs, tsp, this.x0.*rand(3, 1), this.v0.*rand(3, 1), odeset('Mass', @(t_, y_) this.m));
 
       this.assertNotEmpty(this.t);
       this.assertNotEmpty(this.x);
@@ -310,7 +299,6 @@ classdef leapfrog < matlab.unittest.TestCase
       this.assertSize(this.t, size(tsp));
       this.assertSize(this.x, [numel(tsp), 3]);
       this.assertSize(this.v, [numel(tsp), 3]);
-      this.assertEqual(this.t, tsp, 'AbsTol', 1000*eps);
       
       this.testname = funcname();
 

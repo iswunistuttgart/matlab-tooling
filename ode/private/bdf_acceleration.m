@@ -1,4 +1,4 @@
-function res = bdf_acceleration(odefun, ordr, tn, tn1, ynp, yn1, mass, varargin)
+function res = bdf_acceleration(odefun, ordr, yp, tn, yn, h, mass, varargin)
 % BDF_ACCELERATION implements the FSOLVE callback for BDF Euler
 %
 %   Inputs:
@@ -7,13 +7,13 @@ function res = bdf_acceleration(odefun, ordr, tn, tn1, ynp, yn1, mass, varargin)
 %
 %   ORDR                Order K of the BDF formulation.
 %
-%   TN                  Current time value.
+%   YP                  NxK vector of the previous states.
 %
-%   TN1                 Time value at the to-be-estimated state.
+%   TN                  Time value at the to-be-estimated state.
 %
-%   YNP                 NxK vector of the previous states.
+%   YN                  Nx1 vector of the current next-state estimate.
 %
-%   YN1                 Nx1 vector of the current next-state estimate.
+%   H                   Step size.
 %
 %   MASS                Structure containing information on the mass matrix.
 %
@@ -39,15 +39,6 @@ function res = bdf_acceleration(odefun, ordr, tn, tn1, ynp, yn1, mass, varargin)
 
 
 %% Initialize variables
-
-% Order of BDF
-nOrder = ordr;
-
-% Mass information structure
-stMass = mass;
-
-% Calculate step size
-dStepsize = tn1 - tn;
 
 % To speed up evaluation, make Butcher tableau persistent
 persistent aButcher
@@ -77,21 +68,9 @@ if isempty(vStepsizeWeights)
   ];
 end
 
-% Determine value of mass matrix
-switch stMass.Type
-  case 0 % []
-    M = 1;
-  case 1 % M
-    M = stMass.Value;
-  case 2 % M(t)
-    M = stMass.Function(tn);
-  case {3, 4} % M(t, y)
-    M = stMass.Function(tn, ynp);
-end
-
 
 % Calculate residual value
-res = M*(yn1 + ynp*transpose(aButcher(nOrder,end-(nOrder-1):end))) - vStepsizeWeights(nOrder)*dStepsize*feval(odefun, tn1, yn1);
+res = mass.Function(tn, yn)*(yn + yp*transpose(aButcher(ordr,end-(ordr-1):end))) - vStepsizeWeights(ordr)*h*feval(odefun, tn, yn);
 
 
 end
