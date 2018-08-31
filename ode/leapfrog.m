@@ -85,7 +85,7 @@ nFuncEval = 0;
 % Parse the ODE arguments using MATLAB's built-in ODEARGUMENTS function
 [nEquations, vTspan, nTime, next, dTime_0, dTime_T, dTime_Dirn, y0, f0, odeArgs, odefun, ...
  stOptions, threshold, rtol, normcontrol, normy, hmax, htry, htspan, dataType] = ...
-    odearguments(loFHUsed, chSolverName, odefun, tsp, x0, stOptions, {v0});
+    odearguments(loFHUsed, chSolverName, odefun, tsp, [x0(:); v0(:)], stOptions, varargin);
 
 % ODE function was once evaluated inside ODEARGUMENTS
 nFuncEval = nFuncEval + 1;
@@ -108,7 +108,7 @@ dStepsizeDouble = 2*dStepsize;
 % nMass_Type == 1: M
 % nMass_Type == 2: M(t)
 % nMass_Type == 3: M(t, y)
-[nMass_Type, aMass_0, fhMass, ceMass_arg, stMass_Options] = odemass(loFHUsed, odefun, dTime_0, x0, stOptions, {v0});
+[nMass_Type, aMass_0, fhMass, ceMass_arg, stMass_Options] = odemass(loFHUsed, odefun, dTime_0, [x0(:); v0(:)], stOptions, varargin);
 % Stucture containing information on the mass matrix
 stMass = struct( ...
     'Type', nMass_Type ...
@@ -124,16 +124,16 @@ if isa(stMass_Options, 'struct')
   stMass.Options = stMass_Options;
 end
 
-% Determine value of mass matrix
+% Determine function callback of mass matrix
 switch stMass.Type
   case 0 % []
-    stMass.Function = @(t, x, v) 1;
+    stMass.Function = @(t, y) 1;
   case 1 % M
-    stMass.Function = @(t, x, v) stMass.Value;
+    stMass.Function = @(t, y) stMass.Value;
   case 2 % M(t)
-    stMass.Function = @(t, x, v) stMass.Function(tn);
+    stMass.Function = @(t, y) stMass.Function(tn);
   case {3, 4} % M(t, x, v)
-%     M = stMass.Function(tn, xn, vn);
+    % Nothing to be done here, everything's as it's supposed to be
 end
 
 % Make sure we have a column vector
@@ -153,6 +153,8 @@ stOptsFsolve = optimoptions( ...
     'fsolve' ...
     , 'Algorithm', 'levenberg-marquardt' ...
     , 'Display', 'off' ...
+    , 'FunctionTolerance', dStepsize^5 ...
+    , 'StepTolerance', dStepsize^4 ...
 );
 
 % Output time
@@ -172,7 +174,7 @@ vFull(:,nout) = v0;
 % Calculate initial acceleration to determine the velocity at half a time step
 % in the past
 [aFull(:,nout), ~, ~, output] = fsolve( ...
-  @(aTest) leapfrog_acceleration(odefun, dTime_0, x0, v0, aTest, stMass) ...
+  @(aTest) leapfrog_acceleration(odefun, dTime_0, x0, v0, aTest, dStepsize, stMass) ...
   , v0 ...
   , stOptsFsolve ...
 );
@@ -185,14 +187,17 @@ nFuncEval = nFuncEval + output.funcCount;
 % Keep track of if we're done integrating or not
 done = false;
 
+% Increase the current step time value
+% nout = nout + 1;
+% tFull(nout) = tFull(nout - 1) + dStepsize;
+
+% Continue integrating while we're not done
 while ~done
   
   % Current time value
-  tN = round((nout - 1)*dStepsize, 1/dStepsize);
-%   tN = tFull(nout);
+  tN = round(tFull(nout), 1/dStepsize);
   % Next time value
-  tNp1 = round(nout*dStepsize, 1/dStepsize);
-%   tNp1 = tN + dStepsize;
+  tNp1 = round(tN + dStepsize, 1/dStepsize);
   
   % Current position x_n
   xN = xFull(:,nout);
@@ -207,7 +212,7 @@ while ~done
   % Predict an acceleration for the current time step based on solving the ODE
   % M*a = f for the current position but the previous velocity
   [aNPred, ~, ~, output] = fsolve( ...
-      @(atest) leapfrog_acceleration(odefun, tN, xN, vNm12, atest, stMass) ...
+      @(atest) leapfrog_acceleration(odefun, tN, xN, vNm12, atest, dStepsize, stMass) ...
     , aN ...
     , stOptsFsolve ...
   );
@@ -228,7 +233,7 @@ while ~done
   % And determine a corrected acceleration a_n knowing the corrected current
   % acceleration and the corrected current velocity
   [aN, ~, ~, output] = fsolve( ...
-      @(atest) leapfrog_acceleration(odefun, tN, xN, vN, atest, stMass) ...
+      @(atest) leapfrog_acceleration(odefun, tN, xN, vN, atest, dStepsize, stMass) ...
       , aNPred ...
       , stOptsFsolve ...
     );
@@ -275,9 +280,9 @@ while ~done
 end
 
 % Finalize data
-tFull = tFull(1:(nout-1));
-xout = xFull(:,1:(nout-1));
-vout = vFull(:,1:(nout-1));
+tFull = tFull(1:nout);
+xout = xFull(:,1:nout);
+vout = vFull(:,1:nout);
 
 
 

@@ -1,4 +1,4 @@
-function res = leapfrog_acceleration(odefun, tn, xn, vn, ane, mass, varargin)
+function res = leapfrog_acceleration(odefun, tn, xn, vn, ane, h, mass, varargin)
 % LEAPFROG_ACCELERATION solves the non-linear ODE for the current acceleration
 %
 %   Inputs:
@@ -35,7 +35,7 @@ function res = leapfrog_acceleration(odefun, tn, xn, vn, ane, mass, varargin)
 
 
 % Calculate residual value
-res = mass.Function(tn, xn, vn)*ane - odefun(tn, xn, vn);
+res = mass.Function(tn, [xn; vn])*ane - odefun(tn, [xn; vn]);
 
 
 end
