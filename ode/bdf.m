@@ -115,11 +115,11 @@ end
 % Determine function callback of mass matrix
 switch stMass.Type
   case 0 % []
-    stMass.Function = @(t, y) 1;
+    stMass.Function = @(t, y) stMass.Value;
   case 1 % M
     stMass.Function = @(t, y) stMass.Value;
   case 2 % M(t)
-    stMass.Function = @(t, y) stMass.Function(tn);
+    stMass.Function = @(t, y) stMass.Function(t);
   case 3 % M(t, y)
     % Nothing to be done here, everything's as it's supposed to be
 end
@@ -233,7 +233,7 @@ while ~done
   ynew_guess = yprevs(:,end) + dStepsize*feval(odefun, tnew, yprevs(:,end));
 
   % Solve the implicit equation for y_n+1
-  [ynew, ~, ~, output] = fsolve( ...
+  [ynew, ~ , ~, output] = fsolve( ...
       @(ynew) bdf_acceleration(odefun, nBDF, yprevs, tnew, ynew, dStepsize, stMass) ...
       , ynew_guess ...
       , stOptsFsolve ...
@@ -256,16 +256,16 @@ while ~done
   tout(nout) = tnew;
   yout(:,nout) = ynew;
 
-  % Stop loopp if we are at the last iteration of the BDF initalization
-  if tcurr > dTime_T
-    % Done
-    done = true;
-    % Adjust the number of states: reduce by one as we must not consider the
-    % very last state which timm be at Tf + h
-    nout = nout - 1;
-  end
+  % Stop loop if we less than one time step away from the final value
+  done = nout == nTime;
   
 end
+
+% Reduce the step counter by one since we stopped one step after the final time
+% nout = nout - 1;
+
+% Get indices that are to be returned
+% idxOut = find(tout <= dTime_T, ;
 
 % Finalize data
 tout = tout(1:nout);
