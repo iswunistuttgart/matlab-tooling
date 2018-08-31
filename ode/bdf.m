@@ -112,6 +112,18 @@ if isa(stMass_Options, 'struct')
   stMass.Options = stMass_Options;
 end
 
+% Determine function callback of mass matrix
+switch stMass.Type
+  case 0 % []
+    stMass.Function = @(t, y) 1;
+  case 1 % M
+    stMass.Function = @(t, y) stMass.Value;
+  case 2 % M(t)
+    stMass.Function = @(t, y) stMass.Function(tn);
+  case 3 % M(t, y)
+    % Nothing to be done here, everything's as it's supposed to be
+end
+
 % Make sure we have a column vector
 y0 = y0(:);
 
@@ -138,6 +150,8 @@ stOptsFsolve = optimoptions( ...
     'fsolve' ...
     , 'Algorithm', 'levenberg-marquardt' ...
     , 'Display', 'off' ...
+    , 'FunctionTolerance', dStepsize^5 ...
+    , 'StepTolerance', dStepsize^4 ...
 );
 
 
@@ -149,57 +163,48 @@ stOptsFsolve = optimoptions( ...
 % Keep track of if we're done or not
 done = false;
 
-% Current time value
-tcurr = tout(nout);
-
 % Do not stop while we are not done (d'uh)
 while ~done
     
-    % Time value of next step
-    tnew = tcurr + dStepsize;
-    
-    % Calculation of the index vector to retrieve data from the solution vector
-    idxBdfSpan = 1:nout;
-    
-    % All previous till current states
-    yprevs = yout(:,idxBdfSpan);
-    % Current state vector
-    ycurr = yprevs(:,end);
-    
-    % Initial value for yn1 for fsolve based on Euler forward
-    ynew_guess = ycurr + dStepsize*feval(odefun, tnew, ycurr);
-    
-    % Solve the implicit equation for y_n+1
-    [ynew, ~, ~, output] = fsolve( ...
-        @(ynew) bdf_acceleration(odefun, nout, tcurr, tnew, yprevs, ynew, stMass, stOptions) ...
-        , ynew_guess ...
-        , stOptsFsolve ...
-    );
-    
-    % Advance current output time
-    nout = nout + 1;
-    
-    % Add to function evaluation count the number of function evaluations inside
-    % `fsolve`
-    nFuncEval = nFuncEval + output.funcCount;
-    
-    % Advance time so that next time value is current time value
-    tcurr = tnew;
-    
-    % Enlarge time and solution storage if it's insufficiently small
-    if nout > length(tout)
-      tout = [tout, zeros(1, nChunk, dataType)];
-      yout = [yout, zeros(nEquations, nChunk, dataType)];
-    end
-    
-    % Append time and solution to storage
-    tout(nout) = tnew;
-    yout(:,nout) = ynew;
-    
-    % Stop loopp if we are at the last iteration of the BDF initalization
-    if nout > nBDF
-      done = true;
-    end
+  % Time value of current step
+  tcurr = tout(nout);
+
+  % Time value of next step
+  tnew = tcurr + dStepsize;
+
+  % All previous till current states
+  yprevs = yout(:,1:nout);
+
+  % Initial value for yn1 for fsolve based on Euler forward
+  ynew_guess = yprevs(:,end) + dStepsize*feval(odefun, tnew, yprevs(:,end));
+
+  % Solve the implicit equation for y_n+1
+  [ynew, ~, ~, output] = fsolve( ...
+      @(ynew) bdf_acceleration(odefun, nout, yprevs, tnew, ynew, dStepsize, stMass) ...
+      , ynew_guess ...
+      , stOptsFsolve ...
+  );
+
+  % Advance current state counter
+  nout = nout + 1;
+
+  % Add to function evaluation count the number of function evaluations inside
+  % `fsolve`
+  nFuncEval = nFuncEval + output.funcCount;
+
+  % Enlarge time and solution storage if it's insufficiently small
+  if nout > length(tout)
+    tout = [tout, zeros(1, nChunk, dataType)];
+    yout = [yout, zeros(nEquations, nChunk, dataType)];
+  end
+
+  % Append time and solution to storage
+  tout(nout) = tnew;
+  yout(:,nout) = ynew;
+
+  % Stop loopp if we are at the last iteration of the BDF initalization
+  done = nout > nBDF;
+  
 end
 
 
@@ -212,52 +217,54 @@ idxBdfSpan = -(nBDF-1):0;
 % Keep track of if we're done or not
 done = false;
 
-% Current time value
-tcurr = tout(nout);
-
 % Do not stop while we are not done (d'uh)
 while ~done
     
-    % Time value of next step
-    tnew = tcurr + dStepsize;
-    
-    % All previous till current states
-    yprevs = yout(:,nout + idxBdfSpan);
-    % Current state vector
-    ycurr = yprevs(:,end);
-    
-    % Initial value for yn1 for fsolve based on Euler forward
-    ynew_guess = ycurr + dStepsize*feval(odefun, tnew, ycurr);
-    
-    % Solve the implicit equation for y_n+1
-    [ynew, ~, ~, output] = fsolve( ...
-        @(ynew) bdf_acceleration(odefun, nBDF, tcurr, tnew, yprevs, ynew, stMass, stOptions) ...
-        , ynew_guess ...
-        , stOptsFsolve ...
-    );
-    
-    % Advance current output time
-    nout = nout + 1;
-    
-    % Add to function evaluation count the number of function evaluations inside
-    % `fsolve`
-    nFuncEval = nFuncEval + output.funcCount;
-    
-    % Enlarge time and solution storage if it's too small
-    if nout > length(tout)
-      tout = [tout, zeros(1, nChunk, dataType)];
-      yout = [yout, zeros(nEquations, nChunk, dataType)];
-    end
-    
-    % Append time and solution to storage
-    tout(nout) = tnew;
-    yout(:,nout) = ynew;
-    
-    % Advance time so that next time value is current time value
-    tcurr = tnew;
-    
-    % We are done if the new time value is the final time value
-    done = tnew > dTime_T;
+  % Time value of current step
+  tcurr = tout(nout);
+
+  % Time value of next step
+  tnew = tcurr + dStepsize;
+
+  % All previous till current states
+  yprevs = yout(:,nout + idxBdfSpan);
+
+  % Initial value for yn1 for fsolve based on Euler forward
+  ynew_guess = yprevs(:,end) + dStepsize*feval(odefun, tnew, yprevs(:,end));
+
+  % Solve the implicit equation for y_n+1
+  [ynew, ~, ~, output] = fsolve( ...
+      @(ynew) bdf_acceleration(odefun, nBDF, yprevs, tnew, ynew, dStepsize, stMass) ...
+      , ynew_guess ...
+      , stOptsFsolve ...
+  );
+
+  % Advance current state counter
+  nout = nout + 1;
+
+  % Add to function evaluation count the number of function evaluations inside
+  % `fsolve`
+  nFuncEval = nFuncEval + output.funcCount;
+
+  % Enlarge time and solution storage if it's insufficiently small
+  if nout > length(tout)
+    tout = [tout, zeros(1, nChunk, dataType)];
+    yout = [yout, zeros(nEquations, nChunk, dataType)];
+  end
+
+  % Append time and solution to storage
+  tout(nout) = tnew;
+  yout(:,nout) = ynew;
+
+  % Stop loopp if we are at the last iteration of the BDF initalization
+  if tcurr > dTime_T
+    % Done
+    done = true;
+    % Adjust the number of states: reduce by one as we must not consider the
+    % very last state which timm be at Tf + h
+    nout = nout - 1;
+  end
+  
 end
 
 % Finalize data
