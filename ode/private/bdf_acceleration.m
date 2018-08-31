@@ -70,7 +70,7 @@ end
 
 
 % Calculate residual value
-res = mass(tn, yn)*(yn + yp*transpose(aButcher(ordr,end-(ordr-1):end))) - vStepsizeWeights(ordr)*h*feval(odefun, tn, yn);
+res = mass.Function(tn, yn)*(yn + yp*transpose(aButcher(ordr,end-(ordr-1):end))) - vStepsizeWeights(ordr)*h*feval(odefun, tn, yn);
 
 
 end
