@@ -123,11 +123,16 @@ end
 if isa(stMass_Options, 'struct')
   stMass.Options = stMass_Options;
 end
+% Adjust for ODEMASS returning a mass matrix of size 2Nx2N when there isn't any
+% mass matrix given in OPTIONS
+if size(stMass.Value, 1) == 2*nEquations
+  stMass.Value = stMass.Value(end-(nEquations-1):end,end-(nEquations-1):end);
+end
 
 % Determine function callback of mass matrix
 switch stMass.Type
   case 0 % []
-    stMass.Function = @(t, y) 1;
+    stMass.Function = @(t, y) stMass.Value;
   case 1 % M
     stMass.Function = @(t, y) stMass.Value;
   case 2 % M(t)
@@ -275,7 +280,7 @@ while ~done
   aFull(:,nout - 1) = aN;
   
   % We are done if the new time value is the final time value
-  done = tNp1 > dTime_T;
+  done = nout == nTime;
   
 end
 
