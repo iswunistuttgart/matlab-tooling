@@ -95,7 +95,7 @@ res = [...
 % Append the kinematic constraints deviation if it exists (algorithm also works
 % for just containing geometric constraints).
 if ~isempty(nhlc_d)
-  res = [res; nhlc_d*(qne - qn)];
+  res = [res; nhlc_d*(xne - xn)];
 end
 
 
