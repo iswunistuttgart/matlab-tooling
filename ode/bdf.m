@@ -35,8 +35,10 @@ function varargout = bdf(odefun, tspan, y0, options, varargin)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-08-30
+% Date: 2018-08-31
 % Changelog:
+%   2018-08-31
+%       * Make sure BDF order is in 1..6
 %   2018-08-30
 %       * Use the step size calculated in ODEARGUMENTS if the actual step size
 %       is not given in OPTIONS
@@ -56,12 +58,15 @@ end
 
 %% Parse arguments
 % Default ODE options
-stDefaultOptions = odeset( ...
-    'MaxOrder', 3 ...
-);
+% stDefaultOptions = odeset( ...
+%     'MaxOrder', 3 ...
+% );
 
 % Make sure we have all default ODE options
-stOptions = odeset(stDefaultOptions, options);
+stOptions = odeset(options);
+
+% Make sure BDF's MaxOrder is within the range of 1..6
+stOptions = odeset(stOptions, 'MaxOrder', limit(odeget(stOptions, 'MaxOrder', 3, 'fast'), 1, 6));
 
 % Number of the BDF we use
 nBDF = stOptions.MaxOrder;
