@@ -5,8 +5,8 @@ function varargout = leapfrog(odefun, tsp, x0, v0, options, varargin)%#codegen
 %   ODE given in ODEFUN over the time span given in TSPAN with initial position
 %   states X0 and initial velocity states V0.
 %
-%   [T, XV] = LEAPFROG(...) returns the Kx1 time vector, the Kx2N position
-%   and velocity vector.
+%   [T, XV] = LEAPFROG(...) returns the Kx1 time vector, the Kx2N position and
+%   velocity vector.
 %
 %   [T, X, V] = LEAPFROG(...) returns the Kx1 time vector, the KxN position
 %   vector, and the KxN velocity vector.
@@ -20,7 +20,7 @@ function varargout = leapfrog(odefun, tsp, x0, v0, options, varargin)%#codegen
 %
 %   X0                  Nx1 vector of initial position states for t == t_start.
 %
-%   V0                  Nx1 vector of initial velocity states for t == t_n-1/2
+%   V0                  Nx1 vector of initial velocity states for t == t_start.
 %
 %   OPTIONS             Structure array of options to be passed to the ODE
 %                       integrator obtained from ODESET.
@@ -45,8 +45,10 @@ function varargout = leapfrog(odefun, tsp, x0, v0, options, varargin)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-08-30
+% Date: 2018-09-02
 % Changelog:
+%   2018-09-02
+%       * Add support for 'OutputFcn'
 %   2018-08-30
 %       * Code cleanup
 %       * Fix step size calculation such that final value of T matches the given
@@ -103,7 +105,9 @@ dStepsizeHalf = 1/2*dStepsize;
 % Pre-calculate double of the step size
 dStepsizeDouble = 2*dStepsize;
 
-% Handle mass matrix
+
+
+%% Handle mass matrix
 % nMass_Type == 0: no mass matrix
 % nMass_Type == 1: M
 % nMass_Type == 2: M(t)
@@ -137,13 +141,31 @@ switch stMass.Type
     stMass.Function = @(t, y) stMass.Value;
   case 2 % M(t)
     stMass.Function = @(t, y) stMass.Function(tn);
-  case {3, 4} % M(t, x, v)
+  case {3, 4} % M(t, [x; v])
     % Nothing to be done here, everything's as it's supposed to be
 end
 
-% Make sure we have a column vector
-x0 = x0(:);
-v0 = v0(:);
+
+
+%% Output Function
+
+% Handle the output
+if nargout > 0
+  outputFcn = odeget(stOptions, 'OutputFcn', [], 'fast');
+else
+  outputFcn = odeget(stOptions, 'OutputFcn', @odeplot, 'fast');
+end
+outputArgs = {};      
+if isempty(outputFcn)
+  haveOutputFcn = false;
+else
+  haveOutputFcn = true;
+  outputSel = odeget(stOptions, 'OutputSel', 1:nEquations, 'fast');
+  if isa(outputFcn,'function_handle')  
+    % With MATLAB 6 syntax pass additional input arguments to outputFcn.
+    outputArgs = varargin;
+  end  
+end
 
 
 
@@ -195,6 +217,11 @@ done = false;
 % Increase the current step time value
 % nout = nout + 1;
 % tFull(nout) = tFull(nout - 1) + dStepsize;
+
+% Initialize the output function.
+if haveOutputFcn
+  feval(outputFcn, [dTime_0, dTime_T], [xFull(:,nout); vFull(:,nout)], 'init', outputArgs{:});
+end
 
 % Continue integrating while we're not done
 while ~done
@@ -282,12 +309,29 @@ while ~done
   % We are done if the new time value is the final time value
   done = nout == nTime;
   
+  % Call output function?
+  if haveOutputFcn
+    
+    % Call output function and await return
+    stop = feval(outputFcn, tN, [xN, vN], '', outputArgs{:});
+    
+    % Stop requested from output function?
+    if stop
+      done = true;
+    end  
+  end
+  
 end
 
 % Finalize data
 tFull = tFull(1:nout);
 xout = xFull(:,1:nout);
 vout = vFull(:,1:nout);
+
+% Call output function on done?
+if haveOutputFcn
+  feval(outfun, [], [], 'done', outputArgs{:});
+end
 
 
 
