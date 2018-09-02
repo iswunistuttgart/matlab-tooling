@@ -82,6 +82,38 @@ classdef leapfrog < matlab.unittest.TestCase
   end
   
   
+  %% TESTCLASSSETUP
+  methods ( TestClassSetup )
+    
+    function clearFigureTiffs(this)
+      %% CLEARFIGURETIFFS removes all tiffs from previous test runs
+      
+      
+      % Get all files
+      vFiles = allfiles(fileparts(mfilename('fullpath')), '*', 'Prefix', class(this));
+      
+      % If got files
+      if numel(vFiles)
+        % Delete every files
+        for iFile = 1:numel(vFiles)
+          % Skip files not ending in '.tif(f)' (just in case)
+          if ~( endsWith(vFiles(iFile).name, 'tif') || endsWith(vFiles(iFile).name, 'tiff') )
+            continue
+          end
+          
+          try
+            delete(fullfile(vFiles(iFile).folder, vFiles(iFile).name));
+          catch me
+            warning(me.identifier, '%s', me.message);
+          end
+        end
+      end
+      
+    end
+    
+  end
+  
+  
   
   %% TESTMETHODSETUP
   methods ( TestMethodSetup )
@@ -168,7 +200,7 @@ classdef leapfrog < matlab.unittest.TestCase
       drawnow();
       
       % Save figure to file
-      saveas(this.HFig, fullfile(fileparts(mfilename('fullpath')), this.testname), 'tiff');
+      saveas(this.HFig, fullfile(fileparts(mfilename('fullpath')), sprintf('%s.%s.tiff', class(this), this.testname)), 'tiff');
       
       % Close figure
       close(this.HFig);
