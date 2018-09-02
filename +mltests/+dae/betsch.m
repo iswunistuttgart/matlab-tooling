@@ -47,6 +47,7 @@ classdef betsch < matlab.unittest.TestCase
       
     end
     
+    
     function M = pendulum_mass(this, t, q, Dq)
       
       
@@ -55,11 +56,21 @@ classdef betsch < matlab.unittest.TestCase
       
     end
     
+    
     function PhiQ = pendulum_constraintq(this, t, q)
       
       
       % Pendulum mass must be placed at 1 m from the center
       PhiQ = q(1)^2 + q(2)^2 - 1^2;
+      
+    end
+    
+    
+    function PhiDQ = pendulum_constraintdq(this, t, q)
+      
+      
+      % Derivative of PhiQ wrt Q
+      PhiDQ = [2*q(1), 2*q(2)];
       
     end
     
@@ -149,7 +160,7 @@ classdef betsch < matlab.unittest.TestCase
       hax = gobjects(3);
       
       % Position/Positions
-      hax(1) = subplot(2, 2, 1 ...
+      hax(1) = subplot(2, 2, [1, 2] ...
         , 'Parent', this.HFig ...
       );
       plot(hax(1) ...
@@ -157,16 +168,16 @@ classdef betsch < matlab.unittest.TestCase
         , this.q(:,1), this.q(:,2) ...
       );
       xlabel(hax(1) ...
-        , 'Time $t / \mathrm{s}$' ...
+        , 'Position $x / \mathrm{m}$' ...
         , 'Interpreter', 'latex' ...
       );
       ylabel(hax(1) ...
-        , 'Position $q / \mathrm{m}$' ...
+        , 'Position $z / \mathrm{m}$' ...
         , 'Interpreter', 'latex' ...
       );
+      axis(hax(1), 'equal');
       xlim(hax(1), [-1.1, 1.1]);
       ylim(hax(1), [-1.1, 1.1]);
-      axis(hax(1), 'equal');
       legend({'pos'} ...
         , 'Location', 'best' ...
         , 'Interpreter', 'latex' ...
@@ -184,12 +195,12 @@ classdef betsch < matlab.unittest.TestCase
         , 'Interpreter', 'latex' ...
       );
       ylabel(hax(2) ...
-        , 'Positions $\dot{q} / \mathrm{m}$' ...
+        , 'Positions $q / \mathrm{m}$' ...
         , 'Interpreter', 'latex' ...
       );
       xlim(hax(2), this.t([1, end]));
       legend({'$x$', '$z$'} ...
-        , 'Location', 'best' ...
+        , 'Location', 'NorthWest' ...
         , 'Interpreter', 'latex' ...
       );
       
@@ -210,21 +221,21 @@ classdef betsch < matlab.unittest.TestCase
       );
       xlim(hax(3), this.t([1, end]));
       legend({'$\dot{x}$', '$\dot{z}$'} ...
-        , 'Location', 'best' ...
+        , 'Location', 'NorthWest' ...
         , 'Interpreter', 'latex' ...
       );
       
       % Link some axes for better scrolling
-      linkaxes(hax(2,:), 'x');
+      linkaxes(hax([2,3]), 'x');
       
       % Update drawing
       drawnow();
       
       % Save figure to file
-%       saveas(this.HFig, fullfile(fileparts(mfilename('fullpath')), sprintf('%s.%s.tiff', class(this), this.testname)), 'tiff');
+      saveas(this.HFig, fullfile(fileparts(mfilename('fullpath')), sprintf('%s.%s.tiff', class(this), this.testname)), 'tiff');
       
       % Close figure
-%       close(this.HFig);
+      close(this.HFig);
       
     end
     
@@ -235,8 +246,43 @@ classdef betsch < matlab.unittest.TestCase
   %% TESTS
   methods ( Test )
     
-    function freePendulum(this)
-      %% FREEPENDULUM
+    function freePendulum_ZeroVelocity(this)
+      %% FREEPENDULUM_ZEROVELOCITY
+      
+      
+      % Time span vector
+      tsp = tspan(0, this.T, this.h);
+      % Initial positions
+      q0 = [
+        1*cosd(45) ; ...
+        -1*sind(45) ; ...
+      ];
+      Dq0 = [0; 0];
+      
+      % DAE options
+      stDaeOpts = daeset( ...
+          'Mass', @this.pendulum_mass ...
+        , 'ConstraintsQ', @this.pendulum_constraintq ...
+        , 'ConstraintsDQ', @this.pendulum_constraintdq ...
+        , 'JConstraintsQ', @this.pendulum_jconstraintq ...
+      );
+      
+      % Simulate
+      [this.t, this.q, this.Dq] = betsch(@this.pendulum_rhs, tsp, q0, Dq0, stDaeOpts);
+      
+      % Assertion
+      this.assertNotEmpty(this.t);
+      this.assertLength(this.q, length(this.t));
+      this.assertLength(this.Dq, length(this.t));
+      
+      % Mark name of test
+      this.testname = funcname();
+      
+    end
+    
+    
+    function freePendulum_NonzeroVelocity(this)
+      %% FREEPENDULUM_NONZEROVELOCITY
       
       
       % Time span vector
@@ -255,6 +301,7 @@ classdef betsch < matlab.unittest.TestCase
       stDaeOpts = daeset( ...
           'Mass', @this.pendulum_mass ...
         , 'ConstraintsQ', @this.pendulum_constraintq ...
+        , 'ConstraintsDQ', @this.pendulum_constraintdq ...
         , 'JConstraintsQ', @this.pendulum_jconstraintq ...
       );
       
