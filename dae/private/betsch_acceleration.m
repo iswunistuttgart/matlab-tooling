@@ -1,48 +1,93 @@
-function res = betsch_acceleration(odefun, tn, xn, vn, xne, vne, lle, lme, h, mass, conQ, conDQ, jconQ, varargin)
+function res = betsch_acceleration(h, tn, xc, vc, xn, lln, lmn, m, V, JxV, T, JxT, P, JvP, Gx, JxGx, JtGx, Gv)
 % BETSCH_ACCELERATION solves the non-linear ODE for the current acceleration
+%
+%   We assume the following dimension numbers
+%
+%   K               Number of generalized positions and of generalized
+%                   velocities.
+%   MX              Number of constraints on the position level.
+%   MV              Number of constraints on the velocity level.
+%
+%   We denote with pA/pB the partial derivative of A wrt B and with dA/dB the
+%   total derivative of A wrt B.
 %
 %   Inputs:
 %
-%   ODEFUN              ODE function callback.
-%
-%   TN                  Current time value.
-%
-%   XN                  Kx1 vector of the current positions.
-%
-%   VN                  Kx1 vector of the current velocities.
-%
-%   XNE                 Kx1 vector of the estimate of the next time step's
-%                       velocities.
-%
-%   LL                  Gx1 vector of Lagrange multipliers for the current state
-%                       to satisfy the geometric constraints.
-%
-%   LM                  Nx1 vector of Lagrange multipliers for the current state
-%                       to satisfy the velocity constraints.
-%
 %   H                   Step size.
 %
-%   MASS                Structure containing information on the mass matrix.
+%   TN                  1x1 current time value.
 %
-%   CONSTRAINTSQ        Structure containing information on the geometric
-%                       constraints on position level.
+%   XC                  Kx1 vector of the current positions.
 %
-%   CONSTRAINTSDQ       Structure containing information on the velocity
-%                       constraints.
+%   VC                  Kx1 vector of the current velocities.
 %
-%   JCONSTRAINTSQ       Structure containing information on the Jacobian of the
-%                       geometric constraints on position level.
+%   XN                  Kx1 vector of the estimate of the next time step's
+%                       velocities.
+%
+%   LLN                 MXx1 vector of Lagrange multipliers for the current state
+%                       to satisfy the geometric constraints.
+%
+%   LMN                 MVx1 vector of Lagrange multipliers for the current state
+%                       to satisfy the velocity constraints.
+%
+%   M                   KxK mass matrix callback function M = M(t, x, v).
+%
+%   V                   Holonomic potential function as V = V(t, x).
+%
+%   JXV                 Kx1 Jacobian of holonomic potential function V wrt
+%                       generalized positions i.e., JXV = pV/px.
+%
+%   T                   Kinetic energies T = T(t, x, v);
+%
+%   JXT                 Kx1 Jacobian of kinetic energies T wrt generalized
+%                       positions i.e., JXL = pL/pX.
+%
+%   P                   Dissipative potential function as P = P(t, x, v).
+%
+%   JVP                 Kx1 Jacobian of dissipative potential function wrt
+%                       generalized velocities i.e., JVP = pP/pV.
+%
+%   JTT                 1x1 Jacobian of kinetic energies T wrt time i.e.,
+%                       JTT = pT/pt.
+%
+%   JXJTT               Kx1 vector of the Jacobian of JTT wrt generalized
+%                       positions i.e., JXJTT = pJTT/pX.
+%
+%   JVT                 Kx1 vector of the Jacobian of the kinetic energies wrt
+%                       generalized velocities i.e., JVT = pT/pV.
+%
+%   JXJVT               KxK Jacobian matrix of JVT wrt generalized velocities
+%                       i.e., JXJVT = pJVT/pX;
+%
+%   GX                  MXx1 vector of constraints on position level as
+%                       GX = GX(t, x).
+%
+%   JXGX                MXxK Jacobian of positional constraints wrt generalized
+%                       positions i.e., JXGX = pGX/pX.
+%
+%   JTGX                MXxK Jacobian of positional constraints wrt time i.e.,
+%                       JTGX = pGX/pt.
+%
+%   GV                  MVxK Matrix of velocity constraints as GV = GV(t, x)
+%                       such that GV*V == 0
+%   
 %
 %   Outputs:
 %
-%   RES                 Residual of the estimate for an
+%   RES                 (K+MX+MV)x1 residual of the estimate for the given state
+%                       of next positions.
 
 
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-09-01
+% Date: 2018-09-04
 % Changelog:
+%   2018-09-04
+%       * Incorporate correct terms for the discrete derivative as based on
+%       Gonzalez
+%       * Add support for dissipative energies P = P(q, Dq) and kinetic energies
+%       dependent on the generalized coordinates i.e., T = T(q, Dq, t).
 %   2018-09-01
 %       * Initial release
 
@@ -50,53 +95,57 @@ function res = betsch_acceleration(odefun, tn, xn, vn, xne, vne, lle, lme, h, ma
 
 %% Initialize variables
 
-% Next time value
-tne = tn + h;
 % Half time value
-tnh = tn + h/2;
-
-% Next velocity
-% vne = 2/h*( xne - xn ) - vn;
+th = tn + h/2;
+% Next time value
+tn = tn + h;
 
 % Half time position
-xnh = (xne - xne)./2;
+xh = (xn - xn)./2;
+
+% Next velocity
+vn = 2/h*( xn - xc ) - vc;
 % Half time velocity
-vnh = (vne - vn)./2;
-vnh = (xne - xn)./h;
+% vh = (vn - vc)./2;
+% vh = (xn - xc)./h;
 
 % Current mass matrix
-M = mass.Function(tn, xn, vn);
+M = m(tn, xc, vc);
 
-% Difference in the right-hand side
-% f_d = odefun(tne, xne, vne) - odefun(tn, xn, vn);
-f_d = odefun(tne, xne, vne);
-% f_d = odefun(tnh, xnh, vnh);
+% Discrete derivative of the potential function
+dd_v = discrderiv(@(xh_) V(th, xh_), @(xh_) JxV(th, xh_), xc, xn);
 
-% Geometric constraints of target state
-hlc_e = conQ.Function(tne, xne);
+% Discrete derivative of the dissipative function
+dd_p = discrderiv(@(vh_) P(th, xh, vh_), @(vh_) JvP(th, xh, vh_), vc, vn);
 
-% Difference in the holonomic constraints
-% hlc_d = jconQ.Function(tne, xne) - jconQ.Function(tn, xn);
-hlc_d = jconQ.Function(tne, xne);
-% hlc_d = jconQ.Function(tnh, xnh);
+% Discrete derivative of the change of kinetic energies
+dd_t = discrderiv(@(vh_) T(th, xh, vh_), @(vh_) JxT(th, xh, vh_), vc, vn);
 
-% Difference in non-holonomic constraints
-% nhlc_d = conDQ.Function(tne, xne) - conDQ.Function(tne, xn);
-nhlc_d = conDQ.Function(tne, xne);
-% nhlc_d = conDQ.Function(tnh, xnh);
+% Discrete derivative of the positional constraints function
+dd_gx = discrderiv(@(xh_) Gx(th, xh_), @(xh_) JxGx(th, xh_), xc, xn);
+
+% Explicit position constraints at the next state
+gx_e = Gx(tn, xn);
+
+% Implicit velocity constraints at the half state
+gxv_h = JtGx(tn, xn);
+
+% Explicit velocity constraints at the half state
+gv_h = Gv(th, xh);
+
+% Evaluated velocity constraints at next state
+% @TODO Do we need the discrete derivative here of G wrt X? I would say so as
+% the velocity constraints contain both the hidden velocity constraints as well
+% as the explicit ones. And the hidden constraints are clearly including the
+% Jacobian of GX.
+gv_e = ( gv_h + dd_gx )*(xn - xc) + gxv_h;
 
 % Build the full residual vector
-res = [...
-  ... vne - 2/h*(xne - xn) - vn ; ...
-  2/h.*M*( xne - xn ) - 2.*M*vn - h*(f_d + transpose(hlc_d)*lle + transpose(nhlc_d)*lme ) ; ...
-  hlc_e ; ...
-];
-
-% Append the kinematic constraints deviation if it exists (algorithm also works
-% for just containing geometric constraints).
-if ~isempty(nhlc_d)
-  res = [res; nhlc_d*(xne - xn)];
-end
+res = vertcat( ...
+  2/h.*M*( xn - xc ) - 2.*M*vc - h*( dd_v + dd_p + dd_t + transpose(dd_gx)*lln + transpose(gv_h)*lmn ) ...
+  , gx_e ...
+  , gv_e ...
+);
 
 
 end
