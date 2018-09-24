@@ -35,8 +35,12 @@ function varargout = bdf(odefun, tspan, y0, options, varargin)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-08-30
+% Date: 2018-09-02
 % Changelog:
+%   2018-09-02
+%       * Add support for 'OutputFcn'
+%   2018-08-31
+%       * Make sure BDF order is in 1..6
 %   2018-08-30
 %       * Use the step size calculated in ODEARGUMENTS if the actual step size
 %       is not given in OPTIONS
@@ -56,12 +60,15 @@ end
 
 %% Parse arguments
 % Default ODE options
-stDefaultOptions = odeset( ...
-    'MaxOrder', 3 ...
-);
+% stDefaultOptions = odeset( ...
+%     'MaxOrder', 3 ...
+% );
 
 % Make sure we have all default ODE options
-stOptions = odeset(stDefaultOptions, options);
+stOptions = odeset(options);
+
+% Make sure BDF's MaxOrder is within the range of 1..6
+stOptions = odeset(stOptions, 'MaxOrder', limit(odeget(stOptions, 'MaxOrder', 3, 'fast'), 1, 6));
 
 % Number of the BDF we use
 nBDF = stOptions.MaxOrder;
@@ -91,7 +98,9 @@ if dStepsize == -1
   dStepsize = htspan;
 end
 
-% Handle mass matrix
+
+
+%% Handle mass matrix
 % nMass_Type == 0: no mass matrix
 % nMass_Type == 1: M
 % nMass_Type == 2: M(t)
@@ -124,8 +133,27 @@ switch stMass.Type
     % Nothing to be done here, everything's as it's supposed to be
 end
 
-% Make sure we have a column vector
-y0 = y0(:);
+
+
+%% Output Function
+
+% Handle the output
+if nargout > 0
+  outputFcn = odeget(stOptions, 'OutputFcn', [], 'fast');
+else
+  outputFcn = odeget(stOptions, 'OutputFcn', @odeplot, 'fast');
+end
+outputArgs = {};      
+if isempty(outputFcn)
+  haveOutputFcn = false;
+else
+  haveOutputFcn = true;
+  outputSel = odeget(stOptions, 'OutputSel', 1:nEquations, 'fast');
+  if isa(outputFcn,'function_handle')  
+    % With MATLAB 6 syntax pass additional input arguments to outputFcn.
+    outputArgs = varargin;
+  end  
+end
 
 
 
@@ -162,6 +190,11 @@ stOptsFsolve = optimoptions( ...
 
 % Keep track of if we're done or not
 done = false;
+
+% Initialize the output function.
+if haveOutputFcn
+  feval(outputFcn, [dTime_0, dTime_T], [xFull(:,nout); vFull(:,nout)], 'init', outputArgs{:});
+end
 
 % Do not stop while we are not done (d'uh)
 while ~done
@@ -204,6 +237,13 @@ while ~done
 
   % Stop loopp if we are at the last iteration of the BDF initalization
   done = nout > nBDF;
+  
+  % Call output function?
+  if haveOutputFcn
+    
+    % Call output function and await return
+    stop = feval(outputFcn, tnew, ynew, '', outputArgs{:});
+  end
   
 end
 
@@ -259,6 +299,18 @@ while ~done
   % Stop loop if we less than one time step away from the final value
   done = nout == nTime;
   
+  % Call output function?
+  if haveOutputFcn
+    
+    % Call output function and await return
+    stop = feval(outputFcn, tnew, ynew, '', outputArgs{:});
+    
+    % Stop requested from output function?
+    if stop
+      done = true;
+    end
+  end
+  
 end
 
 % Reduce the step counter by one since we stopped one step after the final time
@@ -270,6 +322,11 @@ end
 % Finalize data
 tout = tout(1:nout);
 yout = yout(:,1:nout);
+
+% Call output function on done?
+if haveOutputFcn
+  feval(outfun, [], [], 'done', outputArgs{:});
+end
 
 
 

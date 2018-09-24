@@ -308,6 +308,38 @@ classdef bdf < matlab.unittest.TestCase
   %% TESTS
   methods ( Test )
     
+    function onVanDerPol1_DefaultOrder(this)
+      %% ONVANDERPOL tests the BDF on van-der-Pols ODE
+      %
+      %   MU in van-der-Pol's ODE is set to 1. Everything else is
+      %   unchanged.%
+      %   Results are compared against ODE15S.
+      
+      
+      % Time vector
+      T0 = 0;
+      Tf = 2;
+      tsp = tspan(T0, Tf, 1e-3);
+      % Initial state
+      y0 = [2; 0];
+      
+      % Solve with MATLAB's built-in ODE15S
+      [this.Tode15s, this.Yode15s] = ode15s(@vdp1, tsp, y0, odeset());
+      % Compare aginst our result
+      [this.Tbdf, this.Ybdf] = bdf(@vdp1, tsp, y0);
+      
+      this.assertNotEmpty(this.Tbdf);
+      this.assertNotEmpty(this.Ybdf);
+      this.assertSize(this.Ybdf, [numel(this.Tbdf), 2]);
+      this.assertEqual(this.Tode15s, this.Tbdf, 'AbsTol', 1000*eps);
+      this.assertEqual(this.Tbdf(end), Tf, 'AbsTol', 1000*eps);
+      
+      % Set name of this test case
+      this.testname = sprintf('%s', funcname());
+      
+    end
+    
+    
     function onVanDerPol1(this, ordr)
       %% ONVANDERPOL tests the BDF on van-der-Pols ODE
       %

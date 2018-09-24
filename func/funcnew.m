@@ -114,21 +114,25 @@ addOptional(ip, 'ArgIn', {}, valFcn_ArgIn);
 valFcn_ArgOut = @(x) validateattributes(x, {'cell'}, {}, mfilename, 'ArgOut');
 addOptional(ip, 'ArgOut', {}, valFcn_ArgOut);
 
-% Description: Char. Non-empty
-valFcn_Description = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Description');
-addParameter(ip, 'Description', '', valFcn_Description);
-
 % Author: Char. Non-empty
 valFcn_Author = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Author');
 addParameter(ip, 'Author', 'Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>', valFcn_Author);
 
-% Silent: Char. Matches {'on', 'off', 'yes', 'no'}. Defaults 'off'
-valFcn_Silent = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no'}, mfilename, 'Silent'));
-addParameter(ip, 'Silent', 'off', valFcn_Silent);
+% Description: Char. Non-empty
+valFcn_Description = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Description');
+addParameter(ip, 'Description', '', valFcn_Description);
 
 % Overwrite: Char. Matches {'on', 'off', 'yes', 'no'}. Defaults 'no';
 valFcn_Overwrite = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no'}, mfilename, 'Overwrite'));
 addParameter(ip, 'Overwrite', 'off', valFcn_Overwrite);
+
+% A package name may also be provided
+valFcn_Package = @(x) validateattributes(x, {'char'}, {}, mfilename, 'Package');
+addParameter(ip, 'Package', '', valFcn_Package);
+
+% Silent: Char. Matches {'on', 'off', 'yes', 'no'}. Defaults 'off'
+valFcn_Silent = @(x) any(validatestring(x, {'on', 'off', 'yes', 'no'}, mfilename, 'Silent'));
+addParameter(ip, 'Silent', 'off', valFcn_Silent);
 
 % Template: Char; non-empty
 valFcn_Template = @(x) validateattributes(x, {'char'}, {'nonempty'}, mfilename, 'Template');
@@ -187,6 +191,8 @@ chSilent = parseswitcharg(ip.Results.Silent);
 chOverwrite = parseswitcharg(ip.Results.Overwrite);
 % Path to template file
 chTemplate = ip.Results.Template;
+% Package name
+chPackage = ip.Results.Package;
 
 %%% Local variables
 % No templtae file given?
@@ -202,7 +208,17 @@ if isempty(chTemplate)
 end
 % Date of creation of the file
 chDate = datestr(now, 'yyyy-mm-dd');
-% Target file path
+if ~isempty(chPackage)
+    % Split package name as string into package parts
+    cePackage = strsplit(chPackage, '.');
+    % Merge package name components back into a string with '/+' as separator
+    chPackage = strjoin(cePackage, '/+');
+    % Prepend a last missing package indicator in front of the first package name
+    chPackage = ['+' , chPackage];
+    % Append to file path
+    chFunction_Path = fullfile(chFunction_Path, chPackage);
+end
+% Lastly, add file name to file path
 chFunction_FullFile = fullfile(chFunction_Path, sprintf('%s%s', chFunction_Name , chFunction_Ext));
 
 
@@ -282,6 +298,10 @@ end
 
 % Save the file
 try
+  % Make target directory
+    if 7 ~= exist(chFunction_Path, 'dir')
+        mkdir(chFunction_Path);
+    end
     fidTarget = fopen(chFunction_FullFile, 'w+');
     for row = 1:numel(ceFunction_Contents)
         fprintf(fidTarget, '%s\r\n', ceFunction_Contents{row,:});
