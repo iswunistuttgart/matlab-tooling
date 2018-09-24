@@ -64,15 +64,16 @@ function [varargout] = anim2d(X, Y, varargin)
 %       being used for animation. Additionally, this value is passed to the
 %       title of the plot to display the progress.
 %
-%   Title           String to be displayed in the title. Can also be set to
-%       'timer' of 'timer_of' to enable automatic rendering of the time in the
-%       axes' title.
+%   Title           String to be displayed in the title. Can be set to 'timer'
+%       or 'timer_of' to enable automatic rendering of the time in the
+%       axes' title. Can also be set to 'index' or 'index_if', to display the
+%       current frame iteration index.
 %       If a user-specific string is provided, it will be passed to `sprintf`
 %       where the current time is being parsed as first argument, the current
 %       frame index as second.
 %       If you specify this property using a function handle, when MATLAB
-%       executes the callback it passes the axes handle and the current time to
-%       the callbak function.
+%       executes the callback it passes the axes handle and the current loop
+%       index to the callbak function i.e., TitleFcn(ax, idx)
 %
 %   StartFcn        String or function handle that shall be called after the
 %       animation is set up and before it is started.
@@ -128,7 +129,7 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-02-17
+% Date: 2018-09-24
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 %   * Resample time vector such that it explictly matches the FPS value. Right
@@ -136,6 +137,15 @@ function [varargout] = anim2d(X, Y, varargin)
 %   animation (and timer title) will "freeze" during 0s and 2.3s as there is no
 %   data drawn => Title should at least update
 % Changelog:
+%   2018-09-24
+%       * Change arguments passed to TitleFcn. Title callbacks must now take the
+%       arguments (ax, idx) where ax is the current axes handle and idx is the
+%       current zero-based execution counter.
+%       * Change order of execution of user-supplied StartFcn and UpdateFcn as
+%       well as TitleFcn. The TitleFcn now is run after all plot data has been
+%       updated i.e., after any call to StartFcn or UpdateFcn, respectivel.y
+%       * Add options 'index' and 'index_of' to parameter 'Title' which will
+%       display the current index number.
 %   2018-02-17
 %       * Ensure figure is visible after the function has been called. Prior to
 %       now, the figure was made visible once the timer started which wasn't
@@ -428,17 +438,23 @@ stUserData.TitleFcn = '';
 if isa(mxTitle, 'function_handle')
     stUserData.TitleFcn = mxTitle;
 % Parse 'timer' as axes title
-elseif strcmpi('timer', mxTitle)
-    stUserData.TitleFcn = @(ax, t) sprintf('Time: %.2fs', t);
-elseif strcmpi('timer_of', mxTitle)
-    stUserData.TitleFcn = @(ax, t) sprintf('Time: %.2fs/%.2fs', t, ax.UserData.Time(end));
-% Parse regular chars as axes title
-elseif isa(mxTitle, 'char')
-    if ~isempty(mxTitle)
-        stUserData.TitleFcn = @(ax, t) eval(mxTitle);
-    else
+else
+  switch mxTitle
+    case 'timer'
+      stUserData.TitleFcn = @(ax, idx) sprintf('Time: %.2fs', ax.UserData.Time(ax.UserData.Frame2Time(idx)));
+    case 'timer_of'
+      stUserData.TitleFcn = @(ax, idx) sprintf('Time: %.2fs/%.2fs', ax.UserData.Time(ax.UserData.Frame2Time(idx)), ax.UserData.Time(end));
+    case 'index'
+      stUserData.TitleFcn = @(ax, idx) sprintf('Index: %g', idx);
+    case 'index_of'
+      stUserData.TitleFcn = @(ax, idx) sprintf('Index: %g/%g', idx, ax.UserData.Time(end));
+    otherwise
+      if ~isempty(mxTitle)
+        stUserData.TitleFcn = @(ax, idx) eval(mxTitle);
+      else
         stUserData.TitleFcn = [];
-    end
+      end
+  end
 end
 stUserData.UpdateFcn = ceUpdateCallbacks;
 stUserData.VideoObject = [];
@@ -626,11 +642,6 @@ try
     catch me
         display(me.message);
     end
-    
-    % Set the title, if a title function callback exists
-    if ~isempty(ax.UserData.TitleFcn)
-        title(ax, ax.UserData.TitleFcn(ax, ax.UserData.Time(ax.UserData.Frame2Time(1))));
-    end
 
     % Mark the initial plot?
     if strcmp('on', stUserData.MarkStart)
@@ -649,9 +660,14 @@ try
     for iSF = 1:numel(ax.UserData.StartFcn)
         ax.UserData.StartFcn{iSF}(ax, ax.Children(1:ax.UserData.DataCount), timer.TasksExecuted);
     end
+    
+    % Set the title, if a title function callback exists
+    if ~isempty(ax.UserData.TitleFcn)
+        title(ax, ax.UserData.TitleFcn(ax, timer.TasksExecuted));
+    end
 
     % Update figure
-    drawnow
+    drawnow('limitrate');
 catch me
     stop(timer)
 
@@ -681,18 +697,18 @@ try
         );
     end
 
-    % Update the title, if it previously was set and if there is a callback
-     if ~ ( isempty(ax.Title.String) && isempty(ax.UserData.TitleFcn) )
-        ax.Title.String = ax.UserData.TitleFcn(ax, ax.UserData.Time(ax.UserData.Frame2Time(timer.TasksExecuted)));
-    end
-
     % Call the user supplied update callback(s)
     for iSF = 1:numel(ax.UserData.UpdateFcn)
         ax.UserData.UpdateFcn{iSF}(ax, ax.Children(1:ax.UserData.DataCount), timer.TasksExecuted);
     end
 
+    % Update the title, if it previously was set and if there is a callback
+     if ~ ( isempty(ax.Title.String) && isempty(ax.UserData.TitleFcn) )
+        ax.Title.String = ax.UserData.TitleFcn(ax, timer.TasksExecuted);
+    end
+
     % Update figure
-    drawnow
+    drawnow('limitrate');
 catch me
     stop(timer)
 
@@ -716,7 +732,7 @@ try
     end
 
     % Update figure
-    drawnow
+    drawnow('limitrate');
 
     % Let go off our axes
     hold(ax, 'off');
