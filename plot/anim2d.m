@@ -287,7 +287,7 @@ end
 
 % Check if the third argument is a string or a vector. If it's a vector we
 % assume it to be the value of the name/value parameter 'Time'.
-if isvector(args{3})
+if isnumeric(args{3}) && isvector(args{3})
   args = [args(1:2), 'Time', args(3:end)];
 end
 
