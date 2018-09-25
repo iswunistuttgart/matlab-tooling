@@ -1,5 +1,25 @@
-function fcname = funcname()
+function fcname = funcname(plain)
 % FUNCNAME returns the current function's name
+%
+%   FUNCNAME() returns the name of the currently executing function i.e.,
+%   wherever called. If called within the base workspace or a script, will
+%   return 'base'.
+%
+%   FUNCNAME(NOCLASS) returns the function name without any preceding class name
+%   from packages.
+%
+%   Inputs
+%
+%   PLAIN               Flag whether to return the function name with or without
+%                       package/class name. Defaults to 'off'. Possible values
+%                       are
+%                       true, 'on', 'yes', 'please'   Return only the function
+%                                                     name and not its
+%                                                     enwrapping class/package
+%                                                     name.
+%                       false, 'off', 'no'            Return the full function
+%                                                     name including possible
+%                                                     package/class names.
 
 
 
@@ -9,6 +29,26 @@ function fcname = funcname()
 % Changelog:
 %   2017-12-01
 %       * Initial release
+
+
+
+%% Check arguments
+
+try
+  narginchk(0, 1);
+  nargoutchk(0, 1);
+  
+  if nargin < 1 || isempty(plain) || 1 ~= exist('plain', 'var')
+    plain = 'off';
+  end
+  
+  validateattributes(plain, {'char', 'logical'}, {'nonempty'}, mfilename, 'noclass');
+  
+  % Convert the given switch argument into standard 'on'/'off' form
+  chPlain = parseswitcharg(plain);
+catch me
+  throwAsCaller(me);
+end
 
 
 
@@ -22,6 +62,11 @@ if ~isempty(stStack) && isfield(stStack, 'name')
 % No stack, so called from within base
 else
     chName = 'base';
+end
+
+% Strip any class/package name?
+if strcmp(chPlain, 'on')
+  chName = last(strsplit(chName, '.'));
 end
 
 
