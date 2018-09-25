@@ -527,7 +527,7 @@ stUserData.DataIndex = stUserData.Time;
 if loLoopTime
   % Number of frames equals end of animation time multiplied by number of
   % frames
-  nFrames = vTime(end)*nFps;
+  nFrames = fix(vTime(end)*nFps);
   % The time stamp assigned to each frame
   vFrameTime = ((1:nFrames) - 1)/nFps;
   % If no time cannot be found because the given final time is less than the
