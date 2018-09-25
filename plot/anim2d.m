@@ -137,6 +137,13 @@ function [varargout] = anim2d(X, Y, varargin)
 %   animation (and timer title) will "freeze" during 0s and 2.3s as there is no
 %   data drawn => Title should at least update
 % Changelog:
+%   2018-09-25
+%       * Change property 'Frame2Time' of the UserData structure to 'DataIndex'
+%       for more clear notation (and also because this function may be used
+%       without an reference to time but just looping over data sets.
+%       * Properly implement the optional positional argument 'Time' to also be
+%       a name/value paired argument. Now, ANIM2D(X, Y, T, ...) and
+%       ANIM2D(X, Y, 'Time', T, ...) both produce the same result.
 %   2018-09-24
 %       * Change arguments passed to TitleFcn. Title callbacks must now take the
 %       arguments (ax, idx) where ax is the current axes handle and idx is the
@@ -278,6 +285,12 @@ if isobject(args{1}) && ismethod(args{1}, 'anim2d')
     return
 end
 
+% Check if the third argument is a string or a vector. If it's a vector we
+% assume it to be the value of the name/value parameter 'Time'.
+if isvector(args{3})
+  args = [args(1:2), 'Time', args(3:end)];
+end
+
 try
     % Required: X. Numeric. Matrix; Non-empty; Columns matches columns of
     % Y;
@@ -289,10 +302,10 @@ try
     valFcn_Y = @(x) validateattributes(x, {'numeric'}, {'3d', 'nonempty', 'size', size(args{1})}, mfilename, 'X');
     addRequired(ip, 'Y', valFcn_Y);
 
-    % Optional: Time. Numeric. Vector; Non-empty; Increasing; Numel matches
+    % Parameter: Time. Numeric. Vector; Non-empty; Increasing; Numel matches
     % numel X and Y;
     valFcn_Time = @(x) validateattributes(x, {'numeric'}, {'nonempty', 'vector', 'increasing', 'finite', 'numel', size(args{1}, 1)}, mfilename, 'Time');
-    addOptional(ip, 'Time', [], valFcn_Time);
+    addParameter(ip, 'Time', [], valFcn_Time);
     
     % Parameter: Axes. Handle. Non-empty
     valFcn_Axes = @(x) validateattributes(x, {'matlab.graphics.axis.Axes'}, {'nonempty', 'vector'}, mfilename, 'Axes');
@@ -441,9 +454,9 @@ if isa(mxTitle, 'function_handle')
 else
   switch mxTitle
     case 'timer'
-      stUserData.TitleFcn = @(ax, idx) sprintf('Time: %.2fs', ax.UserData.Time(ax.UserData.Frame2Time(idx)));
+      stUserData.TitleFcn = @(ax, idx) sprintf('Time: %.2fs', ax.UserData.Time(ax.UserData.DataIndex(idx)));
     case 'timer_of'
-      stUserData.TitleFcn = @(ax, idx) sprintf('Time: %.2fs/%.2fs', ax.UserData.Time(ax.UserData.Frame2Time(idx)), ax.UserData.Time(end));
+      stUserData.TitleFcn = @(ax, idx) sprintf('Time: %.2fs/%.2fs', ax.UserData.Time(ax.UserData.DataIndex(idx)), ax.UserData.Time(end));
     case 'index'
       stUserData.TitleFcn = @(ax, idx) sprintf('Index: %g', idx);
     case 'index_of'
@@ -506,7 +519,7 @@ end
 
 % If we loop over the items and draw them one by one, the mapping of frame
 % to time is simple:
-stUserData.Frame2Time = stUserData.Time;
+stUserData.DataIndex = stUserData.Time;
 
 % Time is given explicitely, so we need to find out what time index each
 % frame corresponds to
@@ -527,15 +540,15 @@ if loLoopTime
         vFrameTime(end+1) = vTime(end);
     end
     % Now, find the time index closest to each frame's time
-    vFrame2Time = zeros(numel(vFrameTime) - 1, 1);
+    vDataIndex = zeros(numel(vFrameTime) - 1, 1);
     for iFrame = 1:nFrames
-        vFrame2Time(iFrame) = closest(vTime, vFrameTime(iFrame));
+        vDataIndex(iFrame) = closest(vTime, vFrameTime(iFrame));
     end
-    if vFrame2Time(end) ~= numel(vTime)
-        vFrame2Time(end+1) = numel(vTime);
+    if vDataIndex(end) ~= numel(vTime)
+        vDataIndex(end+1) = numel(vTime);
     end
     % And move the time correctly
-    stUserData.Frame2Time = vFrame2Time;
+    stUserData.DataIndex = vDataIndex;
 end
 
 % Store the axes parent figure locally so we can access it further down, too,
@@ -553,7 +566,7 @@ tiUpdater = timer(...
     , 'StartFcn', @(timer, event) cb_timerstart(haTarget, timer, event) ...
     , 'StopFcn', @(timer, event) cb_timerend(haTarget, timer, event)...
     , 'TimerFcn', @(timer, event) cb_timerupdate(haTarget, timer, event) ...
-    , 'TasksToExecute', numel(stUserData.Frame2Time) ... % Execute only as often as we have samples
+    , 'TasksToExecute', numel(stUserData.DataIndex) ... % Execute only as often as we have samples
 );
 
 % Create a close function on the current axis
@@ -605,8 +618,8 @@ try
     % Plot the first row of data
     stUserData.Plot = feval(stUserData.Fun, ax, squeeze(stUserData.XData(1,:,:)), squeeze(stUserData.YData(1,:,:)));
 
-    % Hold on to the axes!
-    hold(ax, 'on');
+%     % Hold on to the axes!
+%     hold(ax, 'on');
 
     % And save the user data back into it
     ax.UserData = stUserData;
@@ -692,8 +705,8 @@ try
     % plots of the data)`
     for iChild = 1:ax.UserData.DataCount
         set(ax.Children(iChild) ...
-            , 'XData', squeeze(ax.UserData.XData(ax.UserData.Frame2Time(timer.TasksExecuted),:,iChild)) ...
-            , 'YData', squeeze(ax.UserData.YData(ax.UserData.Frame2Time(timer.TasksExecuted),:,iChild)) ...
+            , 'XData', squeeze(ax.UserData.XData(ax.UserData.DataIndex(timer.TasksExecuted),:,iChild)) ...
+            , 'YData', squeeze(ax.UserData.YData(ax.UserData.DataIndex(timer.TasksExecuted),:,iChild)) ...
         );
     end
 
