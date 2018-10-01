@@ -42,7 +42,7 @@ function flag = issize(A, r, c)
 
 
 %% Assert arguments
-narginchk(3, 3);
+narginchk(2, 2);
 nargoutchk(0, 1);
 
 
