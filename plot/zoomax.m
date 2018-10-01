@@ -1,11 +1,11 @@
 function zoomax(f, varargin)
 % ZOOMAX in or out into an axes depending on the scaling factor
 %
-%   ZOOMAX(F) zoomaxs by factor F in or out of the given axes. If F is positive, we
+%   ZOOMAX(F) zoom by factor F in or out of the given axes. If F is positive, we
 %   zoomax into the given axes, if F is negative, we zoomax out of the axes i.e.,
 %   with F = 0.1 we zoomax in by 10%, with F = -0.1, we zoomax out by 10%.
 %
-%   ZOOMAX(AX, F) zoomaxs in to the given axes object
+%   ZOOMAX(AX, F) zoom in to the given axes object
 %
 %   Inputs:
 %
@@ -17,8 +17,10 @@ function zoomax(f, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-09-25
+% Date: 2018-09-30
 % Changelog:
+%   2018-09-30
+%       * Change from using `newplot()` to `gca()`
 %   2018-09-25
 %       * Initial release
 
@@ -54,7 +56,7 @@ end
 % If there is no axes provided, grab one
 if isempty(haTarget)
   % Get a valid axes handle
-  haTarget = newplot(haTarget);
+  haTarget = gca();
 end
 % Old hold state
 lOldHold = ishold(haTarget);
