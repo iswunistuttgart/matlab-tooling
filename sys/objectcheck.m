@@ -1,12 +1,13 @@
 function [obj, args, nargs] = objectcheck(oc, varargin)
 % OBJECTCHECK checks for an object of a calling class in the list of arguments
 %
-%   [OBJ, ARGS, NARGS] = OBJECTCHECK(OC, ...) checks of an object of class OC in
+%   [OBJ, ARGS, NARGS] = OBJECTCHECK(O, ...) checks of an object of class OC in
 %   the given list of variable arguments.
 %
 %   Inputs:
 %
-%   OC                  String of class of object to find.
+%   O                   MATLAB object to extract from list of arguments or class
+%                       name to find inside the given list of arguments.
 %
 %   Outputs:
 %
@@ -20,8 +21,11 @@ function [obj, args, nargs] = objectcheck(oc, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-09-27
+% Date: 2018-10-17
 % Changelog:
+%   2018-10-17
+%       * Update to support passing an object as first argument instead of a
+%       class name
 %   2018-09-27
 %       * Initial release
 
@@ -38,6 +42,11 @@ try
   % [OBJ, ARGS] = OBJECTCHECK(...)
   % [OBJ, ARGS, NARGS] = OBJECTCHECK(...)
   nargoutchk(0, 3);
+  
+  % If an object is given, we will convert it to its class name
+  if isobject(oc)
+    oc = class(oc);
+  end
   
   % Make sure the object given is a string
   validateattributes(oc, {'char'}, {'nonempty'}, mfilename, 'OC');
