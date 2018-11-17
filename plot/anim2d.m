@@ -1,29 +1,28 @@
 function [varargout] = anim2d(X, Y, varargin)
 % ANIM2D animates 2-dimensional data over time.
 %
-%   ANIM2D(X, Y) animates over the first dimension of X and Y the
-%   corresponding items in the matrices. The values must be given in
-%   absolute X and Y coordinates while there is no limitation on how much
-%   data will be plotted. The inputs must follow a specific format for
-%   proper rendering. Let X and Y be MxNxP matrices, then the dimensions
-%   represent the following information
+%   ANIM2D(X, Y) animates over the first dimension of X and Y the corresponding
+%   items in the matrices. The values must be given in absolute X and Y
+%   coordinates while there is no limitation on how much data will be plotted.
+%   The inputs must follow a specific format for proper rendering. Let X and Y
+%   be MxNxP matrices, then the dimensions represent the following information
 %       M:  Number of snapshots of the data at different time frames.
 %       N:  Number of markers of each plot
 %       P:  Number of different plots
 %
-%   Internally, ANIM2D uses a timer object that is bound to a new or a
-%   given axes. The timer is called at specified periods and changes the
-%   XData and YData properties of each child plot found in the axes.
+%   Internally, ANIM2D uses a timer object that is bound to a new or a given
+%   axes. The timer is called at specified periods and changes the XData and
+%   YData properties of each child plot found in the axes.
 %
 %   BEWARE: The actual speed of animating your plot largely depends on the
-%   amount of data being plotted, the speed of custom callback functions,
-%   and the size and resolution of the figure. Small figure windows animate
-%   much much more quickly than larger ones.
+%   amount of data being plotted, the speed of custom callback functions, and
+%   the size and resolution of the figure. Small figure windows animate much
+%   much more quickly than larger ones.
 %
 %   ANIM2D(X, Y, T) uses the time T to plot over. By default, 25 frames per
-%   second are drawn thus the row of T closest to the current frame's time
-%   is used to gather data from. Helpful to animate results of a simulation
-%   with a variable step-size solver.
+%   second are drawn thus the row of T closest to the current frame's time is
+%   used to gather data from. Helpful to animate results of a simulation with a
+%   variable step-size solver.
 %
 %   ANIM2D(X, Y, 'Name', 'Value', ...) plots with additional
 %   name/value-arguments.
@@ -57,6 +56,9 @@ function [varargout] = anim2d(X, Y, varargin)
 %       write content to. The name/path should contain the correct file
 %       type/extension to avoid creation of incorrect files. See also argument
 %       'VideoProfile'
+%
+%   Tag             Cell array of tags that should be assigned to each plot
+%   during initial drawing phase.
 %
 %   Time            Mx1 vector of time values to use. By default, this function
 %       iterates over the first dimension of X and Y. If a time vector is given,
@@ -129,7 +131,7 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-09-24
+% Date: 2018-11-13
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 %   * Resample time vector such that it explictly matches the FPS value. Right
@@ -137,6 +139,13 @@ function [varargout] = anim2d(X, Y, varargin)
 %   animation (and timer title) will "freeze" during 0s and 2.3s as there is no
 %   data drawn => Title should at least update
 % Changelog:
+%   2018-11-13
+%       * Add parameter 'Tag' to allow tagging a single plot so that it can be
+%       more easily retrieved in the start, update, or stop callbacks.
+%       * Remove ability to pass an object as second argument. Following
+%       standard object-oriented approaches, the object should be passed as the
+%       first argument (and that will be caught by MATLAB and dispatched
+%       properly), while the then second argument may be an axes handle.
 %   2018-09-25
 %       * Change property 'Frame2Time' of the UserData structure to 'DataIndex'
 %       for more clear notation (and also because this function may be used
@@ -252,39 +261,6 @@ ip = inputParser;
 args = [{X}, {Y}, varargin];
 [haTarget, args, ~] = axescheck(args{:});
 
-% If the first real argument i.e., non-axes argument, is an object, we will
-% check whether this implements the 'anim2d' function, then we'll call this
-% object's `anim2d` function
-if isobject(args{1}) && ismethod(args{1}, 'anim2d')
-  % Create a new axes handle or select the given one
-%     haTarget = newplot(haTarget);
-
-  % Get the object and remove it from the arguments
-  mxObject = args{1};
-  args(1) = [];
-
-  % Add the target axes to the list of arguments
-  args = ['Axes', {haTarget}, args];
-
-  % Call the animation on the object
-  ht = deal(anim2d(mxObject, args{:}));
-
-  % If no return arguments are wanted
-  if nargout == 0
-      % Start the timer
-      start(ht)
-  end
-
-  % If return arguments are wanted, this function will return the timer so the
-  % user can/must start it manually
-  if nargout > 0
-      varargout{1} = ht;
-  end
-
-  % Skip the rest of the function
-  return
-end
-
 % Check if the third argument is a string or a vector. If it's a vector we
 % assume it to be the value of the name/value parameter 'Time'.
 if isnumeric(args{3}) && isvector(args{3})
@@ -339,6 +315,10 @@ try
   valFcn_StopFcn = @(x) validateattributes(x, {'char', 'cell', 'function_handle'}, {'nonempty'}, mfilename, 'StopFcn');
   addParameter(ip, 'StopFcn', {}, valFcn_StopFcn);
 
+  % Parameter: Tag. Cell;
+  valFcn_Tag = @(x) validateattributes(x, {'cell'}, {'nonempty', 'numel', size(args{1}, 3)}, mfilename, 'Tag');
+  addParameter(ip, 'Tag', {}, valFcn_Tag);
+
   % Parameter: Title. Char; Function Handle. Non-empty;
   valFcn_Title = @(x) validateattributes(x, {'char', 'function_handle'}, {'nonempty'}, mfilename, 'Title');
   addParameter(ip, 'Title', '', valFcn_Title);
@@ -371,6 +351,8 @@ end
 aXData = ip.Results.X;
 % Matrix of Y-data
 aYData = ip.Results.Y;
+% Number of data plots
+nData = size(aXData, 3);
 % Vector of time
 vTime = ip.Results.Time;
 % If time is empty, we will just loop over the samples of X and Y
@@ -384,6 +366,9 @@ end
 nFps = ip.Results.Fps;
 % Custom plot functions
 mxFun = ip.Results.Fun;
+if numel(mxFun) == 1
+  mxFun = repmat({mxFun}, 1, size(aXData, 3));
+end
 
 % Get start function callback handle
 try
@@ -419,6 +404,8 @@ ceVideoWriter = ip.Results.VideoWriter;
 chEvenX = parseswitcharg(ip.Results.EvenX);
 % Title of the axes
 mxTitle = ip.Results.Title;
+% Tags of plots
+ceTags = ip.Results.Tag;
 % Mark start?
 chMarkStart = parseswitcharg(ip.Results.MarkStart);
 % Get a valid axes handle
@@ -437,7 +424,7 @@ end
 %% Create all data
 % Collect all data we need into one struct that we will assign to the axes
 stUserData = struct();
-stUserData.DataCount = size(aXData, 3);
+stUserData.DataCount = nData;
 stUserData.EvenX = chEvenX;
 stUserData.File = chOutputFile;
 stUserData.Fun = mxFun;
@@ -445,6 +432,7 @@ stUserData.InitialPlot = [];
 stUserData.MarkStart = chMarkStart;
 stUserData.StartFcn = ceStartCallbacks;
 stUserData.StopFcn = ceStopCallbacks;
+stUserData.Tag = ceTags;
 stUserData.Time = vTime;
 stUserData.TitleFcn = '';
 % Parse function handles as title
@@ -603,6 +591,7 @@ end
 
 function cb_timerstart(ax, timer, event)
 
+
 % Don't do anything if the axes is not a valid handle
 if ~ishandle(ax)
   return
@@ -615,12 +604,20 @@ try
 
   % Get the current axes' user data
   stUserData = ax.UserData;
+  
+  % Add to axes
+  hold(ax, 'on');
 
   % Plot the first row of data
-  stUserData.Plot = feval(stUserData.Fun, ax, squeeze(stUserData.XData(1,:,:)), squeeze(stUserData.YData(1,:,:)));
-
-%     % Hold on to the axes!
-%     hold(ax, 'on');
+  arrayfun(@(iP) feval(stUserData.Fun{iP}, ax, squeeze(stUserData.XData(1,:,iP)), squeeze(stUserData.YData(1,:,iP))), 1:stUserData.DataCount);
+  
+  % Done adding to axes
+  hold(ax, 'off');
+  
+  % Process tags?
+  if ~isempty(stUserData.Tag)
+    [ax.Children.Tag] = deal(stUserData.Tag{:});
+  end
 
   % And save the user data back into it
   ax.UserData = stUserData;
@@ -641,16 +638,9 @@ try
   if strcmp('on', ax.UserData.EvenX)
       vXLim = max(abs(vXLim)).*[-1, 1];
   end
-
-%     display(vXLim)
-%     display(vYLim)
-%     display([vXLim, vYLim], '[vXLim, vYLim]')
-
+  
+  % Update limits
   try
-      % Set the axes limits to manual...
-%         axis(ax, 'manual');
-      % Set the limits to the min and max of the plot data ...
-  %     axis(ax, [vXLim, vYLim]);
       xlim(ax, vXLim);
       ylim(ax, vYLim);
   catch me
@@ -681,7 +671,7 @@ try
   end
 
   % Update figure
-  drawnow('limitrate');
+  drawnow limitrate
 catch me
   stop(timer)
 
@@ -694,6 +684,7 @@ end
 
 
 function cb_timerupdate(ax, timer, event)
+
 
 % Don't do anything if the axes is not a valid handle
 if ~ishandle(ax)
@@ -722,7 +713,7 @@ try
   end
 
   % Update figure
-  drawnow('limitrate');
+  drawnow limitrate
 catch me
   stop(timer)
 
@@ -733,6 +724,7 @@ end
 
 
 function cb_timerend(ax, timer, event)
+
 
 % Don't do anything if the axes is not a valid handle
 if ~ishandle(ax)
@@ -746,7 +738,7 @@ try
   end
 
   % Update figure
-  drawnow('limitrate');
+  drawnow limitrate
 
   % Let go off our axes
   hold(ax, 'off');
@@ -758,6 +750,7 @@ end
 
 
 function cb_cleanup(ax, ~, hax)
+
 
 % Default third argument
 if nargin < 3
@@ -786,6 +779,7 @@ end
 
 
 function ceCallbacks = in_parseCallbacks(ceCallbackArgs, Type)
+
 
 % Default start callback: empty/does nothing
 ceCallbacks = {};
@@ -820,6 +814,7 @@ end
 function cb_start_writeVideo(ax, ~, ~)
 %% CB_START_WRITEVIDEO sets the figure resize option to 'off'
 
+
 try
   ax.UserData.Figure.Resize = 'off';
 catch me
@@ -831,6 +826,7 @@ end
 
 function cb_update_writeVideo(ax, plt, idx)
 %% IN_UPDATECALLBACK_WRITEVIDEO writes the current frame to the video object
+
 
 % Write the current frame to the video object
 try
@@ -844,6 +840,7 @@ end
 
 function cb_stop_writeVideo(ax, plt, idx)
 %% IN_STOPCALLBACK_WRITEVIDEO closes the video object
+
 
 try
   close(ax.UserData.VideoObject);
