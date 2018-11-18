@@ -1,5 +1,5 @@
 function {{ARGOUT}}{{FUNCTION}}({{ARGIN}})
-% {{FUNCTION_UPPER}} {{DESCRIPTION}}
+%% {{FUNCTION_UPPER}} {{DESCRIPTION}}
 
 
 
