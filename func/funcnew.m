@@ -1,5 +1,5 @@
 function funcnew(Name, varargin)
-% FUNCNEW creates a new function file based on a template
+%% FUNCNEW creates a new function file based on a template
 %
 %   FUNCNEW(NAME) creates function NAME into a new file at the specified
 %   target. It will not have any input or return arguments pre-defined.
@@ -38,7 +38,7 @@ function funcnew(Name, varargin)
 %                   after the function declaration and contains the function
 %                   name in all caps.
 %
-%   Templtae        Path to a template file that should be used instead of the
+%   Template        Path to a template file that should be used instead of the
 %                   default `functiontemplate.mtpl` found in this function's
 %                   root directory.
 
@@ -46,8 +46,10 @@ function funcnew(Name, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-05-14
+% Date: 2018-11-18
 % Changelog:
+%   2018-11-18
+%       * Fix typo in help lines
 %   2018-05-14
 %       * A custom defined template file path can be given now, too
 %       * Additionally, if no custom template file path was givent, a file
