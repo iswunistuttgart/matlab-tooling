@@ -1,7 +1,7 @@
-function B = adjoint(A)
-% ADJOINT Calculate the adjoint matrix of A
+function B = adjugate(A)
+% ADJUGATE Calculate the adjugate matrix of A
 %
-% This finds the adjoint of square matrix A, and is valid even if A is singular
+% This finds the adjugate of square matrix A, and is valid even if A is singular
 % or complex-valued. With U, S, and V obtained from [U,S,V] = SVD(A), it makes
 % use of the identity adj(A) = det(U*V')*V*ADJ(S)*U', which holds even if A and
 % S are both singular. The expression diag(prod(reshape(s0(ix),n-1,n),1)),
@@ -14,7 +14,7 @@ function B = adjoint(A)
 %
 %   Outputs:
 %
-%   B                   NxN matrix being the adjoint of A.
+%   B                   NxN matrix being the adjugate of A.
 %
 %   See also
 %   SVD TOEPLITZ
@@ -24,9 +24,12 @@ function B = adjoint(A)
 %% File information
 % Author: Roger Stafford - 10/18/06 https://mathworks.com/matlabcentral/profile/authors/870327-roger-stafford
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% See: https://mathworks.com/matlabcentral/fileexchange/12692-adjugate-adjoint-of-a-square-matrix
-% Date: 2018-11-17
+% See: https://mathworks.com/matlabcentral/fileexchange/12692-adjugate-adjugate-of-a-square-matrix
+% Date: 2018-11-20
 % Changelog:
+%   2018-11-20
+%       * Rename to `adjugate` as it really is the matrix adjugate rather than
+%       the matrix adjoint
 %   2018-11-17
 %       * Initial release
 %   2006-10-18
