@@ -5,8 +5,10 @@ function create_contents(d)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-05-21
+% Date: 2018-11-30
 % Changelog:
+%   2018-11-30
+%       *  Fix broken code since ALLFILES works differently now
 %   2018-05-21
 %       * Initial release
 
@@ -83,7 +85,7 @@ end
 
 % We will now create one toplevel file that contains the Contents.M of the
 % toplevel directory and all child directories
-vAllContents = allfiles(chRoot, 'Prefix', 'Contents', 'Extension', 'm', 'Recurse', 'on');
+vAllContents = allfiles(chRoot, '',  'Prefix', 'Contents', 'Extension', 'm', 'Recurse', 'on');
 % Create a container map of 'relative/path => contents.m'
 cmContents = containers.Map('KeyType', 'char', 'ValueType', 'any');
 % Loop over all contents files
