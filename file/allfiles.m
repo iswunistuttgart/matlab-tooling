@@ -46,8 +46,10 @@ function Files = allfiles(d, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-08-31
+% Date: 2018-11-30
 % Changelog:
+%   2018-11-30
+%       * Fix incorrect creation of cell array of recursion arguments
 %   2018-08-31
 %       * Change name/value parameter EXTENSION to an optional parameter, that
 %       now may also be left empty to gather all files
@@ -161,14 +163,16 @@ if strcmp('on', chRecurse)
         'IncludeHidden', chIncludeHidden ...
         , 'Recurse', 'on' ...
     };
-    if ~isempty(chExtension)
-        ceArgsRecurse = horzcat(ceArgsRecurse, 'Extension', chExtension);
-    end
     if ~isempty(chPrefix)
         ceArgsRecurse = horzcat(ceArgsRecurse, 'Prefix', chPrefix);
     end
     if ~isempty(chSuffix)
         ceArgsRecurse = horzcat(ceArgsRecurse, 'Suffix', chSuffix);
+    end
+    if ~isempty(chExtension)
+        ceArgsRecurse = horzcat(chExtension, ceArgsRecurse);
+    else
+        ceArgsRecurse = horzcat('', ceArgsRecurse);
     end
 end
 

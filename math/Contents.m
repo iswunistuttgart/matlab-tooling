@@ -1,6 +1,7 @@
 % MATH
 %
 % Files
+%   adjugate      - Calculate the adjugate matrix of A
 %   angle2rotm    - Create Tait-Bryan rotation matrices from rotation angles
 %   bbox          - Calculates the 2D bounding box for the given points
 %   bbox3         - Calculates the 3D bounding box for the given points
@@ -14,6 +15,7 @@
 %   f2w           - turns ordinary frequency into angular frequency
 %   factorial2    - Factorial function.
 %   fibonacci     - Fibonacci numbers.
+%   gausslegendre - Determine Gauss-Legendre Quadrature abscissae and weights
 %   gcd2          - Greatest common divisor of all elements.
 %   haversin      - creates the haversinersine function of argument z
 %   iseven        - checks the given number(s) for being even
@@ -38,6 +40,7 @@
 %   rotxsym       - Symbolic rotation matrix about the x-axis
 %   rotysym       - Symbolic rotation matrix about the y-axis
 %   rotzsym       - Symbolic rotation matrix about the z-axis
+%   sigdigits     - Return significant digits in a numeric non-uint64 number
 %   sym_eul2rotm  - Convert symbolic Euler angles to rotation matrix
 %   vec2skew      - Turn the input into its skew-symmetrix matrix form
 %   vec2tens      - converts a vector to its 2d tensor matrix representation.

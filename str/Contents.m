@@ -1,6 +1,7 @@
 % STR
 %
 % Files
+%   num2prefix      - converts numbers to their SI unit prefix.
 %   strdist         - computes distances between strings
 %   strlcfirst      - lower cases the frist character of the string(s)
 %   strnatsort      - Alphanumeric / Natural-Order sort the strings in a cell array of strings.

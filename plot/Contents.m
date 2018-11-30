@@ -7,6 +7,7 @@
 %   center_cos                     - centers the coordinate system at [0, 0] i.e., moves the axes
 %   circle                         - draws a circle of specified radius
 %   circle3                        - draws a circle in 3D
+%   cmyk2rgb                       - convert CMYK colors to RGB colors
 %   distinguishableColors          - pick colors that are maximally perceptually distinct
 %   figplot                        - opens a figure and plots inside this figure.
 %   gpf                            - Get the given handles parent figure
@@ -27,6 +28,7 @@
 %   plot_zoom                      - plots a zoom region into the given axes
 %   plotrange                      - Determine the range of plotted data from min to max
 %   point                          - Define the input parser
+%   rgb2cmyk                       - convert RGB colors to CMYK colors
 %   rgb_darker                     - 
 %   rgb_lighter                    - 
 %   ruler                          - plots a vertical or horizontal ruler at the given position
@@ -36,3 +38,4 @@
 %   usdistcolors                   - creates distinguishable colors complying with University of
 %   uslayout                       - applies the corresponding figure to University of Stuttgarts
 %   uslinestyles                   - creates a list of N unique lineseries plot styles
+%   zoomax                         - in or out into an axes depending on the scaling factor
