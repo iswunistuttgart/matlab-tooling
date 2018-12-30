@@ -27,11 +27,12 @@ function l = loglim(d)
 %% Do your code magic here
 
 % Evaluate the floored and ceiled values of the 10-logarithm of all values given
-f = -ceil( -log10(d) ./ 3 )*3;
-c = floor( -log10(d) ./ 3 )*3;
+x = log10(d) ./ 3;
+% A nicer function to round away from zero
+f = (sign(x) + fix(x)) .* 3;
 
 % And build output
-l = [min(f, [], 2), max(c, [], 2)];
+l = [min(f, [], 2), max(f, [], 2)];
 
 
 end
