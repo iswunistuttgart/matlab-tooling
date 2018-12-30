@@ -1,9 +1,20 @@
 # List of functions
 
-## /
-  * `finish`: shuts down the project
-  * `projpath`: returns the path definiton for this project
-  * `startup`: starts this project
+## dae/
+  * `betsch`: implements BETSCH's ODE time-stepping scheme for mechanical systems
+  * `Betsch_pend`: 
+  * `Betsch_twoMass`: 
+  * `daeget`: Get DAE OPTIONS parameters.
+  * `daeproblem`: creates a DAE problem structure
+  * `daeset`: Create/alter ODE OPTIONS structure.
+  * `discrderiv`: calculates the discrete derivative of a scalar function F
+  * `fourbarlinkage_dae_constraintsq`: FOURBARLINKAGE_DAE_CONSTRAINTSQ
+  * `fourbarlinkage_dae_jconstraintsq`: FOURBARLINKAGE_DAE_JCONSTRAINTSQ
+  * `fourbarlinkage_generator`: GENERATOR for the dynamics models of the four-bar linkage
+  * `fourbarlinkage_geo_nodes`: FOURBARLINKAGE_GEO_NODES
+  * `fourbarlinkage_ode_forces`: FOURBARLINKAGE_ODE_FORCES
+  * `fourbarlinkage_ode_mass`: FOURBARLINKAGE_ODE_MASS
+  * `fourbarlinkage_simulate`: SIMULATE the four-bar linkage with different DAE stabilization techniques
 
 
 ## data/
@@ -44,6 +55,7 @@
   * `funcnew`: creates a new function file based on a template
   * `funcren`: renames the function to a new name
   * `isfunction`: - true for valid matlab functions
+  * `packageroot`: Determine the root directory of the given package.
   * `parseswitcharg`: parses the toggle arg to a valid and unified char.
   * `splitaxesargs`: calls axescheck for a list with an object inside
 
@@ -208,7 +220,9 @@
   * `bump`: Bump function
   * `gauss`: calculates the 1D gaussian function along X
   * `h2r`: converts Hertz to radian per second
+  * `heaviside`: Analytic heaviside function at X = 0
   * `r2h`: converts radian per second to Hertz
+  * `richard`: Generalized logistics curve or Richards' curve
   * `siggen_difflattraj`: creates a differentially flat trajectory.
   * `siggen_rectangular`: generates a rectangular signal
   * `siggen_sawtooth`: 
@@ -263,4 +277,5 @@
 
 ## twincat/
   * `csv2tcscope`: converts a TwinCat CSV scope file to a TCSCOPE object
+
 
