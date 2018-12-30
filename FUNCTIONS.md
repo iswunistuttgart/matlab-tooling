@@ -113,6 +113,7 @@
   * `iseven`: checks the given number(s) for being even
   * `isprime2`: True for prime numbers.
   * `lcm2`: LCMALL Least common multiple of all elements.
+  * `loglim`: returns logarithmic limits
   * `mcols`: Count number of columns of matrix A
   * `mmax`: behaves similar to MAX except that it automatically shrinks down to
   * `mmin`: behaves similar to MIN except that it automatically shrinks down to
@@ -164,6 +165,7 @@
   * `circle`: draws a circle of specified radius
   * `circle3`: draws a circle in 3D
   * `cmyk2rgb`: convert CMYK colors to RGB colors
+  * `colororder_pre2014b`: returns the color order of plot lines pre R2014b
   * `distinguishableColors`: pick colors that are maximally perceptually distinct
   * `figplot`: opens a figure and plots inside this figure.
   * `gpf`: Get the given handles parent figure

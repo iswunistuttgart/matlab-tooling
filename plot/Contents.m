@@ -8,6 +8,7 @@
 %   circle                         - draws a circle of specified radius
 %   circle3                        - draws a circle in 3D
 %   cmyk2rgb                       - convert CMYK colors to RGB colors
+%   colororder_pre2014b            - returns the color order of plot lines pre R2014b
 %   distinguishableColors          - pick colors that are maximally perceptually distinct
 %   figplot                        - opens a figure and plots inside this figure.
 %   gpf                            - Get the given handles parent figure
