@@ -21,6 +21,7 @@
 %   iseven        - checks the given number(s) for being even
 %   isprime2      - True for prime numbers.
 %   lcm2          - LCMALL Least common multiple of all elements.
+%   loglim        - returns logarithmic limits
 %   mcols         - Count number of columns of matrix A
 %   mmax          - behaves similar to MAX except that it automatically shrinks down to
 %   mmin          - behaves similar to MIN except that it automatically shrinks down to
