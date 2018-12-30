@@ -6,8 +6,11 @@ function create_docs()
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-08-17
+% Date: 2018-12-30
 % Changelog:
+%   2018-12-30
+%       * Update to exclude directories not in path
+%       * Update to exclude files name "untitled*"
 %   2017-08-17
 %       * Wiki directory is now created, if it does not exist
 %       * Replace sort_nat() function with MATLAB built-in `sortrows` function
@@ -27,7 +30,7 @@ persistent chBasepath chBasepath_Wiki;
 % If the file is run the first time, chBasepath will be empty
 if isempty(chBasepath)
     % Get the location of this file as all code is relative to here
-    chBasepath = fileparts(mfilename('fullpath'));
+    chBasepath = fullfile(fileparts(mfilename('fullpath')), '..');
     chBasepath_Wiki = fullfile(chBasepath, 'wiki');
 end
 
@@ -56,10 +59,28 @@ ceFunctions_Alphabetical = sortrows(ceFunctions);
 
 % Process all functions alphabetically
 for iFunc = 1:numel(ceFunctions_Alphabetical)
+    % Skip files that are called 'untitled*'
+    if contains(ceFunctions_Alphabetical{iFunc}, 'untitled')
+        continue
+    end
+    
+    % Find full path of the function
     chFunction_Path = which(ceFunctions_Alphabetical{iFunc});
+    
+    % Directory and name of function
+    [chFunction_Dir, chFunction_Name, ~] = fileparts(chFunction_Path);
+    
     % Get the function "namespace"
-    ceNamespace = strsplit(strrep(fileparts(chFunction_Path), chBasepath, ''), filesep);
-    [~, chFunction_Name, ~] = fileparts(chFunction_Path);
+    ceNamespace = strsplit(strrep(chFunction_Dir, chBasepath, ''), filesep);
+    
+    % Get MATLAB's full search path
+    ceMLPath = regexp(path, pathsep, 'split');
+    
+    % Skip directories not on path (Windows is not case-sensitive)
+    if ispc && ~any(strcmpi(chFunction_Dir, ceMLPath)) ...
+        || ~ispc && ~any(strcmp(chFunction_Dir, ceMLPath))
+        continue
+    end
     
     % Get the H1 comment line from the file
     chH1Comment = in_getH1Comment(chFunction_Name);
@@ -73,37 +94,6 @@ for iFunc = 1:numel(ceFunctions_Alphabetical)
     % Newline
     fprintf(fidFunctions, '\n');
     
-    
-%     % Create a namespace folder inside the wiki if it does exist yet
-%     if 7 ~= exist(fullfile(chBasepath_Wiki, ceNamespace{:}), 'file')
-%         mkdir(fullfile(chBasepath_Wiki, ceNamespace{:}));
-%     end
-%     
-%     % Grab the function/file name from the file path
-%     [~, chFunctionname, ~] = fileparts(which(ceFunctions{iFunc}));
-%     % Create the path to the file's docs directory and file's doc file.
-%     chDocs_Dir = fullfile(chBasepath_Wiki, ceNamespace{:});
-%     chDocs_Path = fullfile(chDocs_Dir, sprintf('%s.md', chFunctionname));
-%     
-%     % Get the help string for the function
-%     chHelp = evalc(sprintf('help %s', chFunctionname));
-%     
-%     % Write the function help to a file
-%     try
-%         [fidDoc, chMessage] = fopen(chDocs_Path, 'w');
-%         if ~isempty(chMessage)
-%             throw(MException('PHILIPPTEMPEL:MATLAB_TOOLING:CREATE_DOCS:FailedOpenFile', 'Failed opening file [%s] with error; %s', sprintf('%s.md', chFunctionname), chMessage));
-%         end
-%         
-%         % Write help string to the document
-%         fprintf(fidDoc, '%s', chHelp);
-%         
-%         % Close the file
-%         fclose(fidDoc);
-%     catch me
-%         warning(me.message, me.identifier);
-%         continue
-%     end
 end
 
 
@@ -113,7 +103,7 @@ end
 function ceFunctions = in_collectFunctions(chDir)
 
 % Holds return value
-ceFunctions = cell(0);
+ceFunctions = cell(1, 0);
 
 % Get all files and folders in the given directory
 stFiles = allfiles(chDir);

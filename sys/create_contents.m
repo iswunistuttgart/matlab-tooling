@@ -5,8 +5,11 @@ function create_contents(d)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-11-30
+% Date: 2018-12-30
 % Changelog:
+%   2018-12-30
+%       * Update to exclude directories not in path
+%       * Update to exclude files name "untitled*"
 %   2018-11-30
 %       *  Fix broken code since ALLFILES works differently now
 %   2018-05-21
@@ -138,6 +141,9 @@ try
     % Get all keys of the containers map
     ceNamespaces = cmContents.keys;
     
+    % Get MATLAB's full search path
+    ceMLPath = regexp(path, pathsep, 'split');
+    
     % Write the markdown file header
     fprintf(hFid, '# List of functions');
     fprintf(hFid, '%s', newline());
@@ -145,6 +151,15 @@ try
     
     % Loop over each namespace
     for iNS = 1:numel(ceNamespaces)
+        % Continue only if namespace is on path (otherwise it's useless to
+        % include the directory)
+        
+        % Skip directories not on path (Windows is not case-sensitive)
+        if ispc && ~any(strcmpi(fullfile(chRoot, ceNamespaces{iNS}), ceMLPath)) ...
+            || ~ispc && ~any(strcmp(fullfile(chRoot, ceNamespaces{iNS}), ceMLPath))
+            continue
+        end
+        
         % Write the header
         fprintf(hFid, '## %s%s', strip(ceNamespaces{iNS}, 'left', filesep), filesep);
         fprintf(hFid, '%s', newline());
@@ -154,6 +169,11 @@ try
         
         % Write the files
         for iFile = 1:numel(vFiles)
+            % Skip files that are called 'untitled*'
+            if contains(vFiles(iFile).name, 'untitled')
+                continue
+            end
+            
             fprintf(hFid, '  * `%s`: %s', vFiles(iFile).name, vFiles(iFile).desc);
             fprintf(hFid, newline());
         end

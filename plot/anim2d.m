@@ -131,7 +131,7 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-11-13
+% Date: 2018-12-30
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 %   * Resample time vector such that it explictly matches the FPS value. Right
@@ -139,6 +139,9 @@ function [varargout] = anim2d(X, Y, varargin)
 %   animation (and timer title) will "freeze" during 0s and 2.3s as there is no
 %   data drawn => Title should at least update
 % Changelog:
+%   2018-12-30
+%       * Allow passing third argument, time T, simply as a numeric array. If
+%       so, the list of variable arguments will expanded accordingly.
 %   2018-11-13
 %       * Add parameter 'Tag' to allow tagging a single plot so that it can be
 %       more easily retrieved in the start, update, or stop callbacks.
@@ -259,11 +262,11 @@ ip = inputParser;
 
 % Parse the provided inputs
 args = [{X}, {Y}, varargin];
-[haTarget, args, ~] = axescheck(args{:});
+[haTarget, args, nargs] = axescheck(args{:});
 
 % Check if the third argument is a string or a vector. If it's a vector we
 % assume it to be the value of the name/value parameter 'Time'.
-if isnumeric(args{3}) && isvector(args{3})
+if nargs > 2 && isnumeric(args{3}) && isvector(args{3})
   args = [args(1:2), 'Time', args(3:end)];
 end
 
