@@ -1,15 +1,15 @@
 function y = smoothtrans(x, in)
 %% SMOOTHTRANS Evaluate a smooth transition function at value X
 %
-%   Y = SMOOTHTRANS(X) evaluates a smooth transition function from 0 to 1 along
-%   the vector X.
+%   Y = SMOOTHTRANS(X) evaluates a smooth transition function from -1 to 1s
+%   along the vector X.
 %
 %   Y = SMOOTHTRANS(X, I) uses interval I to perform smooth transition. Defaults
-%   to [0;1].
+%   to [-1,1].
 %
 %   Inputs:
 %
-%   X                   1xN vector at which to evaluate the smooth transition
+%   X                   Nx1 vector at which to evaluate the smooth transition
 %                       function.
 %
 %   I                   2xK vector of intervals on which to perform transition.
@@ -22,8 +22,12 @@ function y = smoothtrans(x, in)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-11-27
+% Date: 2018-12-30
 % Changelog:
+%   2018-12-30
+%       * Update interval of method to be on [-1, 1] by default.
+%   2018-12-16
+%       * Ensure that intervals given as row vectors also work
 %   2018-11-27
 %       * Initial release
 
@@ -37,7 +41,12 @@ try
   
   % Default interval
   if nargin < 2 || isempty(in)
-    in = [0; 1];
+    in = [-1; 1];
+  end
+  
+  % Make sure a vector interval is going to be a column vector
+  if isvector(in) && isrow(in)
+    in = in(:);
   end
   
   validateattributes(x, {'numeric'}, {'vector', 'nonempty', 'nondecreasing', 'finite', 'nonnan', 'nonsparse'}, mfilename, 'x');
@@ -53,7 +62,7 @@ end
 %% Process
 % p0 + ( pt - p0 ) .* ( 1 - 1 ./ ( exp( ( t - tt ) ./ w ) + 1 ) )
 % Make sure X is a column vector
-x = x(:);
+x = x(:); 
 
 % Adjust path coordinate to match original interval [0,1]
 x_ = (x - in(1,:)) ./ ( in(2,:) - in(1,:) );
