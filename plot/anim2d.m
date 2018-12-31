@@ -131,7 +131,7 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-12-30
+% Date: 2018-12-31
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 %   * Resample time vector such that it explictly matches the FPS value. Right
@@ -139,6 +139,10 @@ function [varargout] = anim2d(X, Y, varargin)
 %   animation (and timer title) will "freeze" during 0s and 2.3s as there is no
 %   data drawn => Title should at least update
 % Changelog:
+%   2018-12-31
+%       * Update how the title is being set when 'Title' property is given. Now,
+%       it seems to be faster as we are not traversing through the whole axes
+%       object but are accessing the title object directly.
 %   2018-12-30
 %       * Allow passing third argument, time T, simply as a numeric array. If
 %       so, the list of variable arguments will expanded accordingly.
@@ -567,6 +571,13 @@ tiUpdater = timer(...
 hfFigure = gpf(haTarget);
 hfFigure.DeleteFcn = {@cb_cleanup, haTarget};
 
+% Set the title object, if a title function callback exists
+if ~isempty(stUserData.TitleFcn)
+    haTarget.UserData.Title = title(haTarget, haTarget.UserData.TitleFcn(haTarget, 0));
+else
+    haTarget.UserData.Title = [];
+end
+
 % Add the timer to the axes, too
 haTarget.UserData.Timer = tiUpdater;
 
@@ -668,11 +679,6 @@ try
       ax.UserData.StartFcn{iSF}(ax, ax.Children(1:ax.UserData.DataCount), timer.TasksExecuted);
   end
 
-  % Set the title, if a title function callback exists
-  if ~isempty(ax.UserData.TitleFcn)
-      title(ax, ax.UserData.TitleFcn(ax, timer.TasksExecuted));
-  end
-
   % Update figure
   drawnow limitrate
 catch me
@@ -711,8 +717,8 @@ try
   end
 
   % Update the title, if it previously was set and if there is a callback
-  if ~ ( isempty(ax.Title.String) && isempty(ax.UserData.TitleFcn) )
-      ax.Title.String = ax.UserData.TitleFcn(ax, timer.TasksExecuted);
+  if ~isempty(ax.UserData.Title)
+      ax.UserData.Title.String = ax.UserData.TitleFcn(ax, timer.TasksExecuted);
   end
 
   % Update figure
