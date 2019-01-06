@@ -33,6 +33,7 @@
 %   quat2rotm     - converts quaternions to rotation matrices
 %   quat2rotzyx   - Convert quaternion to Tait-Bryan angle rotation matrix
 %   quat2vel      - Converts quaternion velocity vector to angular velocity vector
+%   reldiff       - Calculate relative difference of X and Y
 %   rot2          - creates the 2D rotation matrix of angles A
 %   rot2d         - ROT2d creates the 2D rotation matrix of angles A given in degree
 %   rotm2row      - converts a 3d rotation matrix to a row

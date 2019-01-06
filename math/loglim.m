@@ -17,22 +17,32 @@ function l = loglim(d)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-12-30
+% Date: 2019-01-06
 % Changelog:
+%   2019-01-06
+%       * Fix implementation not working correcty for numbers in
+%       [1+eps,1000-eps].
 %   2018-12-30
 %       * Initial release
 
 
 
+%% Validate arguments
+
+validateattributes(d, {'numeric'}, {'nonempty', 'finite', 'positive'}, mfilename, 'd');
+
+
+
 %% Do your code magic here
 
-% Evaluate the floored and ceiled values of the 10-logarithm of all values given
-x = log10(d) ./ 3;
-% A nicer function to round away from zero
-f = (sign(x) + fix(x)) .* 3;
+% Sort in ascending order
+d = sort(d, 2);
 
-% And build output
-l = [min(f, [], 2), max(f, [], 2)];
+% Express numbers in base-10 system
+lg = log10(d);
+
+% Just like so (to powers of 10^3)
+l = [floor(floor(min(lg, [], 2))./3).*3, ceil(ceil(max(lg, [], 2))./3).*3];
 
 
 end
