@@ -68,7 +68,7 @@ function [varargout] = anim2d(X, Y, varargin)
 %
 %   Title           String to be displayed in the title. Can be set to 'timer'
 %       or 'timer_of' to enable automatic rendering of the time in the
-%       axes' title. Can also be set to 'index' or 'index_if', to display the
+%       axes' title. Can also be set to 'index' or 'index_of', to display the
 %       current frame iteration index.
 %       If a user-specific string is provided, it will be passed to `sprintf`
 %       where the current time is being parsed as first argument, the current
@@ -131,7 +131,7 @@ function [varargout] = anim2d(X, Y, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-12-31
+% Date: 2019-01-07
 % TODO:
 %   * Line-specific plot-functions like 'plot' for 1:3, and 'stem' for 4:6'
 %   * Resample time vector such that it explictly matches the FPS value. Right
@@ -139,6 +139,9 @@ function [varargout] = anim2d(X, Y, varargin)
 %   animation (and timer title) will "freeze" during 0s and 2.3s as there is no
 %   data drawn => Title should at least update
 % Changelog:
+%   2019-01-07
+%       * Fix incorrect property name in validation function of Y.
+%       * Fix typos in help section.
 %   2018-12-31
 %       * Update how the title is being set when 'Title' property is given. Now,
 %       it seems to be faster as we are not traversing through the whole axes
@@ -282,7 +285,7 @@ try
 
   % Required: Y. Numeric. Matrix; Non-empty; Columns matches columns of
   % X;
-  valFcn_Y = @(x) validateattributes(x, {'numeric'}, {'3d', 'nonempty', 'size', size(args{1})}, mfilename, 'X');
+  valFcn_Y = @(x) validateattributes(x, {'numeric'}, {'3d', 'nonempty', 'size', size(args{1})}, mfilename, 'Y');
   addRequired(ip, 'Y', valFcn_Y);
 
   % Parameter: Time. Numeric. Vector; Non-empty; Increasing; Numel matches
@@ -604,6 +607,7 @@ end
 
 
 function cb_timerstart(ax, timer, event)
+%% CB_TIMERSTART
 
 
 % Don't do anything if the axes is not a valid handle
@@ -693,6 +697,7 @@ end
 
 
 function cb_timerupdate(ax, timer, event)
+%% CB_TIMERUPDATE
 
 
 % Don't do anything if the axes is not a valid handle
@@ -733,6 +738,7 @@ end
 
 
 function cb_timerend(ax, timer, event)
+%% CB_TIMEREND
 
 
 % Don't do anything if the axes is not a valid handle
@@ -759,6 +765,7 @@ end
 
 
 function cb_cleanup(ax, ~, hax)
+%% CB_CLEANUP
 
 
 % Default third argument
@@ -788,7 +795,7 @@ end
 
 
 function ceCallbacks = in_parseCallbacks(ceCallbackArgs, Type)
-
+%% IN_PARSECALLBACKS
 
 % Default start callback: empty/does nothing
 ceCallbacks = {};
