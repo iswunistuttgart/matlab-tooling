@@ -136,6 +136,7 @@
   * `rotysym`: Symbolic rotation matrix about the y-axis
   * `rotzsym`: Symbolic rotation matrix about the z-axis
   * `sigdigits`: Return significant digits in a numeric non-uint64 number
+  * `skew2vec`: Convert skew-symmetric matrix into skew-symmetric vector representation
   * `sym_eul2rotm`: Convert symbolic Euler angles to rotation matrix
   * `vec2skew`: Turn the input into its skew-symmetrix matrix form
   * `vec2tens`: converts a vector to its 2d tensor matrix representation.
@@ -162,13 +163,13 @@
 ## plot/
   * `anim2d`: animates 2-dimensional data over time.
   * `anim3d`: animates 3-dimensional data over time.
-  * `autosetlims`: automatically sets limits of the curent axis
   * `center_cos`: centers the coordinate system at [0, 0] i.e., moves the axes
   * `circle`: draws a circle of specified radius
   * `circle3`: draws a circle in 3D
   * `cmyk2rgb`: convert CMYK colors to RGB colors
   * `colororder_pre2014b`: returns the color order of plot lines pre R2014b
   * `distinguishableColors`: pick colors that are maximally perceptually distinct
+  * `enlargelimits`: Automatically enlarge limits of the curent axis
   * `figplot`: opens a figure and plots inside this figure.
   * `gpf`: Get the given handles parent figure
   * `isallaxes`: Checks whether the given handle is purely axes or not

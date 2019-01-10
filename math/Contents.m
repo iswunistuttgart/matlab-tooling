@@ -43,6 +43,7 @@
 %   rotysym       - Symbolic rotation matrix about the y-axis
 %   rotzsym       - Symbolic rotation matrix about the z-axis
 %   sigdigits     - Return significant digits in a numeric non-uint64 number
+%   skew2vec      - Convert skew-symmetric matrix into skew-symmetric vector representation
 %   sym_eul2rotm  - Convert symbolic Euler angles to rotation matrix
 %   vec2skew      - Turn the input into its skew-symmetrix matrix form
 %   vec2tens      - converts a vector to its 2d tensor matrix representation.
