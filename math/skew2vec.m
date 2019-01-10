@@ -28,7 +28,7 @@ function v = skew2vec(S)
 narginchk(1, 1);
 nargoutchk(0, 1);
 
-validateattributes(S, {'numeric'}, {'nonempty', '3d', 'nrows', 3, 'ncols', 3}, mfilename, 'S');
+validateattributes(S, {'numeric', 'symbolic', 'sym'}, {'nonempty', '3d', 'nrows', 3, 'ncols', 3}, mfilename, 'S');
 
 
 
