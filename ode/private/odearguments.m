@@ -99,7 +99,7 @@ if any( tdir*diff(tspan) <= 0 )
   error(message('MATLAB:odearguments:TspanNotMonotonic'));
 end
 
-f0 = feval(ode,t0,y0,args{:});   % ODE15I sets args{1} to yp0. LEAPFROG sets args{1} to v0.
+f0 = feval(ode,t0,y0,args{:});   % ODE15I sets args{1} to yp0.
 [m,n] = size(f0);
 if n > 1
   error(message('MATLAB:odearguments:FoMustReturnCol', funstring( ode )));
