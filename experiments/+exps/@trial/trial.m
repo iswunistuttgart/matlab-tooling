@@ -1,5 +1,6 @@
 classdef trial < handle ...
-        & matlab.mixin.Heterogeneous
+        & matlab.mixin.Heterogeneous ...
+        & dynamicprops
     % TRIAL An experimental trial object containing information on all files
     
     
@@ -26,6 +27,9 @@ classdef trial < handle ...
         
         % Path to the config file
         ConfigPath
+        
+        % Loaded scope data
+        Scope
         
         % All images of this experiment
         Image
@@ -116,6 +120,9 @@ classdef trial < handle ...
       % Actual loaded config
       Config_ = struct();
       
+      % Actual scope data
+      Scope_
+      
     end
     
     
@@ -152,7 +159,7 @@ classdef trial < handle ...
             end
             
             % Load configuration
-            this.Config = this.load_config();
+            this.Config = load_config(this);
             
         end
         
@@ -317,6 +324,22 @@ classdef trial < handle ...
         end
         
         
+        function s = get.Scope(this)
+          %% GET.SCOPE Return scope data
+          
+          
+          % Check if scope was already loaded
+          if isempty(this.Scope_) && this.HasScope
+            % Load scope
+            this.Scope_ = csv2tcscope(this.ScopePath);
+          end
+          
+          % Return cached scope
+          s = this.Scope_;
+          
+        end
+        
+        
         function m = get.Media(this)
             %% GET.MEDIA returns all media of this project
             
@@ -334,7 +357,7 @@ classdef trial < handle ...
             
             
             % Pass through to the media filtering function
-            im = this.filter_media(this.ImageExtensions);
+            im = filter_media(this, this.ImageExtensions);
             
         end
         
@@ -344,7 +367,7 @@ classdef trial < handle ...
             
             
             % Pass through to the media filtering function
-            vi = this.filter_media(this.VideoExtensions);
+            vi = filter_media(this, this.VideoExtensions);
             
         end
         
@@ -519,7 +542,7 @@ classdef trial < handle ...
             %% MKDIR creates the directory for this experimental trial
             
             
-            [varargout{1:nargout}] = this.create();
+            [varargout{1:nargout}] = create(this);
             
         end
         
@@ -643,13 +666,19 @@ classdef trial < handle ...
           
         end
         
+    end
+    
+    
+    
+    %% CONVERSION METHODS
+    methods
         
-        function t = csv2tcscope(this)
-            %% CSV2TCSCOPE loads the scope CSV file for this object
+        function t = tcscope(this)
+            %% TCSCOPE loads the scope CSV file for this object
             
             
             try
-                validateattributes(this, {'exps.trial'}, {'scalar'}, mfilename, 'csv2tscope');
+                validateattributes(this, {'exps.trial'}, {'scalar'}, mfilename, 'tcscope');
                 
                 t = csv2tcscope(this.ScopePath);
             catch me
