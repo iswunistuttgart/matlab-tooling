@@ -84,7 +84,7 @@ classdef trial < handle ...
         IsNew
         
         % Project that this trial corresponds to
-        Project
+        Project@exps.project
         
     end
     
