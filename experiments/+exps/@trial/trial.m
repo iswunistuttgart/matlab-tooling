@@ -84,7 +84,7 @@ classdef trial < handle ...
         IsNew
         
         % Project that this trial corresponds to
-        Project
+        Project@exps.project
         
     end
     
@@ -310,7 +310,12 @@ classdef trial < handle ...
             %% GET.SCOPEPATH returns the path to the scope file
             
             
-            p = fullfile(this, sprintf('%s.csv', this.ScopeName));
+            % Check if a pre-compiled MAT file exists
+            if 2 == exist(fullfile(this, sprintf('%s.mat', this.ScopeName)), 'file')
+              p = fullfile(this, sprintf('%s.mat', this.ScopeName));
+            else
+              p = fullfile(this, sprintf('%s.csv', this.ScopeName));
+            end
             
         end
         
@@ -330,8 +335,28 @@ classdef trial < handle ...
           
           % Check if scope was already loaded
           if isempty(this.Scope_) && this.HasScope
-            % Load scope
-            this.Scope_ = csv2tcscope(this.ScopePath);
+            % Check if scope file is a MAT File
+            [~, ~, ext] = fileparts(this.ScopePath);
+            
+            % .MAT file
+            if strcmp('.mat', ext)
+              % Load MAT file as MATFILE
+              m = matfile(this.ScopePath);
+              % Variables in the MAT file
+              vars = whos(m);
+              % Find the correct variable type
+              idxScopes = find(arrayfun(@(f) strcmp(f.class, 'tcscope'), vars), 1, 'first');
+              
+              % Got some
+              if ~isempty(idxScopes)
+                % Load variable from the MAT file
+                this.Scope_ = m.(vars(idxScopes(1)).name);
+              end
+            else
+              % Load scope from CSV file
+              this.Scope_ = csv2tcscope(this.ScopePath);
+            end
+            
           end
           
           % Return cached scope

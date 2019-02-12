@@ -278,7 +278,9 @@ for iHeader = 1:nLines_Header
           break
         catch me
         end
-
+      end
+      
+      if isempty(stSignalData(1).StartRecord_DateTime)
         % Nothing found, inform user
         warning('PHILIPPTEMPEL:MATLABTOOLING:TWINCAT:CSV2TSCOPE:DateTimeParsingFailed', 'Could not parse date time for %s', 'StartRecord');
       end
@@ -295,7 +297,9 @@ for iHeader = 1:nLines_Header
           break
         catch me
         end
-
+      end
+      
+      if isempty(stSignalData(1).EndRecord_DateTime)
         % Nothing found, inform user
         warning('PHILIPPTEMPEL:MATLABTOOLING:TWINCAT:CSV2TSCOPE:DateTimeParsingFailed', 'Could not parse date time for %s', 'EndRecord');
       end
