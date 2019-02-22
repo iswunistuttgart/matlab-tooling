@@ -25,8 +25,10 @@ function ts = tspan(t0, tf, h)%#codegen
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-08-30
+% Date: 2019-02-22
 % Changelog:
+%   2019-02-22
+%       * Round number of elements passed to `linspace` to be non-rational
 %   2018-08-30
 %       * Initial release
 
@@ -43,7 +45,7 @@ end
 %% Perform creation of TS
 
 % Simply pass the properly formatted values to linspace
-ts = linspace(t0, tf, (tf - t0)/h + 1);
+ts = linspace(t0, tf, round((tf - t0)/h + 1));
 ts = ts(:);
 
 
