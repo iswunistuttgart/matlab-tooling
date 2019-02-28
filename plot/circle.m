@@ -29,8 +29,11 @@ function varargout = circle(Center, Radius, varargin)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-09-09
+% Date: 2019-02-27
 % Changelog:
+%   2019-02-27
+%       * Update handling of first argument making sure it always is a column
+%       vector
 %   2017-09-09
 %       * Change order of arguments to (CENTER, RADIUS)
 %       * Update to allow drawing more than one circle at a time
@@ -48,6 +51,11 @@ varargin = [{Center}, {Radius}, varargin];
 
 % Extract center from the axes-cleaned cell
 Center = args{1};
+args(1) = [];
+
+if isvector(Center)
+  Center = Center(:);
+end
 
 % Count circles
 nCircles = size(Center, 2);
@@ -70,7 +78,7 @@ ip.FunctionName = mfilename;
 
 % Parse the provided inputs
 try
-    parse(ip, args{:});
+    parse(ip, Center, args{:});
 catch me
     throwAsCaller(me);
 end
