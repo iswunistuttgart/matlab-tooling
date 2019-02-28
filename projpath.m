@@ -9,8 +9,10 @@ function p = projpath()
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2018-04-29
+% Date: 2019-02-28
 % Changelog:
+%   2019-02-28
+%       * Remove directory 'dae' which is not yet to be available
 %   2018-04-29
 %       * Initial release
 
@@ -22,7 +24,6 @@ chPath = fileparts(mfilename('fullpath'));
 
 p = { ...
     fullfile(chPath) ...
-    fullfile(chPath, 'dae') ...
     fullfile(chPath, 'data') ...
     fullfile(chPath, 'experiments') ...
     fullfile(chPath, 'file') ...
