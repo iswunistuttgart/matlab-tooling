@@ -3,12 +3,12 @@ function l = last(mixed)
 %
 %   Inputs:
 %
-%   MIXED               Can be a MATLAB variable of any content. This function
+%   MIXED               Can be a MATLAB variable of any content. This function 
 %                       tries its best to handle getting the "last" item
 %                       correctly. Depending on the class of the argument, the
 %                       last item is differently defined:
-%                       couble: last(mixed) => mixed(end)
-%                       cell:   last(cell) => cell{end}
+%                         double: last(mixed) => mixed(end)
+%                         cell:   last(cell) => cell{end}
 %
 %   Outputs:
 %
@@ -18,21 +18,24 @@ function l = last(mixed)
 
 %% File information
 % Author: Philipp Tempel <philipp.tempel@isw.uni-stuttgart.de>
-% Date: 2017-09-19
+% Date: 2019-03-18
 % Changelog:
+%   2019-03-18
+%     * Update to use `BUILTIN` when an unsupported data type is passed as input
+%     argument.
 %   2017-09-19
-%       * Initial release
+%     * Initial release
 
 
 
 %% Do your code magic here
 switch class(mixed)
-    case 'double'
-        l = mixed(end);
-    case 'cell'
-        l = mixed{end};
-    otherwise
-        throwAsCaller(MException('PHILIPPTEMPEL:MATLABTOOLING:DATA:LAST:UnsupportedType', 'Unsupported type %s given to function', class(mixed)));
+  case 'double'
+    l = mixed(end);
+  case 'cell'
+    l = mixed{end};
+  otherwise
+    l = builtin('last', mixed);
 end
 
 
