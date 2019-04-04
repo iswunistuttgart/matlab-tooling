@@ -66,6 +66,7 @@ classdef project < handle ...
     
     % Actual loaded data
     Data_ = struct();
+    DataLoaded = false;
     
   end
   
@@ -284,7 +285,16 @@ classdef project < handle ...
       %% GET.DATA gets the data
       
       
-      % Get private property
+      % If data has not been loaded but exists...
+      if ~this.DataLoaded && this.HasData
+        % Load it
+        this.Data_ = load(this.DataPath);
+      end
+      
+      % Flag that we have now at least once loaded data
+      this.DataLoaded = true;
+      
+      % Return data
       d = this.Data_;
       
     end
