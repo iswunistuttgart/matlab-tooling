@@ -1,9 +1,9 @@
-function l = last(mixed)
-% LAST gets the last element of the given argument
+function f = first(mixed)
+% FIRST gets the first element of the given argument
 %
 %   Inputs:
 %
-%   MIXED               Can be a MATLAB variable of any content. This function 
+%   MIXED               Can be a MATLAB variable of any content. This function
 %                       tries its best to handle getting the "last" item
 %                       correctly. Depending on the class of the argument, the
 %                       last item is differently defined:
@@ -12,7 +12,7 @@ function l = last(mixed)
 %
 %   Outputs:
 %
-%   L                   The last item in the given arguument
+%   F                   The first item in the given arguument
 
 
 
@@ -21,9 +21,6 @@ function l = last(mixed)
 % Date: 2019-03-18
 % Changelog:
 %   2019-03-18
-%     * Update to use `BUILTIN` when an unsupported data type is passed as input
-%     argument.
-%   2017-09-19
 %     * Initial release
 
 
@@ -31,11 +28,11 @@ function l = last(mixed)
 %% Do your code magic here
 switch class(mixed)
   case 'double'
-    l = mixed(end);
+    f = mixed(1);
   case 'cell'
-    l = mixed{end};
+    f = mixed{1};
   otherwise
-    l = builtin('last', mixed);
+    f = builtin('first', mixed);
 end
 
 

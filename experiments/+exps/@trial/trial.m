@@ -103,7 +103,7 @@ classdef trial < handle ...
   
   
   %% HIDDEN PROPERTIES
-  properties ( Constant , Hidden )
+  properties ( Constant, Hidden )
     
     % Name of the media folder
     MediaFolder = 'media'
@@ -137,6 +137,7 @@ classdef trial < handle ...
     
     % Actual loaded data
     Data_ = struct();
+    DataLoaded = false;
     
     % Actual scope data
     Scope_
@@ -354,6 +355,16 @@ classdef trial < handle ...
       %% GET.DATA gets the data
       
       
+      % If data has not been loaded but exists...
+      if ~this.DataLoaded && this.HasData
+        % Load it
+        this.Data_ = load(this.DataPath);
+      end
+      
+      % Flag that we have now at least once loaded data
+      this.DataLoaded = true;
+      
+      % Return data
       d = this.Data_;
       
     end
