@@ -20,7 +20,11 @@ What this will do is
 
 That's it. You are now officially all set to use any of the functions defind in the [list of functions](FUNCTIONS.md). Happy efficiency.
 
-## Some Comments
+## Guides
+
+* [Typesetting of MATLAB data in LaTeX documents](guides/matlab-array-typesetting.md)
+
+## Comments
 
 ### On notation of matrices (aka. **row/column issue**)
 
